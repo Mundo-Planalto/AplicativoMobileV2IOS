@@ -8,17 +8,13 @@
 import Foundation
 
 enum TabItem: String, CaseIterable {
-    case home = "Início"
+    case home = "Dashboard"
     case ventures = "Empreendimentos"
-    case news = "Notícias"
-    case profile = "Perfil"
 
     var iconName: String {
         switch self {
         case .home: return "house.fill"
         case .ventures: return "building.2.fill"
-        case .news: return "bell.fill"
-        case .profile: return "person.fill"
         }
     }
 }
@@ -32,6 +28,8 @@ enum QuickAction: String, Identifiable, CaseIterable {
     case requestService = "Solicitar Atendimento"
     case sendEmail = "Enviar E-mail"
     case whatsappCall = "Chamar no WhatsApp"
+    case profile = "Perfil"
+    case chatAI = "Atendimento IA"
 
     var id: String { rawValue }
 
@@ -45,6 +43,8 @@ enum QuickAction: String, Identifiable, CaseIterable {
         case .requestService: return "headphones"
         case .sendEmail: return "envelope.fill"
         case .whatsappCall: return "message.fill"
+        case .profile: return "person.fill"
+        case .chatAI: return "message.circle.fill"
         }
     }
 
@@ -58,6 +58,8 @@ enum QuickAction: String, Identifiable, CaseIterable {
         case .requestService: return "#FF9800" // Laranja escuro
         case .sendEmail: return "#2196F3" // Azul claro
         case .whatsappCall: return "#25D366" // Verde WhatsApp
+        case .profile: return "#607D8B" // Azul acinzentado
+        case .chatAI: return "#FF5722" // Laranja avermelhado
         }
     }
 }

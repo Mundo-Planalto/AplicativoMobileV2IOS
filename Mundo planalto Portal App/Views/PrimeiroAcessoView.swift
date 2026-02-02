@@ -9,7 +9,6 @@ import SwiftUI
 
 struct PrimeiroAcessoView: View {
     @StateObject private var viewModel = PrimeiroAcessoViewModel()
-    @State private var navigateToDashboard = false
 
     var body: some View {
         NavigationStack {
@@ -98,14 +97,6 @@ struct PrimeiroAcessoView: View {
                         Spacer()
                     }
                     .padding(.vertical, 32)
-                }
-            }
-            .navigationDestination(isPresented: $navigateToDashboard) {
-                DashboardView()
-            }
-            .onChange(of: viewModel.state) { oldValue, newValue in
-                if case .success = newValue {
-                    navigateToDashboard = true
                 }
             }
         }

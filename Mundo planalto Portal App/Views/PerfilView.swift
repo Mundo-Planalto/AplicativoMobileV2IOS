@@ -9,71 +9,133 @@ import SwiftUI
 
 struct PerfilView: View {
     @StateObject private var viewModel = PerfilViewModel()
+    @State private var navigateToSistema = false
+    @State private var showChatIA = false
 
     var body: some View {
         ZStack {
             AppColors.backgroundPrimary
                 .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Avatar do usuário
+            VStack(spacing: 0) {
+                if viewModel.isLoading {
+                    Spacer()
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentCyan))
+                    Spacer()
+                } else if let error = viewModel.error {
+                    Spacer()
                     VStack(spacing: 16) {
-                        ZStack {
-                            Circle()
-                                .fill(AppColors.accentCyan.opacity(0.2))
-                                .frame(width: 80, height: 80)
-
-                            Image(systemName: "person.fill")
-                                .font(.system(size: 40))
-                                .foregroundColor(AppColors.accentCyan)
-                        }
-
-                        VStack(spacing: 4) {
-                            Text(viewModel.userName)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-
-                            Text(viewModel.userEmail)
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .padding(.vertical, 24)
-
-                    // Itens de menu
-                    VStack(spacing: 8) {
-                        ForEach(viewModel.menuOptions) { option in
-                            ProfileMenuItem(option: option) {
-                                viewModel.performAction(option.action)
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 50))
+                            .foregroundColor(.orange)
+                        Text(error)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                        Button("Tentar Novamente") {
+                            Task {
+                                await viewModel.loadUserData()
                             }
                         }
+                        .foregroundColor(AppColors.accentCyan)
                     }
-                    .padding(.horizontal)
+                    .padding()
+                    Spacer()
+                } else {
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            // Avatar do usuário - Circle 80dp, ícone person
+                            VStack(spacing: 16) {
+                                ZStack {
+                                    Circle()
+                                        .fill(AppColors.accentCyan.opacity(0.2))
+                                        .frame(width: 80, height: 80)
+
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 40))
+                                        .foregroundColor(AppColors.accentCyan)
+                                }
+                            }
+                            .padding(.vertical, 24)
+
+                            // Informações pessoais - nome, CPF, telefone
+                            VStack(spacing: 16) {
+                                InfoRow(icon: "person.fill", title: "Nome", value: viewModel.userName)
+                                InfoRow(icon: "creditcard.fill", title: "CPF", value: viewModel.userCPF)
+                                InfoRow(icon: "phone.fill", title: "Telefone", value: viewModel.userPhone)
+                            }
+                            .padding()
+                            .background(AppColors.cardBackground)
+                            .cornerRadius(16)
+                            .padding(.horizontal)
+
+                            // Menu opções - Sistema, Atendimento IA, Logout
+                            VStack(spacing: 8) {
+                                ForEach(viewModel.menuOptions) { option in
+                                    ProfileMenuRow(option: option) {
+                                        handleMenuAction(option.action)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        .padding(.vertical)
+                    }
                 }
-                .padding(.vertical)
             }
         }
-        .confirmationDialog("Tema do App", isPresented: $viewModel.showThemeDialog) {
-            Button("Claro") {
-                if !viewModel.isDarkTheme {
-                    viewModel.toggleTheme()
-                }
+        .navigationDestination(isPresented: $navigateToSistema) {
+            SistemaView()
+        }
+        .sheet(isPresented: $showChatIA) {
+            ChatAIScreen()
+        }
+        .onAppear {
+            Task {
+                await viewModel.loadUserData()
             }
-            Button("Escuro") {
-                if viewModel.isDarkTheme {
-                    viewModel.toggleTheme()
-                }
-            }
-            Button("Cancelar", role: .cancel) {}
-        } message: {
-            Text("Escolha o tema do aplicativo")
+        }
+    }
+
+    private func handleMenuAction(_ action: ProfileAction) {
+        switch action {
+        case .sistema:
+            navigateToSistema = true
+        case .chatIA:
+            showChatIA = true
+        case .logout:
+            viewModel.performAction(.logout)
         }
     }
 }
 
-struct ProfileMenuItem: View {
+struct InfoRow: View {
+    let icon: String
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundColor(AppColors.accentCyan)
+                .frame(width: 20, height: 20)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+
+                Text(value)
+                    .font(.subheadline)
+                    .foregroundColor(.white)
+            }
+
+            Spacer()
+        }
+    }
+}
+
+struct ProfileMenuRow: View {
     let option: ProfileMenuOption
     let action: () -> Void
 

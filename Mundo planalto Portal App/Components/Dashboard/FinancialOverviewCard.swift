@@ -60,8 +60,8 @@ struct FinancialOverviewCard: View {
 
                 // Botão Ver Extrato
                 Button(action: {
-                    // Navegação será tratada pelo DashboardView
-                    NotificationCenter.default.post(name: NSNotification.Name("SwitchToFinancial"), object: nil)
+                    // Por enquanto, apenas um print - navegação será implementada
+                    print("Ver Extrato - funcionalidade em desenvolvimento")
                 }) {
                     Text("Ver Extrato")
                         .font(.headline)

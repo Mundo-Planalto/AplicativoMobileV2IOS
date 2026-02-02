@@ -58,7 +58,7 @@ struct DetalhesObraView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
-                            // Barra de progresso opcional
+                            // Barra de Progresso Geral (Topo)
                             VStack(spacing: 8) {
                                 HStack {
                                     Text("Progresso da Obra")
@@ -79,7 +79,7 @@ struct DetalhesObraView: View {
 
                             // Timeline Vertical
                             ZStack(alignment: .leading) {
-                                // Linha contínua ciana
+                                // Linha contínua ciana (5dp width)
                                 Rectangle()
                                     .fill(AppColors.accentCyan)
                                     .frame(width: 5)
@@ -92,7 +92,7 @@ struct DetalhesObraView: View {
                                     }
                                 }
                                 .padding(.leading, 8)
-                                .padding(.trailing)
+                                .padding(.trailing, 16)
                                 .padding(.vertical)
                             }
                         }
@@ -113,7 +113,7 @@ struct TimelineMarcoItem: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            // Indicador circular
+            // Indicador circular (16dp)
             ZStack {
                 if update.isCompleted {
                     Circle()
@@ -128,26 +128,28 @@ struct TimelineMarcoItem: View {
                         .frame(width: 16, height: 16)
                 }
             }
-            .padding(.top, 8)
 
-            // Card de conteúdo
+            // Card de conteúdo (surfaceVariant, radius 16dp)
             VStack(alignment: .leading, spacing: 12) {
+                // Data em AccentCyan (18sp SemiBold)
                 Text(update.date)
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundColor(AppColors.accentCyan)
 
+                // Título em onBackground bold 20sp
                 Text(update.title)
                     .font(.title2)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
 
+                // Descrição em onSurface 80% alpha
                 Text(update.description)
                     .font(.body)
                     .foregroundColor(.white.opacity(0.8))
                     .lineSpacing(4)
 
-                // Galeria horizontal de fotos
+                // Galeria horizontal (LazyRow imagens 120x90dp radius 12dp)
                 if !update.images.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
@@ -165,7 +167,7 @@ struct TimelineMarcoItem: View {
                     }
                 }
             }
-            .padding()
+            .padding(16) // 16dp padding interno
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(AppColors.cardBackground)
             .cornerRadius(16)

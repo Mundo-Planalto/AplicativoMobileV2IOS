@@ -9,25 +9,36 @@ import Foundation
 import SwiftUI
 import Combine
 
+enum ExtratoFilter: String, CaseIterable {
+    case todas = "Todas"
+    case aVencer = "A Vencer"
+    case pagas = "Pagas"
+    case vencidas = "Vencidas"
+
+    var status: PaymentStatus? {
+        switch self {
+        case .todas: return nil
+        case .aVencer: return .upcoming
+        case .pagas: return .paid
+        case .vencidas: return .overdue
+        }
+    }
+}
+
 @MainActor
 class ExtratoViewModel: ObservableObject {
     @Published var allItems: [FinancialStatementItem] = []
     @Published var filteredItems: [FinancialStatementItem] = []
-    @Published var selectedFilter: PaymentStatus? = nil
+    @Published var selectedFilter: ExtratoFilter = .todas
     @Published var isLoading = false
     @Published var error: String?
 
-    var filterOptions: [String] {
-        ["Todas", "A Vencer", "Pagas", "Vencidas"]
+    var filterOptions: [ExtratoFilter] {
+        ExtratoFilter.allCases
     }
 
     var selectedFilterText: String {
-        switch selectedFilter {
-        case .upcoming: return "A Vencer"
-        case .paid: return "Pagas"
-        case .overdue: return "Vencidas"
-        case nil: return "Todas"
-        }
+        selectedFilter.rawValue
     }
 
     func loadFinancialStatement() async {
@@ -44,6 +55,7 @@ class ExtratoViewModel: ObservableObject {
                     id: "1",
                     ventureName: "Residencial Parque das Flores",
                     installmentNumber: "1/24",
+                    parcela: "1/24",
                     dueDate: "15/01/2025",
                     amount: 1250.00,
                     status: .paid
@@ -52,6 +64,7 @@ class ExtratoViewModel: ObservableObject {
                     id: "2",
                     ventureName: "Residencial Parque das Flores",
                     installmentNumber: "2/24",
+                    parcela: "2/24",
                     dueDate: "15/02/2025",
                     amount: 1250.00,
                     status: .upcoming
@@ -60,6 +73,7 @@ class ExtratoViewModel: ObservableObject {
                     id: "3",
                     ventureName: "Condomínio Vista Verde",
                     installmentNumber: "1/36",
+                    parcela: "1/36",
                     dueDate: "10/12/2024",
                     amount: 890.50,
                     status: .overdue
@@ -68,6 +82,7 @@ class ExtratoViewModel: ObservableObject {
                     id: "4",
                     ventureName: "Condomínio Vista Verde",
                     installmentNumber: "2/36",
+                    parcela: "2/36",
                     dueDate: "10/01/2025",
                     amount: 890.50,
                     status: .paid
@@ -76,6 +91,7 @@ class ExtratoViewModel: ObservableObject {
                     id: "5",
                     ventureName: "Edifício Central Plaza",
                     installmentNumber: "1/48",
+                    parcela: "1/48",
                     dueDate: "20/03/2025",
                     amount: 2100.75,
                     status: .upcoming
@@ -84,6 +100,7 @@ class ExtratoViewModel: ObservableObject {
                     id: "6",
                     ventureName: "Edifício Central Plaza",
                     installmentNumber: "2/48",
+                    parcela: "2/48",
                     dueDate: "20/02/2025",
                     amount: 2100.75,
                     status: .overdue
@@ -99,25 +116,14 @@ class ExtratoViewModel: ObservableObject {
         isLoading = false
     }
 
-    func setFilter(_ filterText: String) {
-        switch filterText {
-        case "Todas":
-            selectedFilter = nil
-        case "A Vencer":
-            selectedFilter = .upcoming
-        case "Pagas":
-            selectedFilter = .paid
-        case "Vencidas":
-            selectedFilter = .overdue
-        default:
-            selectedFilter = nil
-        }
+    func setFilter(_ filter: ExtratoFilter) {
+        selectedFilter = filter
         applyFilter()
     }
 
     private func applyFilter() {
-        if let filter = selectedFilter {
-            filteredItems = allItems.filter { $0.status == filter }
+        if let status = selectedFilter.status {
+            filteredItems = allItems.filter { $0.status == status }
         } else {
             filteredItems = allItems
         }

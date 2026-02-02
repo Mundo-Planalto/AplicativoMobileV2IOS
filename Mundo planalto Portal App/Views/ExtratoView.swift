@@ -102,8 +102,8 @@ struct ExtratoView: View {
                             HStack(spacing: 8) {
                                 ForEach(viewModel.filterOptions, id: \.self) { filter in
                                     FilterChip(
-                                        text: filter,
-                                        isSelected: filter == viewModel.selectedFilterText
+                                        text: filter.rawValue,
+                                        isSelected: filter == viewModel.selectedFilter
                                     ) {
                                         viewModel.setFilter(filter)
                                     }
@@ -200,7 +200,7 @@ struct ParcelaCard: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
 
-                Text("Parcela \(item.installmentNumber)")
+                Text("Parcela \(item.parcela)")
                     .font(.subheadline)
                     .foregroundColor(.gray)
 

@@ -9,20 +9,25 @@ import SwiftUI
 
 @main
 struct Mundo_planalto_Portal_AppApp: App {
-    @State private var isLoggedIn = false
+    @State private var showSplash = true
 
     var body: some Scene {
         WindowGroup {
-            if isLoggedIn || UserDefaults.standard.string(forKey: "auth_token") != nil {
-                MainTabView()
+            if showSplash {
+                SplashView()
+                    .onDisappear {
+                        AppState.shared.checkInitialLoginState()
+                    }
             } else {
-                NavigationStack {
-                    LoginView()
-                }
-                .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("UserLoggedIn"))) { _ in
-                    isLoggedIn = true
-                }
+                ContentView()
             }
+        }
+    }
+
+    init() {
+        // Delay para mostrar splash por pelo menos 2 segundos
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            showSplash = false
         }
     }
 }

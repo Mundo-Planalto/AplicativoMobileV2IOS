@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AvisosNoticiasView: View {
     @StateObject private var viewModel = AvisosNoticiasViewModel()
-    @State private var selectedNotice: Notice?
+    @State private var selectedNoticeId: String?
 
     var body: some View {
         ZStack {
@@ -47,7 +47,7 @@ struct AvisosNoticiasView: View {
                                 NoticeDetailCard(notice: notice)
                                     .padding(.horizontal)
                                     .onTapGesture {
-                                        selectedNotice = notice
+                                        selectedNoticeId = notice.id
                                     }
                             }
                         }
@@ -56,8 +56,8 @@ struct AvisosNoticiasView: View {
                 }
             }
         }
-        .navigationDestination(item: $selectedNotice) { notice in
-            NoticiaDetalhesView(notice: notice)
+        .navigationDestination(item: $selectedNoticeId) { noticeId in
+            NoticiaDetalhesView(noticeId: noticeId)
         }
         .onAppear {
             Task {
@@ -75,13 +75,13 @@ struct NoticeDetailCard: View {
             // Header com tipo e data
             HStack {
                 HStack(spacing: 6) {
-                    Image(systemName: notice.type == .notice ? "bell.fill" : "newspaper.fill")
-                        .foregroundColor(notice.type == .notice ? .orange : AppColors.accentBlue)
+                    Image(systemName: notice.intelligentType == .notice ? "bell.fill" : "newspaper.fill")
+                        .foregroundColor(notice.intelligentType == .notice ? .orange : AppColors.accentBlue)
 
-                    Text(notice.type == .notice ? "Aviso" : "Notícia")
+                    Text(notice.intelligentType == .notice ? "Aviso" : "Notícia")
                         .font(.caption)
                         .fontWeight(.semibold)
-                        .foregroundColor(notice.type == .notice ? .orange : AppColors.accentBlue)
+                        .foregroundColor(notice.intelligentType == .notice ? .orange : AppColors.accentBlue)
                 }
 
                 Spacer()

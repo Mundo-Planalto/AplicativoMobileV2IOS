@@ -22,8 +22,9 @@ class LoginViewModel: ObservableObject {
     @Published var password: String = ""
     @Published var state: LoginState = .idle
     @Published var errorMessage: String = ""
-    
+
     private let authService = AuthService.shared
+    private var appState: AppState = AppState.shared
     
     var isFormValid: Bool {
         !cpf.isEmpty && !password.isEmpty && CPFMask.unformat(cpf).count == 11
@@ -44,9 +45,8 @@ class LoginViewModel: ObservableObject {
                 try await Task.sleep(nanoseconds: 1_000_000_000) // 1 segundo para simular delay
 
                 // Simular sucesso para desenvolvimento
-                UserDefaults.standard.set("mock_token", forKey: "auth_token")
                 state = .success
-                NotificationCenter.default.post(name: NSNotification.Name("UserLoggedIn"), object: nil)
+                appState.login()
             } catch {
                 state = .error("Erro ao fazer login. Tente novamente.")
             }

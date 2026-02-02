@@ -9,7 +9,6 @@ import SwiftUI
 
 struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
-    @State private var navigateToDashboard = false
     @State private var navigateToRegister = false
     
     private var isLoading: Bool {
@@ -100,16 +99,8 @@ struct LoginView: View {
                     Spacer()
                 }
             }
-            .navigationDestination(isPresented: $navigateToDashboard) {
-                DashboardView()
-            }
             .navigationDestination(isPresented: $navigateToRegister) {
                 PrimeiroAcessoView()
-            }
-            .onChange(of: viewModel.state) { oldValue, newValue in
-                if case .success = newValue {
-                    navigateToDashboard = true
-                }
             }
         }
     }

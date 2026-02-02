@@ -17,6 +17,8 @@ class PrimeiroAcessoViewModel: ObservableObject {
     @Published var state: RegistrationState = .idle
     @Published var errorMessage: String = ""
 
+    private var appState: AppState = AppState.shared
+
     enum RegistrationState: Equatable {
         case idle
         case loading
@@ -61,7 +63,7 @@ class PrimeiroAcessoViewModel: ObservableObject {
 
                 // Simular sucesso para desenvolvimento
                 state = .success
-                NotificationCenter.default.post(name: NSNotification.Name("UserLoggedIn"), object: nil)
+                appState.login()
 
             } catch {
                 state = .error("Erro ao criar conta. Tente novamente.")

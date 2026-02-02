@@ -43,6 +43,22 @@ struct Notice: Identifiable, Codable, Hashable {
     let date: String
     let type: NoticeType
 
+    // Classificação inteligente baseada em keywords
+    var intelligentType: NoticeType {
+        let warningKeywords = ["aviso", "atenção", "importante", "urgente", "reunião", "manutenção", "obrigatório"]
+        let newsKeywords = ["notícia", "lançamento", "novo", "inauguração", "campanha", "parceria", "atualização"]
+
+        let combinedText = (title + description).lowercased()
+
+        if warningKeywords.contains(where: { combinedText.contains($0) }) {
+            return .notice
+        } else if newsKeywords.contains(where: { combinedText.contains($0) }) {
+            return .news
+        } else {
+            return type // Fallback para tipo da API
+        }
+    }
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
@@ -70,6 +86,7 @@ struct FinancialStatementItem: Identifiable, Codable {
     let id: String
     let ventureName: String
     let installmentNumber: String // "1/24"
+    let parcela: String // Mesmo que installmentNumber para compatibilidade
     let dueDate: String
     let amount: Double
     let status: PaymentStatus

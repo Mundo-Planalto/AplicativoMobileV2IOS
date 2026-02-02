@@ -12,74 +12,69 @@ import Combine
 @MainActor
 class PerfilViewModel: ObservableObject {
     @Published var userName: String = ""
-    @Published var userEmail: String = ""
     @Published var userCPF: String = ""
-    @Published var isDarkTheme: Bool = true
-    @Published var showThemeDialog = false
+    @Published var userPhone: String = ""
+    @Published var isLoading = false
+    @Published var error: String?
 
     let menuOptions: [ProfileMenuOption] = [
-        ProfileMenuOption(title: "Informações Pessoais",
-                         subtitle: "Gerencie seus dados",
-                         iconName: "person.fill",
-                         action: .personalInfo),
-        ProfileMenuOption(title: "Tema do App",
-                         subtitle: "Claro ou escuro",
-                         iconName: "moon.fill",
-                         action: .theme),
-        ProfileMenuOption(title: "Notificações",
-                         subtitle: "Configurar alertas",
-                         iconName: "bell.fill",
-                         action: .notifications),
-        ProfileMenuOption(title: "Contato e Suporte",
-                         subtitle: "Fale conosco",
-                         iconName: "phone.fill",
-                         action: .support),
+        ProfileMenuOption(title: "Sistema",
+                          subtitle: "Tema e configurações",
+                          iconName: "gear",
+                          action: .sistema),
+        ProfileMenuOption(title: "Atendimento com IA",
+                          subtitle: "Converse com nosso assistente",
+                          iconName: "message.circle.fill",
+                          action: .chatIA),
         ProfileMenuOption(title: "Sair",
-                         subtitle: "Encerrar sessão",
-                         iconName: "arrow.right.square",
-                         action: .logout)
+                          subtitle: "Encerrar sessão",
+                          iconName: "arrow.right.square",
+                          action: .logout)
     ]
 
     init() {
-        loadUserData()
+        Task {
+            await loadUserData()
+        }
     }
 
-    private func loadUserData() {
-        // Dados mockados - em produção viriam da API
-        userName = "João Silva"
-        userEmail = "joao.silva@email.com"
-        userCPF = "123.456.789-00"
-        isDarkTheme = true
-    }
+    func loadUserData() async {
+        isLoading = true
+        error = nil
 
-    func toggleTheme() {
-        isDarkTheme.toggle()
-        // TODO: Salvar preferência no UserDefaults
-        print("Tema alterado para: \(isDarkTheme ? "escuro" : "claro")")
+        do {
+            // Simular carregamento de dados da API - em produção seria PreferencesManager + API
+            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 segundo
+
+            // Dados mockados conforme documentação
+            userName = "João Silva"
+            userCPF = "123.456.789-00"
+            userPhone = "Não possui" // Conforme documentação
+
+        } catch {
+            self.error = "Erro ao carregar dados do perfil"
+        }
+
+        isLoading = false
     }
 
     func performAction(_ action: ProfileAction) {
         switch action {
-        case .personalInfo:
-            // TODO: Navegar para edição de dados pessoais
-            print("Editar informações pessoais")
-        case .theme:
-            showThemeDialog = true
-        case .notifications:
-            // TODO: Navegar para configurações de notificações
-            print("Configurar notificações")
-        case .support:
-            // TODO: Navegar para tela de suporte
-            print("Contato e suporte")
+        case .sistema:
+            // Navegação será tratada pela view
+            print("Navegar para sistema")
+        case .chatIA:
+            // Navegação será tratada pela view
+            print("Abrir chat IA")
         case .logout:
             logout()
         }
     }
 
     private func logout() {
-        // Limpar dados do usuário
+        // Limpar dados do usuário conforme documentação
         UserDefaults.standard.removeObject(forKey: "auth_token")
-        // TODO: Navegar para tela de login
+        AppState.shared.logout()
         print("Usuário deslogado")
     }
 }
@@ -93,9 +88,7 @@ struct ProfileMenuOption: Identifiable {
 }
 
 enum ProfileAction {
-    case personalInfo
-    case theme
-    case notifications
-    case support
+    case sistema
+    case chatIA
     case logout
 }
