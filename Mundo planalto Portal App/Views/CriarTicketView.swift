@@ -134,7 +134,7 @@ struct CriarTicketView: View {
                                         await viewModel.createTicket()
                                     }
                                 },
-                                isLoading: viewModel.state == .loading,
+                                //isLoading: viewModel.state == .loading,
                                 isEnabled: viewModel.isFormValid
                             )
                             .padding(.horizontal)

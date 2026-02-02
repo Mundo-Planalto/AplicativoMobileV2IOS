@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import Combine
 import CommonCrypto
+import CryptoKit
 
 struct ChatMessageRequest: Codable {
     let message: String
@@ -27,16 +28,23 @@ class ChatIAViewModel: ObservableObject {
 
     private let apiUrl = "https://primary-production-77f3.up.railway.app/webhook/fbee63dc-1f61-4e02-9cfa-a7c6001c704a"
 
-    // GUID determinístico baseado em dados do usuário
-    private var chatId: String {
-        // Simulando um UUID determinístico
-        // Em produção, seria baseado em userId + cpfCnpj
-        let userData = "user123_12345678900"
-        return UUID(userData.utf8Data.sha256().prefix(16)).uuidString
-    }
 
-    init() {
-        sendWelcomeMessage()
+
+    private var chatId: String {
+        let userData = "user123_12345678900"
+        guard let data = userData.data(using: .utf8) else {
+            return UUID().uuidString
+        }
+        
+        let hash = SHA256.hash(data: data)          // SHA256.Digest
+        let prefix16 = hash.withUnsafeBytes { Array($0.prefix(16)) }
+        
+        return UUID(uuid: (
+            prefix16[0], prefix16[1], prefix16[2], prefix16[3],
+            prefix16[4], prefix16[5], prefix16[6], prefix16[7],
+            prefix16[8], prefix16[9], prefix16[10], prefix16[11],
+            prefix16[12], prefix16[13], prefix16[14], prefix16[15]
+        )).uuidString
     }
 
     private func sendWelcomeMessage() {

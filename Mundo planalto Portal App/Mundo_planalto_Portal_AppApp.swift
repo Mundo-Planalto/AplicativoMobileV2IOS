@@ -9,25 +9,33 @@ import SwiftUI
 
 @main
 struct Mundo_planalto_Portal_AppApp: App {
-    @State private var showSplash = true
-
+    
     var body: some Scene {
         WindowGroup {
-            if showSplash {
-                SplashView()
-                    .onDisappear {
-                        AppState.shared.checkInitialLoginState()
-                    }
-            } else {
-                ContentView()
-            }
+            SplashScreenWithTimer()   // nova view que gerencia o timer
         }
     }
+}
 
-    init() {
-        // Delay para mostrar splash por pelo menos 2 segundos
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            showSplash = false
+// Nova view que cuida do splash + timer
+struct SplashScreenWithTimer: View {
+    @State private var isSplashVisible = true
+    
+    var body: some View {
+        if isSplashVisible {
+            SplashView()
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation {
+                            isSplashVisible = false
+                        }
+                    }
+                }
+                .onDisappear {
+                    AppState.shared.checkInitialLoginState()
+                }
+        } else {
+            ContentView()
         }
     }
 }
