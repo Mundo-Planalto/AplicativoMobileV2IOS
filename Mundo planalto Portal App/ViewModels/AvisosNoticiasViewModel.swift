@@ -11,7 +11,7 @@ import Combine
 
 @MainActor
 class AvisosNoticiasViewModel: ObservableObject {
-    @Published var notices: [Notice] = []
+    @Published var notices: [AppNotice] = []
     @Published var isLoading = false
     @Published var error: String?
 
@@ -25,42 +25,42 @@ class AvisosNoticiasViewModel: ObservableObject {
 
             // Dados mockados expandidos
             notices = [
-                Notice(id: "1",
+                AppNotice(id: "1",
                       title: "Reunião de Condôminos - Residencial Parque das Flores",
                       description: "Reunião marcada para o dia 15/02 às 19h na sala de eventos do prédio. Ordem do dia: prestação de contas, manutenção preventiva e sugestões dos moradores.",
                       date: "10/01/2025",
                       type: .notice),
-                Notice(id: "2",
+                AppNotice(id: "2",
                       title: "Nova Fase da Obra - Condomínio Vista Verde",
                       description: "Iniciamos a construção da torre norte com previsão de entrega para dezembro de 2025. Acompanhe o progresso através do nosso aplicativo.",
                       date: "08/01/2025",
                       type: .news),
-                Notice(id: "3",
+                AppNotice(id: "3",
                       title: "Manutenção Programada - Sistema Elétrico",
                       description: "No próximo sábado (18/01) realizaremos manutenção preventiva no sistema elétrico das áreas comuns. O serviço será das 8h às 12h.",
                       date: "05/01/2025",
                       type: .notice),
-                Notice(id: "4",
+                AppNotice(id: "4",
                       title: "Campanha de Reciclagem Inaugurada",
                       description: "Lançamos nossa campanha de conscientização ambiental. Pontos de coleta seletiva foram instalados em todas as torres do empreendimento.",
                       date: "03/01/2025",
                       type: .news),
-                Notice(id: "5",
+                AppNotice(id: "5",
                       title: "Atualização no Regulamento Interno",
                       description: "Foram aprovadas alterações no regulamento interno, incluindo novas regras para uso das áreas de lazer e normas de convivência.",
                       date: "01/01/2025",
                       type: .notice),
-                Notice(id: "6",
+                AppNotice(id: "6",
                       title: "Parceria com Academia Local",
                       description: "Assinamos convênio com a academia FitLife para desconto especial aos moradores. Desconto de 30% na mensalidade.",
                       date: "28/12/2024",
                       type: .news),
-                Notice(id: "7",
+                AppNotice(id: "7",
                       title: "Festa Junina 2025 - Programação Completa",
                       description: "Anunciamos a programação completa da Festa Junina 2025: quadrilha, comidas típicas, brincadeiras e show musical no dia 15/06.",
                       date: "25/12/2024",
                       type: .notice),
-                Notice(id: "8",
+                AppNotice(id: "8",
                       title: "Sistema de Segurança Atualizado",
                       description: "Implementamos novo sistema de câmeras de segurança com reconhecimento facial e monitoramento 24 horas em todas as áreas comuns.",
                       date: "20/12/2024",

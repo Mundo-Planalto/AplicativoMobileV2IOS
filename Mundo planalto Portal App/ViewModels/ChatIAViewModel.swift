@@ -8,8 +8,6 @@
 import Foundation
 import SwiftUI
 import Combine
-import CommonCrypto
-import CryptoKit
 
 struct ChatMessageRequest: Codable {
     let message: String
@@ -20,31 +18,29 @@ struct ChatMessageResponseItem: Codable {
     let output: String
 }
 
-@MainActor
+struct ChatMessage: Identifiable {
+    let id: UUID
+    let content: String
+    let isUser: Bool
+    let timestamp: Date
+
+    init(content: String, isUser: Bool, id: UUID = UUID(), timestamp: Date = Date()) {
+        self.id = id
+        self.content = content
+        self.isUser = isUser
+        self.timestamp = timestamp
+    }
+}
+
 class ChatIAViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
-    @Published var isLoading = false
+    @Published var isLoading: Bool = false
     @Published var error: String?
 
-    private let apiUrl = "https://primary-production-77f3.up.railway.app/webhook/fbee63dc-1f61-4e02-9cfa-a7c6001c704a"
+    private let aiService = AIService.shared
 
-
-
-    private var chatId: String {
-        let userData = "user123_12345678900"
-        guard let data = userData.data(using: .utf8) else {
-            return UUID().uuidString
-        }
-        
-        let hash = SHA256.hash(data: data)          // SHA256.Digest
-        let prefix16 = hash.withUnsafeBytes { Array($0.prefix(16)) }
-        
-        return UUID(uuid: (
-            prefix16[0], prefix16[1], prefix16[2], prefix16[3],
-            prefix16[4], prefix16[5], prefix16[6], prefix16[7],
-            prefix16[8], prefix16[9], prefix16[10], prefix16[11],
-            prefix16[12], prefix16[13], prefix16[14], prefix16[15]
-        )).uuidString
+    init() {
+        sendWelcomeMessage()
     }
 
     private func sendWelcomeMessage() {
@@ -63,8 +59,8 @@ class ChatIAViewModel: ObservableObject {
         error = nil
 
         do {
-            let response = try await sendToAPI(message: content)
-            let aiMessage = ChatMessage(content: response, isUser: false)
+            let response = try await aiService.sendMessage(message: content)
+            let aiMessage = ChatMessage(content: response.messageText ?? response.message.content, isUser: false)
             messages.append(aiMessage)
         } catch {
             let errorMessage = ChatMessage(
@@ -72,49 +68,10 @@ class ChatIAViewModel: ObservableObject {
                 isUser: false
             )
             messages.append(errorMessage)
+            self.error = "Erro ao enviar mensagem"
         }
 
         isLoading = false
     }
-
-    private func sendToAPI(message: String) async throws -> String {
-        let request = ChatMessageRequest(message: message, chat: chatId)
-
-        guard let url = URL(string: apiUrl) else {
-            throw URLError(.badURL)
-        }
-
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.httpBody = try JSONEncoder().encode(request)
-
-        let (data, response) = try await URLSession.shared.data(for: urlRequest)
-
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw URLError(.badServerResponse)
-        }
-
-        let decodedResponse = try JSONDecoder().decode([ChatMessageResponseItem].self, from: data)
-        return decodedResponse.first?.output ?? "Não foi possível obter uma resposta."
-    }
 }
 
-extension Data {
-    func sha256() -> Data {
-        var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
-        self.withUnsafeBytes { buffer in
-            _ = CC_SHA256(buffer.baseAddress, CC_LONG(self.count), &hash)
-        }
-        return Data(hash)
-    }
-}
-
-extension UUID {
-    init(_ data: Data) {
-        let bytes = [UInt8](data.prefix(16))
-        let uuid = NSUUID(uuidBytes: bytes) as UUID
-        self = uuid
-    }
-}

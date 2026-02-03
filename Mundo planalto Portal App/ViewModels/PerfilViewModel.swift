@@ -74,7 +74,9 @@ class PerfilViewModel: ObservableObject {
     private func logout() {
         // Limpar dados do usuário conforme documentação
         UserDefaults.standard.removeObject(forKey: "auth_token")
-        AppState.shared.logout()
+        Task {
+            await AppState.shared.logout()
+        }
         print("Usuário deslogado")
     }
 }

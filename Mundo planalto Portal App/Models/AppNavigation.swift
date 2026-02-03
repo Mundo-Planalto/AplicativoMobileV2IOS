@@ -19,7 +19,7 @@ enum TabItem: String, CaseIterable {
     }
 }
 
-enum QuickAction: String, Identifiable, CaseIterable {
+enum DashboardQuickAction: String, Identifiable, CaseIterable {
     case viewStatement = "Ver Extrato"
     case trackWorks = "Acompanhar Obras"
     case newsAlerts = "Avisos e Notícias"

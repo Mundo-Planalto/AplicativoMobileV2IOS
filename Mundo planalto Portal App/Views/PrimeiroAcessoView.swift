@@ -12,16 +12,7 @@ struct PrimeiroAcessoView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                // Gradiente de fundo azul-ciano
-                LinearGradient(
-                    gradient: Gradient(colors: [AppColors.accentBlue, AppColors.accentCyan]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-
-                ScrollView {
+            ScrollView {
                     VStack(spacing: 16) {
                         Spacer()
 
@@ -99,9 +90,18 @@ struct PrimeiroAcessoView: View {
                     .padding(.vertical, 32)
                 }
             }
+            .background(
+                // Gradiente de fundo azul-ciano
+                LinearGradient(
+                    gradient: Gradient(colors: [AppColors.accentBlue, AppColors.accentCyan]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
         }
     }
-}
+
 
 #Preview {
     PrimeiroAcessoView()

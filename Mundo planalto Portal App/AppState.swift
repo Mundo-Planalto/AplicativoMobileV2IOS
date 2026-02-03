@@ -34,8 +34,17 @@ class AppState: ObservableObject {
         isLoggedIn = true
     }
 
-    func logout() {
-        // Limpar todos os dados
+    func logout() async {
+        do {
+            // Tentar fazer logout na API
+            let authService = AuthService.shared
+            _ = try await authService.logout()
+        } catch {
+            // Mesmo se falhar, continua com o logout local
+            print("Erro ao fazer logout remoto: \(error)")
+        }
+
+        // Limpar todos os dados locais
         preferencesManager.clearAllData()
         isLoggedIn = false
     }

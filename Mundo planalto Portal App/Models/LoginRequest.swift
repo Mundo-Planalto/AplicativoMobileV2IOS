@@ -17,3 +17,20 @@ struct LoginResponse: Codable {
     let message: String?
     let success: Bool
 }
+
+struct RegisterRequest: Codable {
+    let cpf: String
+    let password: String
+    let confirmPassword: String
+}
+
+struct RegisterResponse: Codable {
+    let token: String?
+    let message: String?
+    let success: Bool
+}
+
+struct LogoutResponse: Codable {
+    let message: String?
+    let success: Bool
+}

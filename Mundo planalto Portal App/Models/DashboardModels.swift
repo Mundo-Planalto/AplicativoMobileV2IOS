@@ -73,6 +73,9 @@ enum NoticeType: String, Codable {
     case news
 }
 
+/// Alias para desambiguar o tipo Notice em contextos onde há conflito
+typealias AppNotice = Notice
+
 struct VentureUpdate: Identifiable, Codable {
     let id: String
     let date: String

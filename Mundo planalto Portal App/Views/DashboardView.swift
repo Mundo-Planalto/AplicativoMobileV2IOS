@@ -55,7 +55,7 @@ struct DashboardView: View {
                                 GridItem(.flexible(), spacing: 16),
                                 GridItem(.flexible(), spacing: 16)
                             ], spacing: 20) {
-                                ForEach(QuickAction.allCases) { action in
+                                ForEach(DashboardQuickAction.allCases) { action in
                                     QuickActionButton(action: action)
                                         .onTapGesture {
                                             handleQuickAction(action)
@@ -85,7 +85,7 @@ struct DashboardView: View {
         }
     }
 
-    private func handleQuickAction(_ action: QuickAction) {
+    private func handleQuickAction(_ action: DashboardQuickAction) {
         switch action {
         case .viewStatement:
             navigateToFinancial = true

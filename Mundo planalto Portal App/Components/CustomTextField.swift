@@ -17,22 +17,6 @@ struct CustomTextField: View {
 
     @State private var isPasswordVisible: Bool = false
 
-    private var textBinding: Binding<String> {
-        Binding(
-            get: { text },
-            set: { newValue in
-                if let onTextChange = onTextChange {
-                    let formatted = onTextChange(newValue)
-                    if formatted != text {
-                        text = formatted
-                    }
-                } else {
-                    text = newValue
-                }
-            }
-        )
-    }
-
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
@@ -41,13 +25,29 @@ struct CustomTextField: View {
 
             ZStack {
                 if isSecure && !isPasswordVisible {
-                    SecureField(title, text: textBinding)
+                    SecureField(title, text: $text)
                         .accessibilityLabel(title)
                         .accessibilityHint(LocalizedStringKey("Campo de senha com botão para mostrar/ocultar"))
+                        .onChange(of: text) { newValue in
+                            if let onTextChange = onTextChange {
+                                let formatted = onTextChange(newValue)
+                                if formatted != text {
+                                    text = formatted
+                                }
+                            }
+                        }
                 } else {
-                    TextField(title, text: textBinding)
+                    TextField(title, text: $text)
                         .accessibilityLabel(title)
                         .accessibilityHint(isSecure ? LocalizedStringKey("Campo de senha com botão para mostrar/ocultar") : LocalizedStringKey(""))
+                        .onChange(of: text) { newValue in
+                            if let onTextChange = onTextChange {
+                                let formatted = onTextChange(newValue)
+                                if formatted != text {
+                                    text = formatted
+                                }
+                            }
+                        }
                 }
             }
 

@@ -11,7 +11,7 @@ import Combine
 
 @MainActor
 class NoticiaDetalhesViewModel: ObservableObject {
-    @Published var notice: Notice?
+    @Published var notice: AppNotice?
     @Published var isLoading = false
     @Published var error: String?
 
@@ -44,15 +44,15 @@ class NoticiaDetalhesViewModel: ObservableObject {
         isLoading = false
     }
 
-    private func getMockNoticeById(_ id: String) -> Notice? {
+    private func getMockNoticeById(_ id: String) -> AppNotice? {
         // Dados mockados - em produção viria da API
         let mockNotices = [
-            Notice(id: "1",
+            AppNotice(id: "1",
                   title: "Reunião de Condôminos - Residencial Parque das Flores",
                   description: "Reunião marcada para o dia 15/02 às 19h na sala de eventos do prédio. Ordem do dia: prestação de contas, manutenção preventiva e sugestões dos moradores. Todos os condôminos estão convidados a participar desta importante reunião onde serão discutidos os assuntos administrativos do condomínio, incluindo a aprovação do orçamento para o próximo ano, planejamento de manutenções preventivas e espaço para sugestões e reclamações dos moradores. A presença de todos é fundamental para a boa gestão do nosso lar.",
                   date: "10/01/2025",
                   type: .notice),
-            Notice(id: "2",
+            AppNotice(id: "2",
                   title: "Nova Fase da Obra - Condomínio Vista Verde",
                   description: "Iniciamos a construção da torre norte com previsão de entrega para dezembro de 2025. Acompanhe o progresso através do nosso aplicativo. Esta nova fase inclui a construção de 48 apartamentos de alto padrão com vista para o parque municipal.",
                   date: "08/01/2025",

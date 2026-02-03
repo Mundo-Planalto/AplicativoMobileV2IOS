@@ -45,7 +45,7 @@ struct ChatAIScreen: View {
                     ScrollView {
                         ScrollViewReader { scrollView in
                             LazyVStack(spacing: 12) {
-                                ForEach(viewModel.messages) { message in
+                                ForEach(viewModel.messages, id: \.id) { message in
                                     ChatBubble(message: message)
                                 }
 
@@ -61,7 +61,9 @@ struct ChatAIScreen: View {
                             .padding(.vertical)
                             .onChange(of: viewModel.messages.count) { _ in
                                 withAnimation {
-                                    scrollView.scrollTo(viewModel.messages.last?.id, anchor: .bottom)
+                                    if let lastMessageId = viewModel.messages.last?.id {
+                                        scrollView.scrollTo(lastMessageId, anchor: .bottom)
+                                    }
                                 }
                             }
                         }
@@ -102,13 +104,6 @@ struct ChatAIScreen: View {
             Text(viewModel.error ?? "")
         }
     }
-}
-
-struct ChatMessage: Identifiable {
-    let id = UUID()
-    let content: String
-    let isUser: Bool
-    let timestamp = Date()
 }
 
 struct ChatBubble: View {

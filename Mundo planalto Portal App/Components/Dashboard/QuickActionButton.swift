@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct QuickActionButton: View {
-    let action: QuickAction
+    let action: DashboardQuickAction
 
     var body: some View {
         VStack(spacing: 8) {

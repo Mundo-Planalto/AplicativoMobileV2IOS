@@ -15,8 +15,8 @@ class PrimeiroAcessoViewModel: ObservableObject {
     @Published var password: String = ""
     @Published var confirmPassword: String = ""
     @Published var state: RegistrationState = .idle
-    @Published var errorMessage: String = ""
 
+    private let authService = AuthService.shared
     private var appState: AppState = AppState.shared
 
     enum RegistrationState: Equatable {
@@ -54,16 +54,23 @@ class PrimeiroAcessoViewModel: ObservableObject {
         }
 
         state = .loading
-        errorMessage = ""
 
         Task {
             do {
-                // Simular chamada de API de registro
-                try await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 segundos
+                let response = try await authService.primeiroAcesso(cpf: cpf, password: password, confirmPassword: confirmPassword)
 
-                // Simular sucesso para desenvolvimento
-                state = .success
-                appState.login()
+                if response.success {
+                    // Salvar token se fornecido
+                    if let token = response.token {
+                        PreferencesManager.shared.saveAuthToken(token)
+                        PreferencesManager.shared.saveUserCpfCnpj(CPFMask.unformat(cpf))
+                    }
+
+                    state = .success
+                    appState.login()
+                } else {
+                    state = .error(response.message ?? "Erro ao criar conta. Tente novamente.")
+                }
 
             } catch {
                 state = .error("Erro ao criar conta. Tente novamente.")

@@ -21,7 +21,6 @@ class LoginViewModel: ObservableObject {
     @Published var cpf: String = ""
     @Published var password: String = ""
     @Published var state: LoginState = .idle
-    @Published var errorMessage: String = ""
 
     private let authService = AuthService.shared
     private var appState: AppState = AppState.shared
@@ -31,24 +30,36 @@ class LoginViewModel: ObservableObject {
     }
     
     func login() {
+        // Prevent multiple simultaneous login attempts
+        guard case .idle = state else {
+            return
+        }
+
         guard isFormValid else {
             state = .error("Por favor, preencha todos os campos corretamente")
             return
         }
-        
+
         state = .loading
-        errorMessage = ""
-        
+
         Task {
             do {
-                // Simular chamada de API (remover em produção)
-                try await Task.sleep(nanoseconds: 1_000_000_000) // 1 segundo para simular delay
+                let response = try await authService.login(cpf: cpf, password: password)
 
-                // Simular sucesso para desenvolvimento
-                state = .success
-                appState.login()
+                if response.success {
+                    // Salvar token se fornecido
+                    if let token = response.token {
+                        PreferencesManager.shared.saveAuthToken(token)
+                        PreferencesManager.shared.saveUserCpfCnpj(CPFMask.unformat(cpf))
+                    }
+
+                    appState.login()
+                    state = .idle
+                } else {
+                    state = .error(response.message ?? "Credenciais inválidas. Tente novamente.")
+                }
             } catch {
-                state = .error("Erro ao fazer login. Tente novamente.")
+                state = .error("Erro ao fazer login. Verifique sua conexão e tente novamente.")
             }
         }
     }
