@@ -93,6 +93,25 @@ struct FinancialStatementItem: Identifiable, Codable {
     let dueDate: String
     let amount: Double
     let status: PaymentStatus
+    /// Para chamar API de boleto: Sienge usa billReceivableId + installmentId; Esolution usa esolutionBoletoId.
+    let billReceivableId: Int?
+    let installmentId: Int?
+    let isEsolution: Bool?
+    let esolutionBoletoId: Int?
+
+    init(id: String, ventureName: String, installmentNumber: String, parcela: String, dueDate: String, amount: Double, status: PaymentStatus, billReceivableId: Int? = nil, installmentId: Int? = nil, isEsolution: Bool? = nil, esolutionBoletoId: Int? = nil) {
+        self.id = id
+        self.ventureName = ventureName
+        self.installmentNumber = installmentNumber
+        self.parcela = parcela
+        self.dueDate = dueDate
+        self.amount = amount
+        self.status = status
+        self.billReceivableId = billReceivableId
+        self.installmentId = installmentId
+        self.isEsolution = isEsolution
+        self.esolutionBoletoId = esolutionBoletoId
+    }
 }
 
 enum PaymentStatus: String, Codable {

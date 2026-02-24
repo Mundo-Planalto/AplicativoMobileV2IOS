@@ -44,21 +44,31 @@ class LoginViewModel: ObservableObject {
 
         Task {
             do {
-                let response = try await authService.login(cpf: cpf, password: password)
+                let response = try await authService.login(document: cpf, password: password)
 
                 if response.success {
-                    // Salvar token se fornecido
                     if let token = response.token {
                         PreferencesManager.shared.saveAuthToken(token)
-                        PreferencesManager.shared.saveUserCpfCnpj(CPFMask.unformat(cpf))
+                        PreferencesManager.shared.saveUserCpfCnpj(response.user?.document ?? CPFMask.unformat(cpf))
                     }
-
+                    if let user = response.user {
+                        PreferencesManager.shared.saveUserId("\(user.id)")
+                        if let name = user.name { PreferencesManager.shared.saveUserName(name) }
+                    }
                     appState.login()
                     state = .idle
+                    print("[LoginViewModel] ✅ Login realizado com sucesso.")
                 } else {
-                    state = .error(response.message ?? "Credenciais inválidas. Tente novamente.")
+                    let msg = response.message ?? "Usuário ou senha incorreta."
+                    print("[LoginViewModel] ❌ Login falhou (API): \(msg)")
+                    state = .error(msg)
                 }
+            } catch AuthError.invalidCredentials {
+                print("[LoginViewModel] ❌ Credenciais inválidas.")
+                state = .error("Usuário ou senha incorreta.")
             } catch {
+                print("[LoginViewModel] ❌ Erro ao fazer login: \(error)")
+                print("[LoginViewModel]    Tipo: \(type(of: error)), descrição: \(error.localizedDescription)")
                 state = .error("Erro ao fazer login. Verifique sua conexão e tente novamente.")
             }
         }

@@ -57,7 +57,7 @@ class PrimeiroAcessoViewModel: ObservableObject {
 
         Task {
             do {
-                let response = try await authService.primeiroAcesso(cpf: cpf, password: password, confirmPassword: confirmPassword)
+                let response = try await authService.primeiroAcesso(document: cpf, password: password, confirmPassword: confirmPassword)
 
                 if response.success {
                     // Salvar token se fornecido

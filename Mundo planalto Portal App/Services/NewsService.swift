@@ -2,7 +2,7 @@
 //  NewsService.swift
 //  Mundo planalto Portal App
 //
-//  Created by matheus ferreira on 26/01/26.
+//  GET /api/announcements (opcional costCenterId)
 //
 
 import Foundation
@@ -42,151 +42,54 @@ struct NewsDetailResponse: Codable {
     let message: String?
 }
 
-struct MarkAsReadResponse: Codable {
-    let success: Bool
-    let message: String?
-}
-
 class NewsService {
     static let shared = NewsService()
-
-    private let baseURL = "http://10.35.0.55:5187/api/"
-
     private init() {}
+
+    private var baseURL: String { ApiConfig.baseURL + "/" }
 
     private func createAuthorizedRequest(url: URL, method: String = "GET", body: Data? = nil) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        // Add authorization header if token exists
         if let token = PreferencesManager.shared.getAuthToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-
-        if let body = body {
-            request.httpBody = body
-        }
-
+        if let body = body { request.httpBody = body }
         return request
     }
 
-    func getNews(page: Int = 1, limit: Int = 20, category: String? = nil, featured: Bool? = nil) async throws -> NewsResponse {
-        var urlString = baseURL + "news?page=\(page)&limit=\(limit)"
-
-        if let category = category {
-            urlString += "&category=\(category)"
+    /// GET /api/announcements?costCenterId= (opcional)
+    func getAnnouncements(costCenterId: Int? = nil) async throws -> [Notice] {
+        var urlString = baseURL + "announcements"
+        if let id = costCenterId {
+            urlString += "?costCenterId=\(id)"
         }
-        if let featured = featured {
-            urlString += "&featured=\(featured)"
-        }
-
-        guard let url = URL(string: urlString) else {
-            throw NewsError.networkError
-        }
-
+        guard let url = URL(string: urlString) else { throw NewsError.networkError }
         let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw NewsError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let newsResponse = try JSONDecoder().decode(NewsResponse.self, from: data)
-                return newsResponse
-            } else if httpResponse.statusCode == 401 {
-                throw NewsError.invalidCredentials
-            } else {
-                throw NewsError.invalidResponse
-            }
-        } catch {
-            throw NewsError.networkError
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            if (response as? HTTPURLResponse)?.statusCode == 401 { throw NewsError.invalidCredentials }
+            throw NewsError.invalidResponse
         }
+        let decoded = try JSONDecoder().decode(ApiResponse<[AnnouncementDto]>.self, from: data)
+        return (decoded.data ?? []).map { a in
+            Notice(id: "\(a.id)", title: a.title, description: a.content, date: a.postDate, type: .news)
+        }
+    }
+
+    func getNews(page: Int = 1, limit: Int = 20, category: String? = nil, featured: Bool? = nil) async throws -> NewsResponse {
+        let notices = try await getAnnouncements()
+        let news = notices.enumerated().map { i, n in
+            NewsArticle(id: n.id, title: n.title, content: n.description, summary: nil, author: nil, publishedDate: n.date, category: "Geral", tags: nil, imageUrl: nil, isFeatured: false, readCount: 0)
+        }
+        return NewsResponse(news: news, totalCount: news.count, currentPage: 1, totalPages: 1, success: true, message: nil)
     }
 
     func getNewsDetail(id: String) async throws -> NewsDetailResponse {
-        guard let url = URL(string: baseURL + "news/\(id)") else {
-            throw NewsError.networkError
-        }
-
-        let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw NewsError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let detailResponse = try JSONDecoder().decode(NewsDetailResponse.self, from: data)
-                return detailResponse
-            } else if httpResponse.statusCode == 401 {
-                throw NewsError.invalidCredentials
-            } else if httpResponse.statusCode == 404 {
-                throw NewsError.invalidResponse
-            } else {
-                throw NewsError.invalidResponse
-            }
-        } catch {
-            throw NewsError.networkError
-        }
-    }
-
-    func markAsRead(id: String) async throws -> MarkAsReadResponse {
-        guard let url = URL(string: baseURL + "news/\(id)/read") else {
-            throw NewsError.networkError
-        }
-
-        let request = createAuthorizedRequest(url: url, method: "POST")
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw NewsError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let markResponse = try JSONDecoder().decode(MarkAsReadResponse.self, from: data)
-                return markResponse
-            } else if httpResponse.statusCode == 401 {
-                throw NewsError.invalidCredentials
-            } else {
-                throw NewsError.invalidResponse
-            }
-        } catch {
-            throw NewsError.networkError
-        }
-    }
-
-    func getCategories() async throws -> [String] {
-        guard let url = URL(string: baseURL + "news/categories") else {
-            throw NewsError.networkError
-        }
-
-        let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw NewsError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let categories = try JSONDecoder().decode([String].self, from: data)
-                return categories
-            } else if httpResponse.statusCode == 401 {
-                throw NewsError.invalidCredentials
-            } else {
-                throw NewsError.invalidResponse
-            }
-        } catch {
-            throw NewsError.networkError
-        }
+        let notices = try await getAnnouncements()
+        guard let n = notices.first(where: { $0.id == id }) else { throw NewsError.invalidResponse }
+        let article = NewsArticle(id: n.id, title: n.title, content: n.description, summary: nil, author: nil, publishedDate: n.date, category: "Geral", tags: nil, imageUrl: nil, isFeatured: false, readCount: 0)
+        return NewsDetailResponse(news: article, success: true, message: nil)
     }
 }

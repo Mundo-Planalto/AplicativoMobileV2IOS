@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CriarTicketView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = CriarTicketViewModel()
     @State private var navigateBack = false
 
@@ -24,7 +25,7 @@ struct CriarTicketView: View {
 
                     HStack {
                         Button(action: {
-                            // Voltar será tratado pela NavigationStack
+                            dismiss()
                         }) {
                             Image(systemName: "chevron.left")
                                 .foregroundColor(.white)
@@ -186,6 +187,7 @@ struct CriarTicketView: View {
             // Voltar para a tela anterior
             EmptyView()
         }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

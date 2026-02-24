@@ -12,23 +12,33 @@ import Combine
 @MainActor
 class PerfilViewModel: ObservableObject {
     @Published var userName: String = ""
-    @Published var userCPF: String = ""
+    @Published var userDocument: String = ""
+    @Published var userEmail: String = ""
     @Published var userPhone: String = ""
+    @Published var userAddressLine1: String = ""
+    @Published var userAddressLine2: String = ""
+    @Published var userAddressCep: String = ""
     @Published var isLoading = false
     @Published var error: String?
 
+    var userCPF: String { userDocument }
+
     let menuOptions: [ProfileMenuOption] = [
+        ProfileMenuOption(title: "Alterar Senha",
+                          subtitle: "Alterar sua senha de acesso",
+                          iconName: "lock.fill",
+                          action: .alterarSenha),
+        ProfileMenuOption(title: "Endereços",
+                          subtitle: "Gerenciar endereços",
+                          iconName: "mappin.circle.fill",
+                          action: .enderecos),
         ProfileMenuOption(title: "Sistema",
                           subtitle: "Tema e configurações",
-                          iconName: "gear",
+                          iconName: "gearshape.fill",
                           action: .sistema),
-        ProfileMenuOption(title: "Atendimento com IA",
-                          subtitle: "Converse com nosso assistente",
-                          iconName: "message.circle.fill",
-                          action: .chatIA),
         ProfileMenuOption(title: "Sair",
                           subtitle: "Encerrar sessão",
-                          iconName: "arrow.right.square",
+                          iconName: "rectangle.portrait.and.arrow.right",
                           action: .logout)
     ]
 
@@ -43,16 +53,30 @@ class PerfilViewModel: ObservableObject {
         error = nil
 
         do {
-            // Simular carregamento de dados da API - em produção seria PreferencesManager + API
-            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 segundo
-
-            // Dados mockados conforme documentação
-            userName = "João Silva"
-            userCPF = "123.456.789-00"
-            userPhone = "Não possui" // Conforme documentação
-
+            let response = try await ProfileService.shared.getProfile()
+            let p = response.profile
+            userName = p.name
+            userDocument = p.cpf
+            userEmail = p.email ?? ""
+            userPhone = p.phone ?? "Não possui"
+            if let addr = p.address, !addr.isEmpty {
+                userAddressLine1 = addr
+                userAddressLine2 = addr
+                userAddressCep = ""
+            } else {
+                userAddressLine1 = "Sem Informação, Sem Informação"
+                userAddressLine2 = "Sem Informação - Sem Informação"
+                userAddressCep = "CEP: Sem Informação"
+            }
         } catch {
-            self.error = "Erro ao carregar dados do perfil"
+            userName = "Usuário"
+            userDocument = PreferencesManager.shared.getUserCpfCnpj() ?? ""
+            userEmail = ""
+            userPhone = "Não possui"
+            userAddressLine1 = "Sem Informação, Sem Informação"
+            userAddressLine2 = "Sem Informação - Sem Informação"
+            userAddressCep = "CEP: Sem Informação"
+            self.error = nil
         }
 
         isLoading = false
@@ -60,12 +84,8 @@ class PerfilViewModel: ObservableObject {
 
     func performAction(_ action: ProfileAction) {
         switch action {
-        case .sistema:
-            // Navegação será tratada pela view
-            print("Navegar para sistema")
-        case .chatIA:
-            // Navegação será tratada pela view
-            print("Abrir chat IA")
+        case .alterarSenha, .enderecos, .sistema:
+            break
         case .logout:
             logout()
         }
@@ -90,7 +110,8 @@ struct ProfileMenuOption: Identifiable {
 }
 
 enum ProfileAction {
+    case alterarSenha
+    case enderecos
     case sistema
-    case chatIA
     case logout
 }

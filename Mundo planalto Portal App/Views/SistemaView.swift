@@ -9,92 +9,122 @@ import SwiftUI
 
 struct SistemaView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
     @State private var showThemeDialog = false
     @State private var showChatIA = false
-    @State private var navigateToSupport = false
 
-    let menuItems: [SistemaMenuItem] = [
+    private var isDark: Bool { appState.isDarkTheme }
+    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
+    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+    private var textS: Color { AppColors.textSecondary(dark: isDark) }
+
+    private let configItems: [SistemaMenuItem] = [
         SistemaMenuItem(
-            title: "Tema",
-            subtitle: "Claro ou escuro",
-            iconName: "moon.fill",
-            action: .theme
+            title: "Atendimento com IA",
+            subtitle: "Converse com nosso assistente virtual",
+            iconName: "bubble.left.and.bubble.right.fill",
+            action: .chatIA
         ),
         SistemaMenuItem(
+            title: "Tema",
+            subtitle: "Alterar aparência do aplicativo",
+            iconName: "gearshape.fill",
+            action: .theme
+        )
+    ]
+
+    private let legalItems: [SistemaMenuItem] = [
+        SistemaMenuItem(
             title: "Termos de Uso",
-            subtitle: "Leia nossos termos",
+            subtitle: "Leia nossos termos e condições",
             iconName: "doc.text.fill",
             action: .terms
         ),
         SistemaMenuItem(
             title: "Política de Privacidade",
-            subtitle: "Como protegemos seus dados",
-            iconName: "hand.raised.fill",
+            subtitle: "Como tratamos seus dados pessoais",
+            iconName: "shield.fill",
             action: .privacy
-        ),
-        SistemaMenuItem(
-            title: "Atendimento com IA",
-            subtitle: "Converse com nosso assistente",
-            iconName: "message.circle.fill",
-            action: .chatIA
         )
     ]
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary
+            bg
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // TopAppBar
-                ZStack {
-                    AppColors.backgroundPrimary
-                        .ignoresSafeArea()
-
-                    HStack {
-                        Button(action: {
-                            // Voltar será tratado pela NavigationStack
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .foregroundColor(.white)
-                                .font(.title2)
-                        }
-
-                        Spacer()
-
-                        Text("Sistema")
+                // Barra superior: voltar + título
+                HStack(spacing: 16) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
                             .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-
-                        Spacer()
+                            .foregroundColor(isDark ? .white : .primary)
                     }
-                    .padding()
+                    Spacer()
+                    Text("Sistema")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(textP)
+                    Spacer()
+                    Color.clear
+                        .frame(width: 32, height: 32)
                 }
-                .frame(height: 60)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(bg)
 
                 ScrollView {
-                    VStack(spacing: 8) {
-                        ForEach(menuItems) { item in
-                            SistemaMenuItemView(item: item) {
-                                handleMenuAction(item.action)
+                    VStack(alignment: .leading, spacing: 24) {
+                        // Configurações
+                        Text("Configurações")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(textP)
+                            .padding(.horizontal, 20)
+
+                        VStack(spacing: 0) {
+                            ForEach(configItems) { item in
+                                SistemaMenuItemView(item: item, isDark: isDark) {
+                                    handleMenuAction(item.action)
+                                }
                             }
                         }
+                        .padding(.horizontal, 20)
+
+                        // Legal
+                        Text("Legal")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(textP)
+                            .padding(.horizontal, 20)
+
+                        VStack(spacing: 0) {
+                            ForEach(legalItems) { item in
+                                SistemaMenuItemView(item: item, isDark: isDark) {
+                                    handleMenuAction(item.action)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 20)
+
+                        Text("Versão 1.0.0")
+                            .font(.caption)
+                            .foregroundColor(textS)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 24)
+                            .padding(.bottom, 32)
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical)
+                    .padding(.top, 16)
                 }
             }
         }
         .confirmationDialog("Tema do App", isPresented: $showThemeDialog) {
-            Button("Claro") {
-                appState.setThemeMode(false)
-                print("Tema claro selecionado")
-            }
-            Button("Escuro") {
-                appState.setThemeMode(true)
-                print("Tema escuro selecionado")
-            }
+            Button("Claro") { appState.setThemeMode(false) }
+            Button("Escuro") { appState.setThemeMode(true) }
             Button("Cancelar", role: .cancel) {}
         } message: {
             Text("Escolha o tema do aplicativo")
@@ -102,9 +132,7 @@ struct SistemaView: View {
         .sheet(isPresented: $showChatIA) {
             ChatAIScreen()
         }
-        .navigationDestination(isPresented: $navigateToSupport) {
-            CriarTicketView()
-        }
+        .navigationBarBackButtonHidden(true)
     }
 
     private func handleMenuAction(_ action: SistemaMenuAction) {
@@ -112,13 +140,11 @@ struct SistemaView: View {
         case .theme:
             showThemeDialog = true
         case .terms:
-            // TODO: Navegar para termos de uso
-            print("Termos de uso")
+            break
         case .privacy:
-            // TODO: Navegar para política de privacidade
-            print("Política de privacidade")
+            break
         case .chatIA:
-            navigateToSupport = true
+            showChatIA = true
         }
     }
 }
@@ -140,37 +166,43 @@ enum SistemaMenuAction {
 
 struct SistemaMenuItemView: View {
     let item: SistemaMenuItem
+    var isDark: Bool = true
     let action: () -> Void
+
+    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+    private var textS: Color { AppColors.textSecondary(dark: isDark) }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
                 Image(systemName: item.iconName)
-                    .font(.title2)
-                    .foregroundColor(AppColors.accentCyan)
-                    .frame(width: 32, height: 32)
+                    .font(.title3)
+                    .foregroundColor(AppColors.accentBlue)
+                    .frame(width: 28, height: 28)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.title)
                         .font(.headline)
-                        .foregroundColor(.white)
-
+                        .foregroundColor(textP)
                     Text(item.subtitle)
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(textS)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .foregroundColor(.gray)
+                    .font(.caption)
+                    .foregroundColor(textS)
             }
             .padding()
-            .background(AppColors.cardBackground)
-            .cornerRadius(16)
+            .background(cardBg)
+            .cornerRadius(12)
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
+        .padding(.bottom, 8)
     }
 }
 

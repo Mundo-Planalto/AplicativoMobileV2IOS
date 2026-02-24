@@ -9,15 +9,6 @@ import Foundation
 import SwiftUI
 import Combine
 
-struct ChatMessageRequest: Codable {
-    let message: String
-    let chat: String
-}
-
-struct ChatMessageResponseItem: Codable {
-    let output: String
-}
-
 struct ChatMessage: Identifiable {
     let id: UUID
     let content: String
@@ -59,8 +50,8 @@ class ChatIAViewModel: ObservableObject {
         error = nil
 
         do {
-            let response = try await aiService.sendMessage(message: content)
-            let aiMessage = ChatMessage(content: response.messageText ?? response.message.content, isUser: false)
+            let result = try await aiService.sendMessage(message: content)
+            let aiMessage = ChatMessage(content: result.content, isUser: false)
             messages.append(aiMessage)
         } catch {
             let errorMessage = ChatMessage(

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DetalhesObraView: View {
     let venture: Venture
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: DetalhesObraViewModel
 
     init(venture: Venture) {
@@ -29,7 +30,7 @@ struct DetalhesObraView: View {
 
                     HStack {
                         Button(action: {
-                            // Voltar será tratado pela NavigationStack
+                            dismiss()
                         }) {
                             Image(systemName: "chevron.left")
                                 .foregroundColor(.white)
@@ -58,26 +59,33 @@ struct DetalhesObraView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 0) {
-                            // Barra de Progresso Geral (Topo)
-                            VStack(spacing: 8) {
-                                HStack {
-                                    Text("Progresso da Obra")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                    Spacer()
-                                    Text("\(Int(venture.progress * 100))%")
-                                        .font(.subheadline)
-                                        .foregroundColor(AppColors.accentCyan)
-                                }
-                                .padding(.horizontal)
-
-                                ProgressView(value: venture.progress)
-                                    .progressViewStyle(LinearProgressViewStyle(tint: AppColors.accentCyan))
+                            if venture.progress > 0 {
+                                VStack(spacing: 8) {
+                                    HStack {
+                                        Text("Progresso da Obra")
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        Text("\(Int(venture.progress * 100))%")
+                                            .font(.subheadline)
+                                            .foregroundColor(AppColors.accentCyan)
+                                    }
                                     .padding(.horizontal)
-                            }
-                            .padding(.vertical)
 
-                            // Timeline Vertical
+                                    ProgressView(value: venture.progress)
+                                        .progressViewStyle(LinearProgressViewStyle(tint: AppColors.accentCyan))
+                                        .padding(.horizontal)
+                                }
+                                .padding(.vertical)
+                            }
+
+                            if viewModel.updates.isEmpty && !viewModel.isLoading {
+                                Text("Nenhuma atualização disponível no momento.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .padding()
+                            }
+
                             ZStack(alignment: .leading) {
                                 // Linha contínua ciana (5dp width)
                                 Rectangle()
@@ -105,6 +113,7 @@ struct DetalhesObraView: View {
                 await viewModel.loadVentureDetails()
             }
         }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

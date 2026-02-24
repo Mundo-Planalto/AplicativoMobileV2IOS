@@ -8,18 +8,21 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @EnvironmentObject private var appState: AppState
     @State private var selectedTab: TabItem = .home
+
+    private var isDark: Bool { appState.isDarkTheme }
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Dashboard
-            DashboardView()
-                .tabItem {
-                    Label("Dashboard", systemImage: "house.fill")
-                }
-                .tag(TabItem.home)
+            NavigationStack {
+                DashboardView()
+            }
+            .tabItem {
+                Label("Início", systemImage: "house.fill")
+            }
+            .tag(TabItem.home)
 
-            // Empreendimentos
             NavigationStack {
                 EmpreendimentosView()
             }
@@ -27,11 +30,28 @@ struct MainTabView: View {
                 Label("Empreendimentos", systemImage: "building.2.fill")
             }
             .tag(TabItem.ventures)
+
+            NavigationStack {
+                AvisosNoticiasView()
+            }
+            .tabItem {
+                Label("Notícias", systemImage: "bell.fill")
+            }
+            .tag(TabItem.news)
+
+            NavigationStack {
+                PerfilView()
+            }
+            .tabItem {
+                Label("Perfil", systemImage: "person.fill")
+            }
+            .tag(TabItem.profile)
         }
-        .accentColor(AppColors.accentCyan)
+        .tint(AppColors.accentBlue)
     }
 }
 
 #Preview {
     MainTabView()
+        .environmentObject(AppState.shared)
 }

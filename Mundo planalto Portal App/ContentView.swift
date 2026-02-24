@@ -20,6 +20,7 @@ struct ContentView: View {
                     .environmentObject(appState)
             }
         }
+        .preferredColorScheme(appState.isDarkTheme ? .dark : .light)
     }
 }
 

@@ -2,7 +2,7 @@
 //  InformeRendimentosViewModel.swift
 //  Mundo planalto Portal App
 //
-//  Created by matheus ferreira on 26/01/26.
+//  Usa GET /api/incometax/years e POST /api/incometax/generate/{year}.
 //
 
 import Foundation
@@ -15,41 +15,65 @@ class InformeRendimentosViewModel: ObservableObject {
     @Published var availableYears: [String] = []
     @Published var isLoading = false
     @Published var error: String?
-    @Published var pdfUrl: String?
+    @Published var statusMessage: String?
+    @Published var generatedData: InformeRendimentosData?
 
     init() {
         loadAvailableYears()
     }
 
-    private func loadAvailableYears() {
-        let currentYear = Calendar.current.component(.year, from: Date())
-        availableYears = (2020...currentYear).reversed().map { String($0) }
-        selectedYear = String(currentYear) // Ano atual como padrão
+    func loadAvailableYears() {
+        Task {
+            do {
+                let years = try await IncomeTaxService.shared.getAvailableYears()
+                availableYears = years.sorted(by: >).map { String($0) }
+                if selectedYear.isEmpty, let first = availableYears.first {
+                    selectedYear = first
+                }
+                updateStatusMessage()
+            } catch {
+                let currentYear = Calendar.current.component(.year, from: Date())
+                availableYears = (2018...currentYear).reversed().map { String($0) }
+                if selectedYear.isEmpty { selectedYear = String(currentYear) }
+                updateStatusMessage()
+            }
+        }
+    }
+
+    func selectYear(_ year: String) {
+        selectedYear = year
+        error = nil
+        updateStatusMessage()
+    }
+
+    private func updateStatusMessage() {
+        guard !selectedYear.isEmpty else {
+            statusMessage = nil
+            return
+        }
+        statusMessage = "Informe pronto para geração"
     }
 
     func generateReport() async {
-        guard !selectedYear.isEmpty else {
+        guard !selectedYear.isEmpty, let yearInt = Int(selectedYear) else {
             error = "Selecione um ano para gerar o informe"
             return
         }
 
         isLoading = true
         error = nil
-        pdfUrl = nil
+        generatedData = nil
 
         do {
-            // Simular geração do informe via API
-            try await Task.sleep(nanoseconds: 2_000_000_000) // 2 segundos
-
-            // Simular URL do PDF gerado
-            pdfUrl = "https://example.com/informe-\(selectedYear).pdf"
-
-            // Em produção, aqui seria a navegação para IncomeTaxReportView
-            print("Informe gerado para o ano \(selectedYear)")
-            print("PDF URL: \(pdfUrl!)")
-
+            let data = try await IncomeTaxService.shared.generateReport(year: yearInt)
+            generatedData = data
+            self.error = nil
+        } catch IncomeTaxError.noData {
+            generatedData = nil
+            self.error = "Não foram encontrados pagamentos realizados no ano de \(selectedYear). Tente selecionar outro ano ou verifique se há pagamentos registrados."
         } catch {
-            self.error = "Erro ao gerar informe de rendimentos"
+            generatedData = nil
+            self.error = "Erro ao gerar informe. Tente novamente."
         }
 
         isLoading = false

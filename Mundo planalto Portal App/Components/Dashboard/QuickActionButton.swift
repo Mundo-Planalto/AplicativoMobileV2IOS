@@ -9,32 +9,33 @@ import SwiftUI
 
 struct QuickActionButton: View {
     let action: DashboardQuickAction
+    var isDark: Bool = true
+
+    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
 
     var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(Color(hex: action.color))
-                    .frame(width: 56, height: 56)
-
-                Image(systemName: action.iconName)
-                    .font(.system(size: 24))
-                    .foregroundColor(.white)
-            }
+        VStack(spacing: 10) {
+            Image(systemName: action.iconName)
+                .font(.system(size: 26))
+                .foregroundColor(AppColors.accentBlue)
 
             Text(action.rawValue)
-                .font(.caption)
-                .foregroundColor(.white)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(textP)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .frame(height: 30)
         }
-        .frame(width: 80)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .background(cardBg)
+        .cornerRadius(12)
     }
 }
 
 #Preview {
-    QuickActionButton(action: .viewStatement)
+    QuickActionButton(action: .viewStatement, isDark: false)
         .padding()
-        .background(AppColors.backgroundPrimary)
+        .background(AppColors.backgroundPrimaryLight)
 }

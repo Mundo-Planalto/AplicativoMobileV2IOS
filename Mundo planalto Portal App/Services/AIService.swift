@@ -2,10 +2,11 @@
 //  AIService.swift
 //  Mundo planalto Portal App
 //
-//  Created by matheus ferreira on 26/01/26.
+//  Atendimento com IA via webhook Railway. Sessão (chat) exclusiva por usuário.
 //
 
 import Foundation
+import UIKit
 
 enum AIError: Error {
     case invalidCredentials
@@ -14,10 +15,10 @@ enum AIError: Error {
 }
 
 struct AIChatMessage: Codable {
-    let id: String
-    let role: MessageRole
+    let id: String?
+    let role: MessageRole?
     let content: String
-    let timestamp: String
+    let timestamp: String?
     let isTyping: Bool?
 }
 
@@ -27,195 +28,76 @@ enum MessageRole: String, Codable {
     case system
 }
 
-struct ChatRequest: Codable {
+/// Request para o webhook: { "message": "...", "chat": "sessionId" }
+struct ChatWebhookRequest: Codable {
     let message: String
-    let context: String?
+    let chat: String
 }
 
-struct ChatResponse: Codable {
-    let message: AIChatMessage
-    let success: Bool
-    let messageText: String?
-}
-
-struct ChatHistoryResponse: Codable {
-    let messages: [AIChatMessage]
-    let totalCount: Int
-    let success: Bool
+/// Resposta esperada do webhook (ajustar conforme API real)
+struct ChatWebhookResponse: Codable {
+    let output: String?
     let message: String?
-}
-
-struct AICapabilities: Codable {
-    let canAnswerQuestions: Bool
-    let canProvideFinancialAdvice: Bool
-    let canHelpWithNavigation: Bool
-    let supportedTopics: [String]
-}
-
-struct AICapabilitiesResponse: Codable {
-    let capabilities: AICapabilities
-    let success: Bool
-    let message: String?
+    let response: String?
+    var text: String? { output ?? message ?? response }
 }
 
 class AIService {
     static let shared = AIService()
-
-    private let baseURL = "http://10.35.0.55:5187/api/"
-
     private init() {}
 
-    private func createAuthorizedRequest(url: URL, method: String = "GET", body: Data? = nil) -> URLRequest {
+    private let webhookURL = "https://primary-production-77f3.up.railway.app/webhook/fbee63dc-1f61-4e02-9cfa-a7c6001c704a"
+
+    private func chatSessionId() -> String {
+        let key = "ai_chat_session_id"
+        if let existing = UserDefaults.standard.string(forKey: key) {
+            return existing
+        }
+        let newId = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        UserDefaults.standard.set(newId, forKey: key)
+        return newId
+    }
+
+    func sendMessage(message: String) async throws -> (content: String, sessionId: String) {
+        guard let url = URL(string: webhookURL) else { throw AIError.networkError }
+        let sessionId = chatSessionId()
+        let body = ChatWebhookRequest(message: message, chat: sessionId)
         var request = URLRequest(url: url)
-        request.httpMethod = method
+        request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        // Add authorization header if token exists
-        if let token = PreferencesManager.shared.getAuthToken() {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-
-        if let body = body {
-            request.httpBody = body
-        }
-
-        return request
+        request.httpBody = try JSONEncoder().encode(body)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw AIError.invalidResponse }
+        guard http.statusCode == 200 else { throw AIError.invalidResponse }
+        let decoded = try? JSONDecoder().decode(ChatWebhookResponse.self, from: data)
+        let rawText = decoded?.text ?? String(data: data, encoding: .utf8) ?? "Resposta indisponível."
+        let displayText = Self.extractMessageOnly(rawText)
+        return (displayText, sessionId)
     }
 
-    func sendMessage(message: String, context: String? = nil) async throws -> ChatResponse {
-        guard let url = URL(string: baseURL + "ai/chat") else {
-            throw AIError.networkError
+    /// Extrai apenas o texto da mensagem da resposta (remove JSON extra, HTML, etc.).
+    private static func extractMessageOnly(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let data = trimmed.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return stripHTML(trimmed)
         }
-
-        let requestBody = ChatRequest(message: message, context: context)
-        let body = try JSONEncoder().encode(requestBody)
-        let request = createAuthorizedRequest(url: url, method: "POST", body: body)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw AIError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let chatResponse = try JSONDecoder().decode(ChatResponse.self, from: data)
-                return chatResponse
-            } else if httpResponse.statusCode == 401 {
-                throw AIError.invalidCredentials
-            } else {
-                throw AIError.invalidResponse
-            }
-        } catch {
-            throw AIError.networkError
+        for key in ["output", "message", "response", "content", "text", "reply"] {
+            if let val = json[key] as? String, !val.isEmpty { return stripHTML(val) }
         }
+        if let msg = json["message"] as? [String: Any], let content = msg["content"] as? String {
+            return stripHTML(content)
+        }
+        return stripHTML(trimmed)
     }
 
-    func getChatHistory(limit: Int = 50, offset: Int = 0) async throws -> ChatHistoryResponse {
-        guard let url = URL(string: baseURL + "ai/chat/history?limit=\(limit)&offset=\(offset)") else {
-            throw AIError.networkError
+    private static func stripHTML(_ text: String) -> String {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard t.contains("<"), t.contains(">"),
+              let data = t.data(using: .utf8),
+              let attributed = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.html], documentAttributes: nil) else {
+            return t.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
         }
-
-        let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw AIError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let historyResponse = try JSONDecoder().decode(ChatHistoryResponse.self, from: data)
-                return historyResponse
-            } else if httpResponse.statusCode == 401 {
-                throw AIError.invalidCredentials
-            } else {
-                throw AIError.invalidResponse
-            }
-        } catch {
-            throw AIError.networkError
-        }
-    }
-
-    func clearChatHistory() async throws -> ChatResponse {
-        guard let url = URL(string: baseURL + "ai/chat/clear") else {
-            throw AIError.networkError
-        }
-
-        let request = createAuthorizedRequest(url: url, method: "DELETE")
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw AIError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let clearResponse = try JSONDecoder().decode(ChatResponse.self, from: data)
-                return clearResponse
-            } else if httpResponse.statusCode == 401 {
-                throw AIError.invalidCredentials
-            } else {
-                throw AIError.invalidResponse
-            }
-        } catch {
-            throw AIError.networkError
-        }
-    }
-
-    func getCapabilities() async throws -> AICapabilitiesResponse {
-        guard let url = URL(string: baseURL + "ai/capabilities") else {
-            throw AIError.networkError
-        }
-
-        let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw AIError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let capabilitiesResponse = try JSONDecoder().decode(AICapabilitiesResponse.self, from: data)
-                return capabilitiesResponse
-            } else if httpResponse.statusCode == 401 {
-                throw AIError.invalidCredentials
-            } else {
-                throw AIError.invalidResponse
-            }
-        } catch {
-            throw AIError.networkError
-        }
-    }
-
-    func getQuickSuggestions() async throws -> [String] {
-        guard let url = URL(string: baseURL + "ai/suggestions") else {
-            throw AIError.networkError
-        }
-
-        let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw AIError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let suggestions = try JSONDecoder().decode([String].self, from: data)
-                return suggestions
-            } else if httpResponse.statusCode == 401 {
-                throw AIError.invalidCredentials
-            } else {
-                throw AIError.invalidResponse
-            }
-        } catch {
-            throw AIError.networkError
-        }
+        return attributed.string
     }
 }

@@ -2,7 +2,7 @@
 //  ExtratoService.swift
 //  Mundo planalto Portal App
 //
-//  Created by matheus ferreira on 26/01/26.
+//  GET /api/financial/extrato, informe via /api/incometax (ver IncomeTaxService).
 //
 
 import Foundation
@@ -13,31 +13,33 @@ enum ExtratoError: Error {
     case invalidResponse
 }
 
-struct ExtratoItem: Codable {
-    let id: String
-    let date: String
-    let description: String
-    let ventureName: String
-    let installmentNumber: String
-    let amount: Double
-    let type: TransactionType
-    let status: PaymentStatus
+/// Item do extrato retornado por GET /api/financial/extrato
+struct ExtratoItemDto: Codable {
+    let billReceivableId: Int
+    let installmentId: Int
+    let installmentNumber: String?
+    let contractNumber: String?
+    let enterpriseName: String
+    let dueDate: String
+    let originalValue: Double
+    let currentBalance: Double
+    let latePaymentInterest: Double?
+    let isPaid: Bool
+    let isOverdue: Bool
+    let generatedBillet: Bool?
+    let billetStatusKnown: Bool?
+    let isEsolution: Bool?
+    let esolutionBoletoId: Int?
 }
 
-enum TransactionType: String, Codable {
-    case payment
-    case refund
-    case adjustment
-    case fee
-}
-
-struct ExtratoResponse: Codable {
-    let transactions: [ExtratoItem]
-    let totalCount: Int
-    let currentPage: Int
-    let totalPages: Int
-    let success: Bool
-    let message: String?
+struct ExtratoResponseDto: Codable {
+    let items: [ExtratoItemDto]
+    let totalOverdue: Double?
+    let totalDue: Double?
+    let overdueCount: Int?
+    let dueCount: Int?
+    let paidCount: Int?
+    let totalPaid: Double?
 }
 
 struct PDFExtratoResponse: Codable {
@@ -48,124 +50,83 @@ struct PDFExtratoResponse: Codable {
 
 class ExtratoService {
     static let shared = ExtratoService()
-
-    private let baseURL = "http://10.35.0.55:5187/api/"
-
     private init() {}
+
+    private var baseURL: String { ApiConfig.baseURL + "/" }
 
     private func createAuthorizedRequest(url: URL, method: String = "GET", body: Data? = nil) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        // Add authorization header if token exists
         if let token = PreferencesManager.shared.getAuthToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-
-        if let body = body {
-            request.httpBody = body
-        }
-
+        if let body = body { request.httpBody = body }
         return request
     }
 
-    func getExtrato(page: Int = 1, limit: Int = 20, startDate: String? = nil, endDate: String? = nil) async throws -> ExtratoResponse {
-        var urlString = baseURL + "extrato?page=\(page)&limit=\(limit)"
-
-        if let startDate = startDate {
-            urlString += "&startDate=\(startDate)"
-        }
-        if let endDate = endDate {
-            urlString += "&endDate=\(endDate)"
-        }
-
-        guard let url = URL(string: urlString) else {
-            throw ExtratoError.networkError
-        }
-
+    /// GET /api/financial/extrato?showPaid=&showOverdue=&showDue=
+    func getExtrato(showPaid: Bool = true, showOverdue: Bool = true, showDue: Bool = true) async throws -> [FinancialStatementItem] {
+        var components = URLComponents(string: baseURL + "financial/extrato")
+        components?.queryItems = [
+            URLQueryItem(name: "showPaid", value: showPaid ? "true" : "false"),
+            URLQueryItem(name: "showOverdue", value: showOverdue ? "true" : "false"),
+            URLQueryItem(name: "showDue", value: showDue ? "true" : "false")
+        ]
+        guard let url = components?.url else { throw ExtratoError.networkError }
         let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw ExtratoError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let extratoResponse = try JSONDecoder().decode(ExtratoResponse.self, from: data)
-                return extratoResponse
-            } else if httpResponse.statusCode == 401 {
-                throw ExtratoError.invalidCredentials
-            } else {
-                throw ExtratoError.invalidResponse
-            }
-        } catch {
-            throw ExtratoError.networkError
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            if (response as? HTTPURLResponse)?.statusCode == 401 { throw ExtratoError.invalidCredentials }
+            throw ExtratoError.invalidResponse
+        }
+        let decoded = try JSONDecoder().decode(ApiResponse<ExtratoResponseDto>.self, from: data)
+        guard let dto = decoded.data else { return [] }
+        return dto.items.map { item in
+            let status: PaymentStatus = item.isPaid ? .paid : (item.isOverdue ? .overdue : .upcoming)
+            let id = item.isEsolution == true && item.esolutionBoletoId != nil
+                ? "esolution-\(item.esolutionBoletoId!)"
+                : "\(item.billReceivableId)-\(item.installmentId)"
+            let parcela = item.installmentNumber ?? "\(item.installmentId)"
+            return FinancialStatementItem(
+                id: id,
+                ventureName: item.enterpriseName,
+                installmentNumber: parcela,
+                parcela: parcela,
+                dueDate: item.dueDate,
+                amount: item.currentBalance > 0 ? item.currentBalance : item.originalValue,
+                status: status,
+                billReceivableId: item.isEsolution == true ? nil : item.billReceivableId,
+                installmentId: item.isEsolution == true ? nil : item.installmentId,
+                isEsolution: item.isEsolution,
+                esolutionBoletoId: item.esolutionBoletoId
+            )
         }
     }
 
-    func generateExtratoPDF(startDate: String? = nil, endDate: String? = nil) async throws -> PDFExtratoResponse {
-        var urlString = baseURL + "extrato/pdf"
-
-        if let startDate = startDate {
-            urlString += "?startDate=\(startDate)"
-        }
-        if let endDate = endDate {
-            urlString += "&endDate=\(endDate)"
-        }
-
-        guard let url = URL(string: urlString) else {
-            throw ExtratoError.networkError
-        }
-
-        let request = createAuthorizedRequest(url: url, method: "POST")
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw ExtratoError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let pdfResponse = try JSONDecoder().decode(PDFExtratoResponse.self, from: data)
-                return pdfResponse
-            } else if httpResponse.statusCode == 401 {
-                throw ExtratoError.invalidCredentials
-            } else {
-                throw ExtratoError.invalidResponse
-            }
-        } catch {
-            throw ExtratoError.networkError
-        }
+    /// Resposta do endpoint de dados do boleto (usamos apenas pdfUrl).
+    private struct BoletoDataDto: Codable {
+        let pdfUrl: String?
     }
 
-    func getInformeRendimentos(year: String) async throws -> PDFExtratoResponse {
-        guard let url = URL(string: baseURL + "informe_rendimentos/\(year)") else {
-            throw ExtratoError.networkError
+    /// Obtém a URL do PDF do boleto para "Ver Boleto" / "Gerar 2ª Via". Retorna nil se falhar ou não aplicável.
+    func getBoletoPdfUrl(item: FinancialStatementItem) async -> URL? {
+        if item.isEsolution == true, let id = item.esolutionBoletoId {
+            guard let url = URL(string: baseURL + "financial/boleto-data/esolution/\(id)") else { return nil }
+            let request = createAuthorizedRequest(url: url)
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+            let decoded = try? JSONDecoder().decode(ApiResponse<BoletoDataDto>.self, from: data)
+            guard let pdfUrlString = decoded?.data?.pdfUrl, let pdfUrl = URL(string: pdfUrlString) else { return nil }
+            return pdfUrl
         }
-
+        guard let brId = item.billReceivableId, let instId = item.installmentId else { return nil }
+        guard let url = URL(string: baseURL + "financial/boleto-data/\(brId)/\(instId)") else { return nil }
         let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw ExtratoError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let pdfResponse = try JSONDecoder().decode(PDFExtratoResponse.self, from: data)
-                return pdfResponse
-            } else if httpResponse.statusCode == 401 {
-                throw ExtratoError.invalidCredentials
-            } else {
-                throw ExtratoError.invalidResponse
-            }
-        } catch {
-            throw ExtratoError.networkError
-        }
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+        let decoded = try? JSONDecoder().decode(ApiResponse<BoletoDataDto>.self, from: data)
+        guard let pdfUrlString = decoded?.data?.pdfUrl, let pdfUrl = URL(string: pdfUrlString) else { return nil }
+        return pdfUrl
     }
 }

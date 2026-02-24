@@ -26,11 +26,7 @@ class AppState: ObservableObject {
     }
 
     func login() {
-        // Salvar token mockado
-        preferencesManager.saveAuthToken("mock_token")
-        // Salvar dados do usuário mockados
-        preferencesManager.saveUserId("user123")
-        preferencesManager.saveUserCpfCnpj("12345678900")
+        // Token e CPF já foram salvos pelo LoginViewModel após login com sucesso na API
         isLoggedIn = true
     }
 

@@ -7,62 +7,67 @@
 
 import SwiftUI
 
+private let emailAtendimento = "atendimento@mundoplanalto.com.br"
+private let whatsAppURL = "https://api.whatsapp.com/send/?phone=556240002200&text&type=phone_number&app_absent=0"
+
 struct DashboardView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DashboardViewModel()
     @State private var navigateToSupport = false
-    
     @State private var showChatScreen = false
-    
-    // Você também já tem (ou deveria ter) esta, pois usa no .navigationDestination
-    @State private var navigateToProfile = false    // já existe no seu código
-    
-    // E esta também aparece no switch, então adicione se ainda não tiver
-    @State private var navigateToFinancial = false  // ← faltando no código mostrado
-    
+    @State private var navigateToFinancial = false
+    @State private var navigateToInforme = false
+    @State private var showSolicitarAtendimento = false
+    @State private var solicitarAtendimentoMessage = ""
+    @State private var supportAlertMessage: String?
+    @State private var showSupportAlert = false
+
+    private var isDark: Bool { appState.isDarkTheme }
+
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary
+            AppColors.backgroundPrimary(dark: isDark)
                 .ignoresSafeArea()
 
             ScrollView {
                 VStack(spacing: 20) {
-                    // Header
-                    HeaderSection(greeting: viewModel.greeting)
+                    HeaderSection(greeting: viewModel.greeting, isDark: isDark)
                         .padding(.horizontal)
 
                     if viewModel.isLoading {
                         ProgressView()
                             .padding(.top, 50)
                     } else {
-                        // Resumo Financeiro
                         if let summary = viewModel.financialSummary {
-                            FinancialOverviewCard(summary: summary)
+                            FinancialOverviewCard(summary: summary, isDark: isDark, onVerExtrato: { navigateToFinancial = true })
                                 .padding(.horizontal)
                         }
 
-                        // Ações Rápidas
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Ações Rápidas")
                                 .font(.title3)
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
+                                .foregroundColor(AppColors.textPrimary(dark: isDark))
                                 .padding(.horizontal)
 
                             LazyVGrid(columns: [
-                                GridItem(.flexible(), spacing: 16),
-                                GridItem(.flexible(), spacing: 16),
-                                GridItem(.flexible(), spacing: 16),
-                                GridItem(.flexible(), spacing: 16),
-                                GridItem(.flexible(), spacing: 16)
-                            ], spacing: 20) {
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ], spacing: 12) {
                                 ForEach(DashboardQuickAction.allCases) { action in
-                                    QuickActionButton(action: action)
+                                    QuickActionButton(action: action, isDark: isDark)
                                         .onTapGesture {
                                             handleQuickAction(action)
                                         }
                                 }
                             }
                             .padding(.horizontal)
+
+                            MeusEmpreendimentosCard(isDark: isDark)
+                                .padding(.horizontal)
+                                .onTapGesture {
+                                    NotificationCenter.default.post(name: NSNotification.Name("SwitchToVentures"), object: nil)
+                                }
                         }
                     }
                 }
@@ -72,8 +77,35 @@ struct DashboardView: View {
         .sheet(isPresented: $showChatScreen) {
             ChatAIScreen()
         }
-            .navigationDestination(isPresented: $navigateToProfile) {
-                SistemaView()
+        .sheet(isPresented: $showSolicitarAtendimento) {
+            SolicitarAtendimentoModal(message: $solicitarAtendimentoMessage, isDark: isDark) { msg in
+                let cpf = PreferencesManager.shared.getUserCpfCnpj() ?? ""
+                do {
+                    let result = try await SupportService.shared.sendExternalSupportRequest(cpf: cpf, message: msg)
+                    await MainActor.run {
+                        solicitarAtendimentoMessage = ""
+                        showSolicitarAtendimento = false
+                        supportAlertMessage = result.success ? (result.message ?? "Solicitação enviada com sucesso.") : result.message
+                        showSupportAlert = true
+                    }
+                } catch {
+                    await MainActor.run {
+                        supportAlertMessage = "Erro de conexão. Tente novamente."
+                        showSupportAlert = true
+                    }
+                }
+            }
+        }
+        .alert("Solicitação de Atendimento", isPresented: $showSupportAlert) {
+            Button("OK") { supportAlertMessage = nil }
+        } message: {
+            if let msg = supportAlertMessage { Text(msg) }
+        }
+            .navigationDestination(isPresented: $navigateToFinancial) {
+                ExtratoView()
+            }
+            .navigationDestination(isPresented: $navigateToInforme) {
+                InformeRendimentosView()
             }
             .navigationDestination(isPresented: $navigateToSupport) {
                 CriarTicketView()
@@ -93,28 +125,27 @@ struct DashboardView: View {
             NotificationCenter.default.post(name: NSNotification.Name("SwitchToVentures"), object: nil)
         case .newsAlerts:
             NotificationCenter.default.post(name: NSNotification.Name("SwitchToNews"), object: nil)
-        case .profile:
-            navigateToProfile = true
+        case .irReport:
+            navigateToInforme = true
         case .chatAI:
             showChatScreen = true
-        case .irReport:
-            // TODO: Implementar navegação para informe IR
-            print("Informe IR")
-        case .changeAddress:
-            // TODO: Implementar mudança de endereço
-            print("Mudar endereço")
         case .requestService:
-            navigateToSupport = true
+            solicitarAtendimentoMessage = ""
+            showSolicitarAtendimento = true
         case .sendEmail:
-            // TODO: Implementar envio de email
-            print("Enviar email")
+            let mailto = "mailto:\(emailAtendimento)?subject=Contato%20Portal"
+            if let url = URL(string: mailto) {
+                UIApplication.shared.open(url)
+            }
         case .whatsappCall:
-            // TODO: Implementar chamada WhatsApp
-            print("Chamar WhatsApp")
+            if let url = URL(string: whatsAppURL) {
+                UIApplication.shared.open(url)
+            }
         }
     }
 }
 
 #Preview {
     DashboardView()
+        .environmentObject(AppState.shared)
 }

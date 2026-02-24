@@ -45,7 +45,7 @@ struct UpdateProfileResponse: Codable {
 class ProfileService {
     static let shared = ProfileService()
 
-    private let baseURL = "http://10.35.0.55:5187/api/"
+    private var baseURL: String { ApiConfig.baseURL + "/" }
 
     private init() {}
 
@@ -66,31 +66,27 @@ class ProfileService {
         return request
     }
 
+    /// GET /api/auth/me - retorna perfil do usuário atual
     func getProfile() async throws -> ProfileResponse {
-        guard let url = URL(string: baseURL + "profile") else {
-            throw ProfileError.networkError
-        }
-
+        guard let url = URL(string: baseURL + "auth/me") else { throw ProfileError.networkError }
         let request = createAuthorizedRequest(url: url)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw ProfileError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 200 {
-                let profileResponse = try JSONDecoder().decode(ProfileResponse.self, from: data)
-                return profileResponse
-            } else if httpResponse.statusCode == 401 {
-                throw ProfileError.invalidCredentials
-            } else {
-                throw ProfileError.invalidResponse
-            }
-        } catch {
-            throw ProfileError.networkError
-        }
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ProfileError.invalidResponse }
+        if http.statusCode == 401 { throw ProfileError.invalidCredentials }
+        guard http.statusCode == 200 else { throw ProfileError.invalidResponse }
+        let decoded = try JSONDecoder().decode(ApiResponse<UserDto>.self, from: data)
+        guard let user = decoded.data else { throw ProfileError.invalidResponse }
+        let profile = UserProfile(
+            id: "\(user.id)",
+            name: user.name ?? "",
+            cpf: user.document,
+            email: user.email,
+            phone: nil,
+            address: nil,
+            registrationDate: "",
+            status: "Ativo"
+        )
+        return ProfileResponse(profile: profile, success: true, message: nil)
     }
 
     func updateProfile(updates: UpdateProfileRequest) async throws -> UpdateProfileResponse {
@@ -121,37 +117,23 @@ class ProfileService {
         }
     }
 
+    /// POST /api/auth/change-password
     func changePassword(currentPassword: String, newPassword: String, confirmPassword: String) async throws -> UpdateProfileResponse {
-        guard let url = URL(string: baseURL + "profile/change-password") else {
-            throw ProfileError.networkError
-        }
-
-        let requestBody = [
-            "currentPassword": currentPassword,
-            "newPassword": newPassword,
-            "confirmPassword": confirmPassword
-        ]
-
+        guard let url = URL(string: baseURL + "auth/change-password") else { throw ProfileError.networkError }
+        let requestBody = ["currentPassword": currentPassword, "newPassword": newPassword, "confirmPassword": confirmPassword]
         let body = try JSONEncoder().encode(requestBody)
         let request = createAuthorizedRequest(url: url, method: "POST", body: body)
-
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-
-            guard let httpResponse = response as? HTTPURLResponse else {
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw ProfileError.invalidResponse }
+        if http.statusCode == 401 { throw ProfileError.invalidCredentials }
+        guard http.statusCode == 200 else {
+            if let api = try? JSONDecoder().decode(ApiResponse<Empty>.self, from: data), let msg = api.message {
                 throw ProfileError.invalidResponse
             }
-
-            if httpResponse.statusCode == 200 {
-                let updateResponse = try JSONDecoder().decode(UpdateProfileResponse.self, from: data)
-                return updateResponse
-            } else if httpResponse.statusCode == 401 {
-                throw ProfileError.invalidCredentials
-            } else {
-                throw ProfileError.invalidResponse
-            }
-        } catch {
-            throw ProfileError.networkError
+            throw ProfileError.invalidResponse
         }
+        return UpdateProfileResponse(success: true, message: nil)
     }
 }
+
+private struct Empty: Codable {}

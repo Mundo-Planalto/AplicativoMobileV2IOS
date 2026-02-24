@@ -8,16 +8,34 @@
 import SwiftUI
 
 struct AppColors {
-    // Cores principais do tema escuro premium
-    static let backgroundPrimary = Color(hex: "#0F1419")
-    static let cardBackground = Color(hex: "#1E2329")
+    // Tema escuro
+    static let backgroundPrimaryDark = Color(hex: "#0F1419")
+    static let cardBackgroundDark = Color(hex: "#1E2329")
+    static let textPrimaryDark = Color.white
+    static let textSecondaryDark = Color.gray
+
+    // Tema claro (como nas fotos)
+    static let backgroundPrimaryLight = Color(hex: "#F2F2F7")
+    static let cardBackgroundLight = Color.white
+    static let textPrimaryLight = Color(hex: "#1C1C1E")
+    static let textSecondaryLight = Color(hex: "#8E8E93")
+
+    // Accent (igual nos dois temas)
     static let accentBlue = Color(hex: "#0066FF")
     static let accentCyan = Color(hex: "#00D9FF")
-    
-    // Cores auxiliares
-    static let textPrimary = Color.white
-    static let textSecondary = Color.gray
-    static let inputBackground = Color.white.opacity(0.9)
+    static let logoutRed = Color(hex: "#FF3B30")
+
+    // Compatibilidade: usa tema escuro por padrão (será sobrescrito onde houver EnvironmentObject appState)
+    static var backgroundPrimary: Color { backgroundPrimaryDark }
+    static var cardBackground: Color { cardBackgroundDark }
+    static var textPrimary: Color { textPrimaryDark }
+    static var textSecondary: Color { textSecondaryDark }
+    static var inputBackground: Color { Color.white.opacity(0.9) }
+
+    static func backgroundPrimary(dark: Bool) -> Color { dark ? backgroundPrimaryDark : backgroundPrimaryLight }
+    static func cardBackground(dark: Bool) -> Color { dark ? cardBackgroundDark : cardBackgroundLight }
+    static func textPrimary(dark: Bool) -> Color { dark ? textPrimaryDark : textPrimaryLight }
+    static func textSecondary(dark: Bool) -> Color { dark ? textSecondaryDark : textSecondaryLight }
 }
 
 extension Color {

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct NoticiaDetalhesView: View {
     let noticeId: String
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: NoticiaDetalhesViewModel
 
     init(noticeId: String) {
@@ -29,7 +30,7 @@ struct NoticiaDetalhesView: View {
 
                     HStack {
                         Button(action: {
-                            // Voltar será tratado pela NavigationStack
+                            dismiss()
                         }) {
                             Image(systemName: "chevron.left")
                                 .foregroundColor(.white)
@@ -138,6 +139,7 @@ struct NoticiaDetalhesView: View {
                 await viewModel.loadNoticeDetails()
             }
         }
+        .navigationBarBackButtonHidden(true)
     }
 }
 

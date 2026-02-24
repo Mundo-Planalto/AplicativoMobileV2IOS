@@ -23,19 +23,36 @@ enum ExtratoFilter: String, CaseIterable {
         case .vencidas: return .overdue
         }
     }
+
+    /// Abas exibidas na barra (sem "Todas")
+    static var tabCases: [ExtratoFilter] { [.aVencer, .pagas, .vencidas] }
+}
+
+enum FiltroEmpreendimento: String, CaseIterable {
+    case todos = "Todos os empreendimentos"
+    case hardRock = "Hard Rock Hotel Gramado"
+}
+
+enum FiltroPeriodo: String, CaseIterable {
+    case todos = "Todos os períodos"
+    case ultimos30 = "Últimos 30 dias"
+    case ultimos90 = "Últimos 90 dias"
+    case ultimos6Meses = "Últimos 6 meses"
+    case ultimoAno = "Último ano"
 }
 
 @MainActor
 class ExtratoViewModel: ObservableObject {
     @Published var allItems: [FinancialStatementItem] = []
     @Published var filteredItems: [FinancialStatementItem] = []
-    @Published var selectedFilter: ExtratoFilter = .todas
+    @Published var selectedFilter: ExtratoFilter = .aVencer
     @Published var isLoading = false
     @Published var error: String?
+    @Published var showFilterModal = false
+    @Published var filtroEmpreendimento: FiltroEmpreendimento = .todos
+    @Published var filtroPeriodo: FiltroPeriodo = .todos
 
-    var filterOptions: [ExtratoFilter] {
-        ExtratoFilter.allCases
-    }
+    var tabOptions: [ExtratoFilter] { ExtratoFilter.tabCases }
 
     var selectedFilterText: String {
         selectedFilter.rawValue
@@ -44,76 +61,24 @@ class ExtratoViewModel: ObservableObject {
     func loadFinancialStatement() async {
         isLoading = true
         error = nil
-
         do {
-            // Simular carregamento de dados da API
-            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 segundo
-
-            // Dados mockados
-            allItems = [
-                FinancialStatementItem(
-                    id: "1",
-                    ventureName: "Residencial Parque das Flores",
-                    installmentNumber: "1/24",
-                    parcela: "1/24",
-                    dueDate: "15/01/2025",
-                    amount: 1250.00,
-                    status: .paid
-                ),
-                FinancialStatementItem(
-                    id: "2",
-                    ventureName: "Residencial Parque das Flores",
-                    installmentNumber: "2/24",
-                    parcela: "2/24",
-                    dueDate: "15/02/2025",
-                    amount: 1250.00,
-                    status: .upcoming
-                ),
-                FinancialStatementItem(
-                    id: "3",
-                    ventureName: "Condomínio Vista Verde",
-                    installmentNumber: "1/36",
-                    parcela: "1/36",
-                    dueDate: "10/12/2024",
-                    amount: 890.50,
-                    status: .overdue
-                ),
-                FinancialStatementItem(
-                    id: "4",
-                    ventureName: "Condomínio Vista Verde",
-                    installmentNumber: "2/36",
-                    parcela: "2/36",
-                    dueDate: "10/01/2025",
-                    amount: 890.50,
-                    status: .paid
-                ),
-                FinancialStatementItem(
-                    id: "5",
-                    ventureName: "Edifício Central Plaza",
-                    installmentNumber: "1/48",
-                    parcela: "1/48",
-                    dueDate: "20/03/2025",
-                    amount: 2100.75,
-                    status: .upcoming
-                ),
-                FinancialStatementItem(
-                    id: "6",
-                    ventureName: "Edifício Central Plaza",
-                    installmentNumber: "2/48",
-                    parcela: "2/48",
-                    dueDate: "20/02/2025",
-                    amount: 2100.75,
-                    status: .overdue
-                )
-            ]
-
+            let items = try await ExtratoService.shared.getExtrato(showPaid: true, showOverdue: true, showDue: true)
+            allItems = items
             applyFilter()
-
         } catch {
             self.error = "Erro ao carregar extrato financeiro"
+            loadFinancialStatementFallback()
         }
-
         isLoading = false
+    }
+
+    private func loadFinancialStatementFallback() {
+        let currentYear = Calendar.current.component(.year, from: Date())
+        allItems = [
+            FinancialStatementItem(id: "1", ventureName: "Residencial Parque das Flores", installmentNumber: "1/24", parcela: "1/24", dueDate: "15/01/\(currentYear)", amount: 1250.00, status: .paid),
+            FinancialStatementItem(id: "2", ventureName: "Residencial Parque das Flores", installmentNumber: "2/24", parcela: "2/24", dueDate: "15/02/\(currentYear)", amount: 1250.00, status: .upcoming),
+        ]
+        applyFilter()
     }
 
     func setFilter(_ filter: ExtratoFilter) {
@@ -121,11 +86,19 @@ class ExtratoViewModel: ObservableObject {
         applyFilter()
     }
 
+    func applyFiltersFromModal() {
+        showFilterModal = false
+        applyFilter()
+    }
+
     private func applyFilter() {
+        var items = allItems
         if let status = selectedFilter.status {
-            filteredItems = allItems.filter { $0.status == status }
-        } else {
-            filteredItems = allItems
+            items = items.filter { $0.status == status }
         }
+        if filtroEmpreendimento == .hardRock {
+            items = items.filter { $0.ventureName.contains("Hard Rock") || $0.ventureName.contains("Gramado") }
+        }
+        filteredItems = items
     }
 }

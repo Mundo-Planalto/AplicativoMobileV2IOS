@@ -9,6 +9,8 @@ import SwiftUI
 
 struct FinancialOverviewCard: View {
     let summary: FinancialSummary?
+    var isDark: Bool = true
+    var onVerExtrato: (() -> Void)? = nil
 
     private func formatCurrency(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -22,67 +24,57 @@ struct FinancialOverviewCard: View {
             Text("Resumo Financeiro")
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.textPrimary(dark: isDark))
 
             VStack(spacing: 12) {
-                // Dívidas vencidas
                 FinancialItemView(
                     title: "Dívidas Vencidas",
                     value: summary?.overdueAmount ?? 0,
                     subtitle: "\(summary?.overdueInstallments ?? 0) parcelas atrasadas",
-                    color: .red
+                    color: .red,
+                    isDark: isDark
                 )
 
-                // Dívidas a vencer
                 FinancialItemView(
                     title: "Dívidas a Vencer",
                     value: summary?.upcomingAmount ?? 0,
                     subtitle: "Próximas parcelas",
-                    color: .orange
+                    color: .orange,
+                    isDark: isDark
                 )
 
-                // Próximo vencimento
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Próximo Vencimento")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(AppColors.textSecondary(dark: isDark))
                     Text("15/02/2025")
                         .font(.headline)
-                        .foregroundColor(AppColors.accentCyan)
+                        .foregroundColor(AppColors.accentBlue)
                     Text("R$ 1.250,00")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(AppColors.textPrimary(dark: isDark))
                 }
                 .padding()
-                .background(AppColors.cardBackground)
+                .background(AppColors.cardBackground(dark: isDark))
                 .cornerRadius(12)
 
-                // Botão Ver Extrato
                 Button(action: {
-                    // Por enquanto, apenas um print - navegação será implementada
-                    print("Ver Extrato - funcionalidade em desenvolvimento")
+                    onVerExtrato?()
                 }) {
-                    Text("Ver Extrato")
+                    Text("Ver Extrato Completo")
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(
-                            LinearGradient(
-                                gradient: Gradient(colors: [AppColors.accentBlue, AppColors.accentCyan]),
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                        .background(AppColors.accentBlue)
                         .cornerRadius(12)
-                        .shadow(color: AppColors.accentBlue.opacity(0.3), radius: 8, x: 0, y: 4)
                 }
             }
         }
         .padding()
-        .background(AppColors.cardBackground)
+        .background(AppColors.cardBackground(dark: isDark))
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
     }
@@ -93,6 +85,7 @@ struct FinancialItemView: View {
     let value: Double
     let subtitle: String
     let color: Color
+    var isDark: Bool = true
 
     private func formatCurrency(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -106,7 +99,7 @@ struct FinancialItemView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(AppColors.textSecondary(dark: isDark))
                 Text(subtitle)
                     .font(.caption)
                     .foregroundColor(color.opacity(0.8))
@@ -120,7 +113,7 @@ struct FinancialItemView: View {
                 .foregroundColor(color)
         }
         .padding()
-        .background(AppColors.cardBackground.opacity(0.5))
+        .background(AppColors.cardBackground(dark: isDark).opacity(0.6))
         .cornerRadius(12)
     }
 }

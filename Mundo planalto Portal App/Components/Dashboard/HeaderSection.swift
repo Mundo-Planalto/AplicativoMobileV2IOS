@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HeaderSection: View {
     let greeting: String
+    var isDark: Bool = true
 
     var body: some View {
         HStack {
@@ -16,7 +17,7 @@ struct HeaderSection: View {
                 Text(greeting)
                     .font(.title)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.textPrimary(dark: isDark))
             }
             Spacer()
 
@@ -24,12 +25,12 @@ struct HeaderSection: View {
                 // TODO: Implementar notificações
             }) {
                 Image(systemName: "bell.fill")
-                    .foregroundColor(.white)
+                    .foregroundColor(AppColors.textPrimary(dark: isDark))
                     .font(.title2)
                     .padding(8)
                     .background(
                         Circle()
-                            .fill(AppColors.cardBackground.opacity(0.3))
+                            .fill(AppColors.cardBackground(dark: isDark).opacity(0.3))
                     )
             }
         }

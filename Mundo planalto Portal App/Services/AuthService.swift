@@ -15,69 +15,123 @@ enum AuthError: Error {
 
 class AuthService {
     static let shared = AuthService()
-
-    private let baseURL = "http://10.35.0.55:5187/api/"
-
     private init() {}
 
-    func login(cpf: String, password: String) async throws -> LoginResponse {
-        guard let url = URL(string: baseURL + "login") else {
+    private var baseURL: String { ApiConfig.baseURL + "/" }
+
+    func login(document: String, password: String) async throws -> LoginResponse {
+        let loginURLString = baseURL + "auth/login"
+        guard let url = URL(string: loginURLString) else {
+            print("[AuthService] ❌ URL inválida: \(loginURLString)")
             throw AuthError.networkError
         }
-        
-        let requestBody = LoginRequest(cpf: CPFMask.unformat(cpf), password: password)
-        
+
+        print("[AuthService] 📤 Login → \(url.absoluteString)")
+
+        let requestBody = LoginRequest(document: CPFMask.unformat(document), password: password)
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(requestBody)
-        
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse else {
+        let data: Data
+        let httpResponse: HTTPURLResponse
+        do {
+            let (responseData, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                print("[AuthService] ❌ Resposta não é HTTPURLResponse")
                 throw AuthError.invalidResponse
             }
-
-            if httpResponse.statusCode == 200 {
-                let loginResponse = try JSONDecoder().decode(LoginResponse.self, from: data)
-                return loginResponse
-            } else {
-                throw AuthError.invalidCredentials
-            }
+            data = responseData
+            httpResponse = http
         } catch {
+            print("[AuthService] ❌ Erro de rede: \(error.localizedDescription)")
+            if let urlError = error as? URLError {
+                print("[AuthService]    Código: \(urlError.code.rawValue), descrição: \(urlError.errorUserInfo)")
+            }
             throw AuthError.networkError
         }
+
+        let statusCode = httpResponse.statusCode
+        let responseBody = String(data: data, encoding: .utf8) ?? "(não foi possível converter para string)"
+
+        print("[AuthService] 📥 Status HTTP: \(statusCode)")
+        if !data.isEmpty {
+            print("[AuthService] 📥 Corpo da resposta: \(responseBody)")
+        }
+
+        let decoder = JSONDecoder()
+        if let loginResponse = try? decoder.decode(LoginResponse.self, from: data) {
+            if !loginResponse.success {
+                print("[AuthService] ⚠️ API retornou success=false, message: \(loginResponse.message ?? "nil")")
+            }
+            return loginResponse
+        }
+
+        if statusCode == 200 {
+            print("[AuthService] ❌ Status 200 mas corpo não é LoginResponse válido. Corpo: \(responseBody)")
+            throw AuthError.invalidResponse
+        }
+
+        // Status 4xx/5xx: tenta extrair "message" do JSON (ex.: 404 "Recurso não encontrado")
+        var messageFromAPI: String?
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let msg = json["message"] as? String {
+            messageFromAPI = msg
+            print("[AuthService] ⚠️ Status \(statusCode), mensagem da API: \(msg)")
+        } else {
+            print("[AuthService] ⚠️ Status \(statusCode), corpo não decodificou. Usando mensagem padrão.")
+        }
+
+        return LoginResponse(
+            token: nil,
+            message: messageFromAPI ?? (statusCode == 404 ? "Recurso não encontrado." : "Usuário ou senha incorreta."),
+            success: false,
+            user: nil
+        )
     }
 
-    func primeiroAcesso(cpf: String, password: String, confirmPassword: String) async throws -> RegisterResponse {
-        guard let url = URL(string: baseURL + "primeiro_acesso") else {
+    /// POST /api/auth/register - Registro de novo usuário (primeiro acesso).
+    func primeiroAcesso(document: String, password: String, confirmPassword: String) async throws -> RegisterResponse {
+        guard let url = URL(string: baseURL + "auth/register") else {
             throw AuthError.networkError
         }
 
-        let requestBody = RegisterRequest(cpf: CPFMask.unformat(cpf), password: password, confirmPassword: confirmPassword)
-
+        let requestBody = RegisterRequest(document: CPFMask.unformat(document), password: password, confirmPassword: confirmPassword)
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONEncoder().encode(requestBody)
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else { throw AuthError.invalidResponse }
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw AuthError.invalidResponse
+        let decoder = JSONDecoder()
+        if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
+            if let wrapped = try? decoder.decode(ApiResponse<RegisterResponse>.self, from: data), let inner = wrapped.data {
+                return inner
             }
-
-            if httpResponse.statusCode == 200 || httpResponse.statusCode == 201 {
-                let registerResponse = try JSONDecoder().decode(RegisterResponse.self, from: data)
-                return registerResponse
-            } else {
-                throw AuthError.invalidCredentials
+            if let direct = try? decoder.decode(RegisterResponse.self, from: data) {
+                return direct
             }
-        } catch {
-            throw AuthError.networkError
         }
+        if let api = try? decoder.decode(ApiResponse<RegisterResponse>.self, from: data), !api.success {
+            throw AuthError.invalidCredentials
+        }
+        throw AuthError.networkError
+    }
+
+    /// GET /api/auth/me - Retorna o usuário atual (requer Bearer token).
+    func getMe() async throws -> UserDto? {
+        guard let url = URL(string: baseURL + "auth/me"),
+              let token = PreferencesManager.shared.getAuthToken() else { return nil }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return nil }
+        let decoded = try? JSONDecoder().decode(ApiResponse<UserDto>.self, from: data)
+        return decoded?.data
     }
 
     func logout() async throws -> LogoutResponse {

@@ -16,6 +16,7 @@ class PreferencesManager {
     private let authTokenKey = "auth_token"
     private let themeModeKey = "theme_mode"
     private let userIdKey = "user_id"
+    private let userNameKey = "user_name"
     private let userCpfCnpjKey = "user_cpf_cnpj"
     private let notificationsEnabledKey = "notifications_enabled"
 
@@ -56,6 +57,15 @@ class PreferencesManager {
         return userDefaults.string(forKey: userIdKey)
     }
 
+    func saveUserName(_ name: String) {
+        userDefaults.set(name, forKey: userNameKey)
+        userDefaults.synchronize()
+    }
+
+    func getUserName() -> String? {
+        return userDefaults.string(forKey: userNameKey)
+    }
+
     func saveUserCpfCnpj(_ cpfCnpj: String) {
         userDefaults.set(cpfCnpj, forKey: userCpfCnpjKey)
         userDefaults.synchronize()
@@ -79,7 +89,7 @@ class PreferencesManager {
 
     // MARK: - Utility Methods
     func clearAllData() {
-        let keys = [authTokenKey, themeModeKey, userIdKey, userCpfCnpjKey, notificationsEnabledKey]
+        let keys = [authTokenKey, themeModeKey, userIdKey, userNameKey, userCpfCnpjKey, notificationsEnabledKey]
         keys.forEach { key in
             userDefaults.removeObject(forKey: key)
         }
