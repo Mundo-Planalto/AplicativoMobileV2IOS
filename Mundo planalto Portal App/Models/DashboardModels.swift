@@ -93,13 +93,15 @@ struct FinancialStatementItem: Identifiable, Codable {
     let dueDate: String
     let amount: Double
     let status: PaymentStatus
+    /// Número do contrato (ex: CT-5235) para exibição e link WhatsApp.
+    let contractNumber: String?
     /// Para chamar API de boleto: Sienge usa billReceivableId + installmentId; Esolution usa esolutionBoletoId.
     let billReceivableId: Int?
     let installmentId: Int?
     let isEsolution: Bool?
     let esolutionBoletoId: Int?
 
-    init(id: String, ventureName: String, installmentNumber: String, parcela: String, dueDate: String, amount: Double, status: PaymentStatus, billReceivableId: Int? = nil, installmentId: Int? = nil, isEsolution: Bool? = nil, esolutionBoletoId: Int? = nil) {
+    init(id: String, ventureName: String, installmentNumber: String, parcela: String, dueDate: String, amount: Double, status: PaymentStatus, contractNumber: String? = nil, billReceivableId: Int? = nil, installmentId: Int? = nil, isEsolution: Bool? = nil, esolutionBoletoId: Int? = nil) {
         self.id = id
         self.ventureName = ventureName
         self.installmentNumber = installmentNumber
@@ -107,6 +109,7 @@ struct FinancialStatementItem: Identifiable, Codable {
         self.dueDate = dueDate
         self.amount = amount
         self.status = status
+        self.contractNumber = contractNumber
         self.billReceivableId = billReceivableId
         self.installmentId = installmentId
         self.isEsolution = isEsolution

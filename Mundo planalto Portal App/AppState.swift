@@ -68,5 +68,6 @@ class AppState: ObservableObject {
 
     func setNotificationsEnabled(_ enabled: Bool) {
         preferencesManager.saveNotificationsEnabled(enabled)
+        objectWillChange.send()
     }
 }

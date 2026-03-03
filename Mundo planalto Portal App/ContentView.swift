@@ -14,12 +14,11 @@ struct ContentView: View {
         Group {
             if appState.isLoggedIn {
                 MainTabView()
-                    .environmentObject(appState)
             } else {
                 LoginView()
-                    .environmentObject(appState)
             }
         }
+        .environmentObject(appState)
         .preferredColorScheme(appState.isDarkTheme ? .dark : .light)
     }
 }

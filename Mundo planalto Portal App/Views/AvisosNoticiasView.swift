@@ -7,20 +7,74 @@
 
 import SwiftUI
 
+enum AvisosNoticiasFiltro: String, CaseIterable {
+    case todos = "Todos"
+    case avisos = "Avisos"
+    case noticias = "Notícias"
+}
+
 struct AvisosNoticiasView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = AvisosNoticiasViewModel()
     @State private var selectedNoticeId: String?
+    @State private var filtro: AvisosNoticiasFiltro = .todos
+
+    private var isDark: Bool { appState.isDarkTheme }
+    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+    private var textS: Color { AppColors.textSecondary(dark: isDark) }
+    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
+
+    private var filteredNotices: [AppNotice] {
+        switch filtro {
+        case .todos: return viewModel.notices
+        case .avisos: return viewModel.notices.filter { $0.intelligentType == .notice }
+        case .noticias: return viewModel.notices.filter { $0.intelligentType == .news }
+        }
+    }
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary
-                .ignoresSafeArea()
-
+            bg.ignoresSafeArea()
             VStack(spacing: 0) {
+                Text("Avisos e Notícias")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(textP)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
+
+                HStack(spacing: 12) {
+                    ForEach(AvisosNoticiasFiltro.allCases, id: \.rawValue) { opcao in
+                        Button {
+                            filtro = opcao
+                        } label: {
+                            Text(opcao.rawValue)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(filtro == opcao ? .white : textP)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(filtro == opcao ? AppColors.accentBlue : Color.clear)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .stroke(textS.opacity(0.5), lineWidth: filtro == opcao ? 0 : 1)
+                                        )
+                                )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 16)
+
                 if viewModel.isLoading {
                     Spacer()
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentCyan))
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentBlue))
                     Spacer()
                 } else if let error = viewModel.error {
                     Spacer()
@@ -29,29 +83,25 @@ struct AvisosNoticiasView: View {
                             .font(.system(size: 50))
                             .foregroundColor(.orange)
                         Text(error)
-                            .foregroundColor(.white)
+                            .foregroundColor(textP)
                             .multilineTextAlignment(.center)
                         Button("Tentar Novamente") {
-                            Task {
-                                await viewModel.loadNotices()
-                            }
+                            Task { await viewModel.loadNotices() }
                         }
-                        .foregroundColor(AppColors.accentCyan)
+                        .foregroundColor(AppColors.accentBlue)
                     }
                     .padding()
                     Spacer()
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(viewModel.notices) { notice in
-                                NoticeDetailCard(notice: notice)
-                                    .padding(.horizontal)
-                                    .onTapGesture {
-                                        selectedNoticeId = notice.id
-                                    }
+                            ForEach(filteredNotices) { notice in
+                                NoticeDetailCard(notice: notice, isDark: isDark)
+                                    .padding(.horizontal, 20)
+                                    .onTapGesture { selectedNoticeId = notice.id }
                             }
                         }
-                        .padding(.vertical)
+                        .padding(.vertical, 8)
                     }
                 }
             }
@@ -60,61 +110,56 @@ struct AvisosNoticiasView: View {
             NoticiaDetalhesView(noticeId: noticeId)
         }
         .onAppear {
-            Task {
-                await viewModel.loadNotices()
-            }
+            Task { await viewModel.loadNotices() }
         }
     }
 }
 
 struct NoticeDetailCard: View {
     let notice: Notice
+    var isDark: Bool = true
+
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+    private var textS: Color { AppColors.textSecondary(dark: isDark) }
+    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header com tipo e data
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: notice.intelligentType == .notice ? "bell.fill" : "newspaper.fill")
                         .foregroundColor(notice.intelligentType == .notice ? .orange : AppColors.accentBlue)
-
                     Text(notice.intelligentType == .notice ? "Aviso" : "Notícia")
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(notice.intelligentType == .notice ? .orange : AppColors.accentBlue)
                 }
-
                 Spacer()
-
                 Text(notice.date)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(textS)
             }
-
-            // Título
             Text(notice.title)
                 .font(.title3)
                 .fontWeight(.bold)
-                .foregroundColor(.white)
+                .foregroundColor(textP)
                 .lineLimit(2)
-
-            // Descrição
             Text(notice.description)
                 .font(.body)
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(textS)
                 .lineSpacing(4)
                 .lineLimit(3)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .background(cardBg)
+        .cornerRadius(12)
     }
 }
 
 #Preview {
     NavigationStack {
         AvisosNoticiasView()
+            .environmentObject(AppState.shared)
     }
 }

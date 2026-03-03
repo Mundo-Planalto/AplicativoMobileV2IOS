@@ -69,26 +69,28 @@ class AIService {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else { throw AIError.invalidResponse }
         guard http.statusCode == 200 else { throw AIError.invalidResponse }
-        let decoded = try? JSONDecoder().decode(ChatWebhookResponse.self, from: data)
-        let rawText = decoded?.text ?? String(data: data, encoding: .utf8) ?? "Resposta indisponível."
-        let displayText = Self.extractMessageOnly(rawText)
+        let rawString = String(data: data, encoding: .utf8) ?? "Resposta indisponível."
+        let displayText = Self.extractMessageOnly(from: data, rawString: rawString)
         return (displayText, sessionId)
     }
 
-    /// Extrai apenas o texto da mensagem da resposta (remove JSON extra, HTML, etc.).
-    private static func extractMessageOnly(_ raw: String) -> String {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let data = trimmed.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return stripHTML(trimmed)
+    /// Extrai apenas o texto da mensagem. Suporta resposta como array (ex: [{"output":"..."}]) ou objeto.
+    private static func extractMessageOnly(from data: Data, rawString: String) -> String {
+        if let array = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+           let first = array.first {
+            for key in ["output", "message", "response", "content", "text", "reply"] {
+                if let val = first[key] as? String, !val.isEmpty { return stripHTML(val) }
+            }
         }
-        for key in ["output", "message", "response", "content", "text", "reply"] {
-            if let val = json[key] as? String, !val.isEmpty { return stripHTML(val) }
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            for key in ["output", "message", "response", "content", "text", "reply"] {
+                if let val = json[key] as? String, !val.isEmpty { return stripHTML(val) }
+            }
+            if let msg = json["message"] as? [String: Any], let content = msg["content"] as? String {
+                return stripHTML(content)
+            }
         }
-        if let msg = json["message"] as? [String: Any], let content = msg["content"] as? String {
-            return stripHTML(content)
-        }
-        return stripHTML(trimmed)
+        return stripHTML(rawString.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private static func stripHTML(_ text: String) -> String {

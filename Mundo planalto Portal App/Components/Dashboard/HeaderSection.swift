@@ -10,21 +10,25 @@ import SwiftUI
 struct HeaderSection: View {
     let greeting: String
     var isDark: Bool = true
+    @EnvironmentObject private var appState: AppState
+
+    private var notificationsOn: Bool { appState.notificationsEnabled }
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(greeting)
-                    .font(.title)
+                    .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(AppColors.textPrimary(dark: isDark))
+                    .lineLimit(2)
             }
             Spacer()
 
-            Button(action: {
-                // TODO: Implementar notificações
-            }) {
-                Image(systemName: "bell.fill")
+            Button {
+                appState.setNotificationsEnabled(!notificationsOn)
+            } label: {
+                Image(systemName: notificationsOn ? "bell.fill" : "bell.slash.fill")
                     .foregroundColor(AppColors.textPrimary(dark: isDark))
                     .font(.title2)
                     .padding(8)
@@ -41,8 +45,9 @@ struct HeaderSection: View {
 
 #Preview {
     ZStack {
-        AppColors.backgroundPrimary
+        AppColors.backgroundPrimary(dark: true)
             .ignoresSafeArea()
-        HeaderSection(greeting: "Olá, João Silva")
+        HeaderSection(greeting: "Olá, João Silva", isDark: true)
+            .environmentObject(AppState.shared)
     }
 }

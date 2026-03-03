@@ -96,6 +96,7 @@ class ExtratoService {
                 dueDate: item.dueDate,
                 amount: item.currentBalance > 0 ? item.currentBalance : item.originalValue,
                 status: status,
+                contractNumber: item.contractNumber,
                 billReceivableId: item.isEsolution == true ? nil : item.billReceivableId,
                 installmentId: item.isEsolution == true ? nil : item.installmentId,
                 isEsolution: item.isEsolution,

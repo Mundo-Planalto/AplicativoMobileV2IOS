@@ -30,18 +30,32 @@ struct FinancialOverviewCard: View {
                 FinancialItemView(
                     title: "Dívidas Vencidas",
                     value: summary?.overdueAmount ?? 0,
-                    subtitle: "\(summary?.overdueInstallments ?? 0) parcelas atrasadas",
+                    subtitle: nil,
                     color: .red,
                     isDark: isDark
                 )
 
                 FinancialItemView(
-                    title: "Dívidas a Vencer",
+                    title: "A Vencer",
                     value: summary?.upcomingAmount ?? 0,
-                    subtitle: "Próximas parcelas",
-                    color: .orange,
+                    subtitle: nil,
+                    color: Color(hex: "#E68A00"),
                     isDark: isDark
                 )
+
+                HStack {
+                    Text("Parcelas Atrasadas")
+                        .font(.subheadline)
+                        .foregroundColor(AppColors.textSecondary(dark: isDark))
+                    Spacer()
+                    Text("\(summary?.overdueInstallments ?? 0) parcelas")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(AppColors.textPrimary(dark: isDark))
+                }
+                .padding()
+                .background(AppColors.cardBackground(dark: isDark).opacity(0.6))
+                .cornerRadius(12)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Próximo Vencimento")
@@ -83,7 +97,7 @@ struct FinancialOverviewCard: View {
 struct FinancialItemView: View {
     let title: String
     let value: Double
-    let subtitle: String
+    let subtitle: String?
     let color: Color
     var isDark: Bool = true
 
@@ -100,9 +114,11 @@ struct FinancialItemView: View {
                 Text(title)
                     .font(.subheadline)
                     .foregroundColor(AppColors.textSecondary(dark: isDark))
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundColor(color.opacity(0.8))
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(color.opacity(0.8))
+                }
             }
 
             Spacer()

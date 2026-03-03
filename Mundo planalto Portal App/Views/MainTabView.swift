@@ -48,6 +48,12 @@ struct MainTabView: View {
             .tag(TabItem.profile)
         }
         .tint(AppColors.accentBlue)
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToNews"))) { _ in
+            selectedTab = .news
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToVentures"))) { _ in
+            selectedTab = .ventures
+        }
     }
 }
 

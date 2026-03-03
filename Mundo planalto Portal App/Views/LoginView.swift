@@ -7,97 +7,97 @@
 
 import SwiftUI
 
+private let forgotPasswordURL = "https://portal.mundoplanalto.com.br/Account/ForgotPassword"
+
 struct LoginView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = LoginViewModel()
     @State private var navigateToRegister = false
-    
+
+    private var isDark: Bool { appState.isDarkTheme }
+    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+    private var textS: Color { AppColors.textSecondary(dark: isDark) }
+    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
+
     private var isLoading: Bool {
-        if case .loading = viewModel.state {
-            return true
-        }
+        if case .loading = viewModel.state { return true }
         return false
     }
-    
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                Spacer()
-
-                // Conteúdo centralizado
-                VStack(spacing: 16) {
-                    // Logo ou título do app (opcional)
-                    Text("Mundo Planalto")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.bottom, 32)
-
-                    // Campo CPF
-                    CustomTextField(
-                        title: "CPF",
-                        icon: "person.text.rectangle",
-                        text: $viewModel.cpf,
-                        isNumeric: true,
-                        onTextChange: { newValue in
-                            return viewModel.formatCPF(newValue)
-                        }
-                    )
-                    .padding(.horizontal, 16)
-
-                    // Campo Senha
-                    CustomTextField(
-                        title: "Senha",
-                        icon: "lock.fill",
-                        text: $viewModel.password,
-                        isSecure: true
-                    )
-                    .padding(.horizontal, 16)
-
-                    // Botão Entrar
-                    GradientButton(
-                        title: "Entrar",
-                        action: {
-                            viewModel.login()
-                        },
-                        isLoading: isLoading,
-                        isEnabled: viewModel.isFormValid
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-
-                    // Link Primeiro Acesso
-                    Button(action: {
-                        navigateToRegister = true
-                    }) {
-                        Text("Primeiro Acesso")
-                            .foregroundColor(.white)
-                            .underline()
+            ZStack {
+                bg.ignoresSafeArea()
+                ScrollView {
+                    VStack(spacing: 24) {
+                        LogoMundoPlanaltoImageView(isDark: isDark, size: 64)
+                            .padding(.top, 40)
+                        Text("Mundo Planalto Portal")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(textP)
+                        Text("Bem-vindo de volta")
                             .font(.subheadline)
-                    }
-                    .padding(.top, 16)
+                            .foregroundColor(textS)
 
-                    // Mensagem de erro
-                    if case .error(let message) = viewModel.state {
-                        Text(message)
-                            .foregroundColor(.red)
-                            .font(.caption)
+                        VStack(spacing: 16) {
+                            CustomTextField(
+                                title: "CPF/CNPJ",
+                                icon: "doc.text",
+                                text: $viewModel.cpf,
+                                isNumeric: true,
+                                onTextChange: { viewModel.formatCPF($0) },
+                                useLightInputStyle: !isDark
+                            )
+                            .padding(.horizontal, 20)
+
+                            CustomTextField(
+                                title: "Senha",
+                                icon: "lock.fill",
+                                text: $viewModel.password,
+                                isSecure: true,
+                                useLightInputStyle: !isDark
+                            )
+                            .padding(.horizontal, 20)
+
+                            PrimaryButton(
+                                title: "Entrar",
+                                action: { viewModel.login() },
+                                isLoading: isLoading,
+                                isEnabled: viewModel.isFormValid,
+                                isDark: isDark
+                            )
+                            .padding(.horizontal, 20)
                             .padding(.top, 8)
-                            .padding(.horizontal, 16)
+
+                            if let url = URL(string: forgotPasswordURL) {
+                                Link("Esqueceu sua senha?", destination: url)
+                                    .font(.subheadline)
+                                    .foregroundColor(textS)
+                            }
+
+                            Button {
+                                navigateToRegister = true
+                            } label: {
+                                Text("Primeiro Acesso? Cadastre-se")
+                                    .font(.subheadline)
+                                    .foregroundColor(AppColors.accentBlue)
+                            }
+                            .padding(.top, 8)
+                        }
+                        .padding(.vertical, 24)
+
+                        if case .error(let message) = viewModel.state {
+                            Text(message)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 20)
+                        }
                     }
                 }
-                .padding(.vertical, 32)
-
-                Spacer()
             }
-            .background(
-                // Gradiente de fundo vertical (AccentBlue → AccentCyan)
-                LinearGradient(
-                    gradient: Gradient(colors: [AppColors.accentBlue, AppColors.accentCyan]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
             .navigationDestination(isPresented: $navigateToRegister) {
                 PrimeiroAcessoView()
             }
@@ -105,6 +105,37 @@ struct LoginView: View {
     }
 }
 
+/// Botão primário azul (tema: fundo claro ou escuro)
+private struct PrimaryButton: View {
+    let title: String
+    let action: () -> Void
+    var isLoading: Bool = false
+    var isEnabled: Bool = true
+    var isDark: Bool = true
+
+    var body: some View {
+        Button(action: action) {
+            Group {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                } else {
+                    Text(title)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(AppColors.accentBlue)
+            .cornerRadius(12)
+        }
+        .disabled(!isEnabled || isLoading)
+        .opacity(isEnabled && !isLoading ? 1 : 0.6)
+    }
+}
+
 #Preview {
     LoginView()
+        .environmentObject(AppState.shared)
 }

@@ -8,54 +8,56 @@
 import SwiftUI
 
 struct SplashView: View {
-    @State private var opacity: Double = 0.3
-    @State private var scale: Double = 0.8
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var opacity: Double = 0.6
+    @State private var scale: Double = 0.95
+    @State private var piscar: Bool = false
+    @State private var blinkTimer: Timer?
+
+    private var isDark: Bool { colorScheme == .dark }
+
+    /// Gradiente conforme tema: claro = azul claro → branco; escuro = azul → cinza escuro
+    private var gradientColors: [Color] {
+        if isDark {
+            return [
+                AppColors.accentBlue.opacity(0.9),
+                AppColors.accentCyan.opacity(0.5),
+                AppColors.backgroundPrimaryDark
+            ]
+        }
+        return [
+            Color(hex: "#E3F2FD"),
+            Color(hex: "#BBDEFB"),
+            Color.white
+        ]
+    }
 
     var body: some View {
         ZStack {
-            // Gradiente de fundo
             LinearGradient(
-                gradient: Gradient(colors: [
-                    AppColors.accentBlue.opacity(0.8),
-                    AppColors.accentCyan.opacity(0.6),
-                    AppColors.backgroundPrimary
-                ]),
+                gradient: Gradient(colors: gradientColors),
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
 
-            VStack {
-                Spacer()
-
-                // Logo animado
-                ZStack {
-                    Circle()
-                        .fill(AppColors.accentCyan.opacity(0.2))
-                        .frame(width: 120, height: 120)
-
-                    Text("MP")
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(AppColors.accentCyan)
-                }
+            LogoMundoPlanaltoImageView(isDark: isDark, size: 120)
                 .scaleEffect(scale)
-                .opacity(opacity)
+                .opacity(opacity * (piscar ? 0.78 : 1.0))
+                .animation(.easeInOut(duration: 1.0), value: piscar)
                 .onAppear {
-                    withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                    withAnimation(.easeOut(duration: 0.8)) {
                         opacity = 1.0
                         scale = 1.0
                     }
+                    blinkTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+                        piscar.toggle()
+                    }
                 }
-
-                Spacer()
-
-                // Nome do app
-                Text("Mundo Planalto Portal")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white.opacity(0.8))
-                    .padding(.bottom, 50)
-            }
+                .onDisappear {
+                    blinkTimer?.invalidate()
+                    blinkTimer = nil
+                }
         }
     }
 }

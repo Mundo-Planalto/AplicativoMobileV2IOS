@@ -12,7 +12,6 @@ struct SolicitarAlteracaoEnderecoView: View {
     @EnvironmentObject private var appState: AppState
     @State private var logradouro = ""
     @State private var numero = ""
-    @State private var complemento = ""
     @State private var bairro = ""
     @State private var cidade = ""
     @State private var estado = ""
@@ -42,19 +41,32 @@ struct SolicitarAlteracaoEnderecoView: View {
                 bg.ignoresSafeArea()
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        Text("Informe o novo endereço de correspondência. A alteração será analisada pela equipe.")
+                        Text("Preencha os dados do novo endereço. A alteração será enviada para aprovação.")
                             .font(.subheadline)
                             .foregroundColor(textS)
                             .padding(.bottom, 8)
 
-                        field("Logradouro", text: $logradouro, placeholder: "Rua, Avenida...")
-                        field("Número", text: $numero, placeholder: "Nº")
-                        field("Complemento", text: $complemento, placeholder: "Apto, Bloco...")
+                        field("Rua", text: $logradouro, placeholder: "Rua")
+                        field("Número", text: $numero, placeholder: "Número")
                         field("Bairro", text: $bairro, placeholder: "Bairro")
-                        HStack(spacing: 12) {
-                            field("Cidade", text: $cidade, placeholder: "Cidade")
-                            field("UF", text: $estado, placeholder: "SP")
-                                .frame(maxWidth: 80)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Cidade - UF")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(textP)
+                            HStack(spacing: 12) {
+                                TextField("Cidade", text: $cidade)
+                                    .padding(12)
+                                    .background(cardBg)
+                                    .cornerRadius(10)
+                                    .foregroundColor(textP)
+                                TextField("UF", text: $estado)
+                                    .padding(12)
+                                    .background(cardBg)
+                                    .cornerRadius(10)
+                                    .foregroundColor(textP)
+                                    .frame(maxWidth: 80)
+                            }
                         }
                         field("CEP", text: $cep, placeholder: "00000-000")
                             .keyboardType(.numberPad)
@@ -66,38 +78,43 @@ struct SolicitarAlteracaoEnderecoView: View {
                                 .padding(.top, 8)
                         }
 
-                        Button {
-                            submit()
-                        } label: {
-                            HStack {
-                                if isLoading {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                } else {
-                                    Text("Enviar solicitação")
-                                        .fontWeight(.semibold)
-                                }
+                        HStack(spacing: 12) {
+                            Button("Cancelar") {
+                                dismiss()
                             }
+                            .font(.headline)
+                            .foregroundColor(AppColors.accentBlue)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(isValid && !isLoading ? AppColors.accentBlue : cardBg)
-                            .foregroundColor(isValid && !isLoading ? .white : textS)
-                            .cornerRadius(12)
+
+                            Button {
+                                submit()
+                            } label: {
+                                HStack {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    } else {
+                                        Text("Enviar Solicitação")
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(isValid && !isLoading ? AppColors.accentBlue : cardBg)
+                                .foregroundColor(isValid && !isLoading ? .white : textS)
+                                .cornerRadius(12)
+                            }
+                            .disabled(!isValid || isLoading)
+                            .buttonStyle(PlainButtonStyle())
                         }
-                        .disabled(!isValid || isLoading)
                         .padding(.top, 16)
                     }
                     .padding(20)
                 }
             }
-            .navigationTitle("Solicitar alteração de endereço")
+            .navigationTitle("Solicitar Alteração de Endereço")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancelar") { dismiss() }
-                        .foregroundColor(AppColors.accentBlue)
-                }
-            }
         }
     }
 
@@ -129,7 +146,7 @@ struct SolicitarAlteracaoEnderecoView: View {
                 let result = try await AddressService.shared.createChangeRequest(
                     street: logradouro.trimmingCharacters(in: .whitespaces),
                     number: numero.trimmingCharacters(in: .whitespaces),
-                    complement: complemento.isEmpty ? nil : complemento.trimmingCharacters(in: .whitespaces),
+                    complement: nil,
                     neighborhood: bairro.trimmingCharacters(in: .whitespaces),
                     city: cidade.trimmingCharacters(in: .whitespaces),
                     state: estado.trimmingCharacters(in: .whitespaces),

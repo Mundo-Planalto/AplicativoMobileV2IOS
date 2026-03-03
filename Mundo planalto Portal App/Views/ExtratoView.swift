@@ -137,17 +137,19 @@ struct ExtratoView: View {
     }
 }
 
-// MARK: - Card no layout do anexo: descrição, tag, Vencimento, Valor, Ver Boleto, Gerar 2ª Via
+// MARK: - Card no layout do anexo: descrição, tag, Vencimento, Valor; Ver Boleto / Gerar 2ª Via só para A Vencer
 struct ParcelaCardExtrato: View {
     let item: FinancialStatementItem
     var isDark: Bool = true
     @State private var loadingBoleto = false
-    @State private var boletoError: String?
-    @State private var showBoletoAlert = false
+    @State private var showBoletoNaoGeradoModal = false
 
     private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
     private var textP: Color { AppColors.textPrimary(dark: isDark) }
     private var textS: Color { AppColors.textSecondary(dark: isDark) }
+
+    /// Exibir botões Ver Boleto e Gerar 2ª Via apenas para parcelas "A Vencer".
+    private var mostraBotoesBoleto: Bool { item.status == .upcoming }
 
     private func formatCurrency(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -174,12 +176,10 @@ struct ParcelaCardExtrato: View {
 
     private func openBoleto() {
         guard item.billReceivableId != nil || item.esolutionBoletoId != nil else {
-            boletoError = "Boleto não disponível para esta parcela."
-            showBoletoAlert = true
+            showBoletoNaoGeradoModal = true
             return
         }
         loadingBoleto = true
-        boletoError = nil
         Task {
             let url = await ExtratoService.shared.getBoletoPdfUrl(item: item)
             await MainActor.run {
@@ -187,8 +187,7 @@ struct ParcelaCardExtrato: View {
                 if let url = url {
                     UIApplication.shared.open(url)
                 } else {
-                    boletoError = "Não foi possível carregar o boleto. Tente novamente."
-                    showBoletoAlert = true
+                    showBoletoNaoGeradoModal = true
                 }
             }
         }
@@ -196,7 +195,7 @@ struct ParcelaCardExtrato: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Linha 1: nome + " - 30/"  |  tag (A Vencer / Vencidas / Pagas)
+            // Linha 1: nome + parcela  |  tag (A Vencer / Vencidas / Pagas)
             HStack(alignment: .top) {
                 Text("\(item.ventureName) - \(item.parcela)")
                     .font(.headline)
@@ -239,57 +238,158 @@ struct ParcelaCardExtrato: View {
                 }
             }
 
-            // Botões: Ver Boleto  |  Gerar 2ª Via
-            HStack(spacing: 12) {
-                Button {
-                    openBoleto()
-                } label: {
-                    HStack(spacing: 6) {
-                        if loadingBoleto {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.8)
-                        } else {
-                            Image(systemName: "eye.fill")
-                                .font(.caption)
+            // Botões: Ver Boleto | Gerar 2ª Via — somente para "A Vencer"
+            if mostraBotoesBoleto {
+                HStack(spacing: 12) {
+                    Button {
+                        openBoleto()
+                    } label: {
+                        HStack(spacing: 6) {
+                            if loadingBoleto {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "eye.fill")
+                                    .font(.caption)
+                            }
+                            Text("Ver Boleto")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
                         }
-                        Text("Ver Boleto")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(AppColors.accentBlue)
-                    .cornerRadius(10)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(loadingBoleto)
-
-                Button {
-                    openBoleto()
-                } label: {
-                    Text("Gerar 2ª Via")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(AppColors.accentBlue)
                         .cornerRadius(10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .disabled(loadingBoleto)
+
+                    Button {
+                        openBoleto()
+                    } label: {
+                        Text("Gerar 2ª Via")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(AppColors.accentBlue)
+                            .cornerRadius(10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .disabled(loadingBoleto)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(loadingBoleto)
-            }
-            .alert("Boleto", isPresented: $showBoletoAlert) {
-                Button("OK") { boletoError = nil }
-            } message: {
-                if let msg = boletoError { Text(msg) }
             }
         }
         .padding()
         .background(cardBg)
         .cornerRadius(12)
+        .sheet(isPresented: $showBoletoNaoGeradoModal) {
+            BoletoNaoGeradoModalView(item: item, isDark: isDark, onDismiss: { showBoletoNaoGeradoModal = false })
+        }
+    }
+}
+
+// MARK: - Modal "Boleto não gerado": detalhes do item + Fechar e Solicitar via WhatsApp
+private struct BoletoNaoGeradoModalView: View {
+    let item: FinancialStatementItem
+    var isDark: Bool = true
+    var onDismiss: () -> Void
+
+    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+    private var textS: Color { AppColors.textSecondary(dark: isDark) }
+
+    private static let whatsAppPhone = "556240002200"
+    private var whatsAppUrl: URL? {
+        let contract = item.contractNumber ?? "-"
+        let text = "Solicito a segunda via do boleto contrato \(contract), vencimento \(item.dueDate)."
+        var components = URLComponents(string: "https://api.whatsapp.com/send/")
+        components?.queryItems = [
+            URLQueryItem(name: "phone", value: Self.whatsAppPhone),
+            URLQueryItem(name: "text", value: text),
+            URLQueryItem(name: "type", value: "phone_number"),
+            URLQueryItem(name: "app_absent", value: "0")
+        ]
+        return components?.url
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                Text("Boleto não gerado")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(textP)
+                Spacer()
+                Button {
+                    onDismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.body)
+                        .foregroundColor(textS)
+                }
+            }
+
+            Text("O boleto ainda não foi gerado pelo sistema.")
+                .font(.subheadline)
+                .foregroundColor(textS)
+
+            VStack(alignment: .leading, spacing: 8) {
+                detailRow("Empreendimento:", value: item.ventureName)
+                detailRow("Contrato:", value: item.contractNumber ?? "-")
+                detailRow("Parcela:", value: item.parcela)
+                detailRow("Vencimento:", value: item.dueDate)
+            }
+
+            HStack(spacing: 12) {
+                Button("Fechar") {
+                    onDismiss()
+                }
+                .font(.headline)
+                .foregroundColor(textS)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(cardBg)
+                .cornerRadius(10)
+
+                if let url = whatsAppUrl {
+                    Link(destination: url) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "message.fill")
+                                .font(.body)
+                            Text("Solicitar via WhatsApp")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(red: 0.18, green: 0.78, blue: 0.44))
+                        .cornerRadius(10)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+            }
+        }
+        .padding(24)
+        .background(cardBg)
+        .cornerRadius(16)
+        .padding(40)
+    }
+
+    private func detailRow(_ label: String, value: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(label)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(textS)
+            Text(value)
+                .font(.subheadline)
+                .foregroundColor(textP)
+        }
     }
 }
 

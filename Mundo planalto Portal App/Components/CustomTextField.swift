@@ -14,13 +14,20 @@ struct CustomTextField: View {
     var isSecure: Bool = false
     var isNumeric: Bool = false
     var onTextChange: ((String) -> String)? = nil
+    /// Se true, usa cores do tema claro (fundo branco/claro). Default nil = comportamento atual.
+    var useLightInputStyle: Bool = false
 
     @State private var isPasswordVisible: Bool = false
+
+    private var inputBg: Color {
+        useLightInputStyle ? AppColors.cardBackgroundLight : AppColors.inputBackground
+    }
+    private var iconColor: Color { AppColors.accentBlue }
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundColor(AppColors.accentBlue)
+                .foregroundColor(iconColor)
                 .frame(width: 20)
 
             ZStack {
@@ -56,14 +63,14 @@ struct CustomTextField: View {
                     isPasswordVisible.toggle()
                 }) {
                     Image(systemName: isPasswordVisible ? "eye.slash.fill" : "eye.fill")
-                        .foregroundColor(AppColors.accentBlue)
+                        .foregroundColor(iconColor)
                 }
                 .accessibilityLabel(isPasswordVisible ? "Ocultar senha" : "Mostrar senha")
             }
         }
         .padding(16)
-        .background(AppColors.inputBackground)
-        .cornerRadius(16)
+        .background(inputBg)
+        .cornerRadius(12)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Campo de entrada: \(title)")
     }
