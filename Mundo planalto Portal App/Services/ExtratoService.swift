@@ -100,7 +100,8 @@ class ExtratoService {
                 billReceivableId: item.isEsolution == true ? nil : item.billReceivableId,
                 installmentId: item.isEsolution == true ? nil : item.installmentId,
                 isEsolution: item.isEsolution,
-                esolutionBoletoId: item.esolutionBoletoId
+                esolutionBoletoId: item.esolutionBoletoId,
+                generatedBillet: item.generatedBillet
             )
         }
     }

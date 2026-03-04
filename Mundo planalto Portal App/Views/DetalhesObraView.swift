@@ -10,7 +10,13 @@ import SwiftUI
 struct DetalhesObraView: View {
     let venture: Venture
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel: DetalhesObraViewModel
+
+    private var isDark: Bool { appState.isDarkTheme }
+    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+    private var textS: Color { AppColors.textSecondary(dark: isDark) }
 
     init(venture: Venture) {
         self.venture = venture
@@ -19,13 +25,12 @@ struct DetalhesObraView: View {
 
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary
+            bg
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // TopAppBar conforme documentação
                 ZStack {
-                    AppColors.backgroundPrimary
+                    bg
                         .ignoresSafeArea()
 
                     HStack {
@@ -33,7 +38,7 @@ struct DetalhesObraView: View {
                             dismiss()
                         }) {
                             Image(systemName: "chevron.left")
-                                .foregroundColor(.white)
+                                .foregroundColor(textP)
                                 .font(.title2)
                         }
 
@@ -42,7 +47,7 @@ struct DetalhesObraView: View {
                         Text(venture.name)
                             .font(.title)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(textP)
                             .lineLimit(1)
 
                         Spacer()
@@ -54,7 +59,7 @@ struct DetalhesObraView: View {
                 if viewModel.isLoading {
                     Spacer()
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentCyan))
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentBlue))
                     Spacer()
                 } else {
                     ScrollView {
@@ -64,16 +69,16 @@ struct DetalhesObraView: View {
                                     HStack {
                                         Text("Progresso da Obra")
                                             .font(.headline)
-                                            .foregroundColor(.white)
+                                            .foregroundColor(textP)
                                         Spacer()
                                         Text("\(Int(venture.progress * 100))%")
                                             .font(.subheadline)
-                                            .foregroundColor(AppColors.accentCyan)
+                                            .foregroundColor(AppColors.accentBlue)
                                     }
                                     .padding(.horizontal)
 
                                     ProgressView(value: venture.progress)
-                                        .progressViewStyle(LinearProgressViewStyle(tint: AppColors.accentCyan))
+                                        .progressViewStyle(LinearProgressViewStyle(tint: AppColors.accentBlue))
                                         .padding(.horizontal)
                                 }
                                 .padding(.vertical)
@@ -82,21 +87,19 @@ struct DetalhesObraView: View {
                             if viewModel.updates.isEmpty && !viewModel.isLoading {
                                 Text("Nenhuma atualização disponível no momento.")
                                     .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.8))
+                                    .foregroundColor(textS)
                                     .padding()
                             }
 
                             ZStack(alignment: .leading) {
-                                // Linha contínua ciana (5dp width)
                                 Rectangle()
-                                    .fill(AppColors.accentCyan)
+                                    .fill(AppColors.accentBlue)
                                     .frame(width: 5)
                                     .padding(.leading, 24)
 
-                                // Lista de marcos
                                 LazyVStack(spacing: 32) {
                                     ForEach(viewModel.updates) { update in
-                                        TimelineMarcoItem(update: update)
+                                        TimelineMarcoItem(update: update, isDark: isDark)
                                     }
                                 }
                                 .padding(.leading, 8)
@@ -119,68 +122,76 @@ struct DetalhesObraView: View {
 
 struct TimelineMarcoItem: View {
     let update: VentureUpdate
+    var isDark: Bool = true
+
+    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+    private var textS: Color { AppColors.textSecondary(dark: isDark) }
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            // Indicador circular (16dp)
             ZStack {
                 if update.isCompleted {
                     Circle()
-                        .fill(AppColors.accentCyan)
+                        .fill(AppColors.accentBlue)
                         .frame(width: 16, height: 16)
                     Image(systemName: "checkmark")
                         .font(.system(size: 8, weight: .bold))
                         .foregroundColor(.white)
                 } else {
                     Circle()
-                        .stroke(AppColors.accentCyan, lineWidth: 2)
+                        .stroke(AppColors.accentBlue, lineWidth: 2)
                         .frame(width: 16, height: 16)
                 }
             }
 
-            // Card de conteúdo (surfaceVariant, radius 16dp)
             VStack(alignment: .leading, spacing: 12) {
-                // Data em AccentCyan (18sp SemiBold)
                 Text(update.date)
                     .font(.title3)
                     .fontWeight(.semibold)
-                    .foregroundColor(AppColors.accentCyan)
+                    .foregroundColor(AppColors.accentBlue)
 
-                // Título em onBackground bold 20sp
                 Text(update.title)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(textP)
 
-                // Descrição em onSurface 80% alpha
                 Text(update.description)
                     .font(.body)
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(textS)
                     .lineSpacing(4)
 
-                // Galeria horizontal (LazyRow imagens 120x90dp radius 12dp)
-                if !update.images.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(update.images, id: \.self) { imageName in
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 120, height: 90)
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        Image(systemName: "photo")
-                                            .foregroundColor(.gray)
-                                    )
-                            }
+                if let imageUrl = update.imageUrl, !imageUrl.isEmpty, let url = URL(string: imageUrl) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure:
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(textS.opacity(0.2))
+                                .overlay(Image(systemName: "photo").foregroundColor(textS))
+                        default:
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(textS.opacity(0.2))
+                                .overlay(ProgressView())
                         }
                     }
+                    .frame(height: 200)
+                    .clipped()
+                    .cornerRadius(12)
+                }
+
+                if let videoUrl = update.videoUrl, !videoUrl.isEmpty {
+                    VideoPlayerView(urlString: videoUrl)
                 }
             }
-            .padding(16) // 16dp padding interno
+            .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.cardBackground)
+            .background(cardBg)
             .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(isDark ? 0.2 : 0.08), radius: 8, x: 0, y: 4)
         }
     }
 }
@@ -194,5 +205,6 @@ struct TimelineMarcoItem: View {
             progress: 0.75,
             lastUpdate: "Atualizado há 2 dias"
         ))
+        .environmentObject(AppState.shared)
     }
 }

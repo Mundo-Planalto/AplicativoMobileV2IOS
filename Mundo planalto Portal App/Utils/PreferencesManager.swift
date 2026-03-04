@@ -43,7 +43,11 @@ class PreferencesManager {
         userDefaults.synchronize()
     }
 
+    /// Retorna true se tema escuro. Se a chave nunca foi definida, retorna false (claro por padrão).
     func getThemeMode() -> Bool {
+        guard userDefaults.object(forKey: themeModeKey) != nil else {
+            return false
+        }
         return userDefaults.bool(forKey: themeModeKey)
     }
 

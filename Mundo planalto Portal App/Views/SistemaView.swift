@@ -62,7 +62,7 @@ struct SistemaView: View {
                     } label: {
                         Image(systemName: "chevron.left")
                             .font(.title2)
-                            .foregroundColor(isDark ? .white : .primary)
+                            .foregroundColor(textP)
                     }
                     Spacer()
                     Text("Sistema")

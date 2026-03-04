@@ -24,14 +24,8 @@ class PerfilViewModel: ObservableObject {
     var userCPF: String { userDocument }
 
     let menuOptions: [ProfileMenuOption] = [
-        ProfileMenuOption(title: "Alterar Senha",
-                          subtitle: "Alterar sua senha de acesso",
-                          iconName: "lock.fill",
-                          action: .alterarSenha),
-        ProfileMenuOption(title: "Endereços",
-                          subtitle: "Gerenciar endereços",
-                          iconName: "mappin.circle.fill",
-                          action: .enderecos),
+        // ProfileMenuOption(title: "Alterar Senha", subtitle: "Alterar sua senha de acesso", iconName: "lock.fill", action: .alterarSenha),
+        // ProfileMenuOption(title: "Endereços", subtitle: "Gerenciar endereços", iconName: "mappin.circle.fill", action: .enderecos),
         ProfileMenuOption(title: "Sistema",
                           subtitle: "Tema e configurações",
                           iconName: "gearshape.fill",

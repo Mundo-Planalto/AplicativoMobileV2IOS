@@ -13,6 +13,15 @@ enum EmpreendimentosError: Error {
     case invalidResponse
 }
 
+/// Item do photoBook em GET /api/ventures
+struct PhotoBookItemDto: Codable {
+    let id: Int
+    let photoUrl: String
+    let mediaType: String
+    let youtubeUrl: String?
+    let createdAt: String?
+}
+
 /// Resposta da API: GET /api/ventures ou /api/customers/ventures
 struct CostCenterDto: Codable {
     let id: Int
@@ -22,6 +31,7 @@ struct CostCenterDto: Codable {
     let imageUrl: String?
     let companyName: String?
     let isActive: Bool?
+    let photoBook: [PhotoBookItemDto]?
 }
 
 struct EmpreendimentoDetail: Codable {
@@ -59,6 +69,7 @@ struct VentureUpdateDto: Codable {
     let title: String
     let content: String
     let imageUrl: String?
+    let videoUrl: String?
     let postDate: String
 }
 
@@ -78,12 +89,28 @@ class EmpreendimentosService {
         return request
     }
 
-    private func fullImageURL(_ path: String?) -> String {
-        guard let path = path, !path.isEmpty else { return "" }
-        if path.hasPrefix("http") { return path }
-        let base = ApiConfig.baseURL.hasSuffix("/") ? String(ApiConfig.baseURL.dropLast()) : ApiConfig.baseURL
+    /// Constrói URL completa para imagem/vídeo (path relativo do servidor). Evita barra dupla.
+    private static func fullMediaURL(_ path: String?) -> String {
+        guard let path = path, !path.trimmingCharacters(in: .whitespaces).isEmpty else { return "" }
+        let trimmed = path.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") { return trimmed }
+        var base = ApiConfig.baseURL
+        if base.hasSuffix("/") { base = String(base.dropLast()) }
         let baseHost = base.replacingOccurrences(of: "/api", with: "")
-        return baseHost + (path.hasPrefix("/") ? path : "/" + path)
+        let pathNorm = trimmed.hasPrefix("/") ? trimmed : "/" + trimmed
+        if baseHost.hasSuffix("/") {
+            return baseHost + pathNorm.dropFirst()
+        }
+        return baseHost + pathNorm
+    }
+
+    /// Exposto para montar URLs de mídia em updates (ex.: ViewModel).
+    static func mediaURL(for path: String?) -> String {
+        fullMediaURL(path)
+    }
+
+    private func fullImageURL(_ path: String?) -> String {
+        Self.fullMediaURL(path)
     }
 
     /// GET /api/ventures ou /api/customers/ventures - lista empreendimentos do cliente
@@ -99,12 +126,22 @@ class EmpreendimentosService {
         let decoded = try JSONDecoder().decode(ApiResponse<[CostCenterDto]>.self, from: data)
         guard let list = decoded.data else { throw EmpreendimentosError.invalidResponse }
         let ventures = list.map { dto in
-            Venture(
+            let photoBook = (dto.photoBook ?? []).map { p in
+                PhotoBookItem(
+                    id: p.id,
+                    photoUrl: Self.fullMediaURL(p.photoUrl),
+                    mediaType: p.mediaType,
+                    youtubeUrl: p.youtubeUrl,
+                    createdAt: p.createdAt
+                )
+            }
+            return Venture(
                 id: "\(dto.id)",
                 name: dto.name,
-                imageUrl: fullImageURL(dto.imageUrl).isEmpty ? "venture\(dto.id)" : fullImageURL(dto.imageUrl),
+                imageUrl: Self.fullMediaURL(dto.imageUrl).isEmpty ? "venture\(dto.id)" : Self.fullMediaURL(dto.imageUrl),
                 progress: 0,
-                lastUpdate: ""
+                lastUpdate: "",
+                photoBook: photoBook.isEmpty ? nil : photoBook
             )
         }
         return EmpreendimentosResponse(empreendimentos: ventures, totalCount: ventures.count, success: true, message: nil)

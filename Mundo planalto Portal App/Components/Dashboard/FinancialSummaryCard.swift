@@ -27,7 +27,7 @@ struct FinancialSummaryCard: View {
             LazyVGrid(columns: [
                 GridItem(.flexible(), spacing: 16),
                 GridItem(.flexible(), spacing: 16)
-            ], spacing: 16) {
+            ], spacing: 13) {
                 // Vencidas
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Vencidas")
@@ -75,7 +75,7 @@ struct FinancialSummaryCard: View {
             }
 
             GradientButton(
-                title: "Ver Extrato Completo",
+                title: "Segunda Via de Boleto",
                 action: {
                     // TODO: Navegar para extrato completo
                 }

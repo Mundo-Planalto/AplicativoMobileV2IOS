@@ -305,6 +305,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Mundo planalto Portal App/Mundo planalto Portal App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L2AA5G4SRT;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
@@ -350,6 +351,7 @@
 				CODE_SIGN_ENTITLEMENTS = "Mundo planalto Portal App/Mundo planalto Portal App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L2AA5G4SRT;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;

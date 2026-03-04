@@ -16,7 +16,8 @@ struct Mundo_planalto_Portal_AppApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     var body: some Scene {
         WindowGroup {
-            SplashScreenWithTimer()   // nova view que gerencia o timer
+            SplashScreenWithTimer()
+                .environmentObject(AppState.shared)
         }
     }
 }
@@ -107,25 +108,30 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 }
 
-// Nova view que cuida do splash + timer
+// Nova view que cuida do splash + timer (iPhone e iPad)
 struct SplashScreenWithTimer: View {
+    @EnvironmentObject private var appState: AppState
     @State private var isSplashVisible = true
-    
+
     var body: some View {
-        if isSplashVisible {
-            SplashView()
-                .onAppear {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        withAnimation {
-                            isSplashVisible = false
+        Group {
+            if isSplashVisible {
+                SplashView()
+                    .environmentObject(appState)
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            withAnimation {
+                                isSplashVisible = false
+                            }
                         }
                     }
-                }
-                .onDisappear {
-                    AppState.shared.checkInitialLoginState()
-                }
-        } else {
-            ContentView()
+                    .onDisappear {
+                        AppState.shared.checkInitialLoginState()
+                    }
+            } else {
+                ContentView()
+            }
         }
+        .preferredColorScheme(appState.isDarkTheme ? .dark : .light)
     }
 }

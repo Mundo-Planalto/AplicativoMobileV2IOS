@@ -27,12 +27,22 @@ class DetalhesObraViewModel: ObservableObject {
         do {
             let dtos = try await EmpreendimentosService.shared.getVentureUpdates(ventureId: ventureId)
             updates = dtos.map { dto in
-                VentureUpdate(
+                let imgUrl = dto.imageUrl.flatMap { s in
+                    let full = EmpreendimentosService.mediaURL(for: s)
+                    return full.isEmpty ? nil : full
+                }
+                let vidUrl = dto.videoUrl.flatMap { s in
+                    let full = EmpreendimentosService.mediaURL(for: s)
+                    return full.isEmpty ? nil : full
+                }
+                return VentureUpdate(
                     id: "\(dto.id)",
                     date: formatPostDate(dto.postDate),
                     title: dto.title,
                     description: dto.content,
-                    images: [dto.imageUrl].compactMap { $0 },
+                    images: imgUrl.map { [$0] } ?? [],
+                    imageUrl: imgUrl,
+                    videoUrl: vidUrl,
                     isCompleted: false
                 )
             }

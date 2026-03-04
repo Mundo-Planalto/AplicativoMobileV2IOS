@@ -68,7 +68,9 @@ class DashboardViewModel: ObservableObject {
             overdueAmount: 0,
             upcomingAmount: 0,
             overdueInstallments: 0,
-            totalAmount: 0
+            totalAmount: 0,
+            nextDueDate: nil,
+            nextDueValue: 0
         )
         mainVenture = nil
         notices = []

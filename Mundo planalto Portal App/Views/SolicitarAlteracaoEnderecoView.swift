@@ -177,4 +177,5 @@ struct SolicitarAlteracaoEnderecoView: View {
 #Preview {
     SolicitarAlteracaoEnderecoView()
         .environmentObject(AppState.shared)
+        .presentationDetents([.fraction(0.9), .large])  // teste aqui no preview
 }

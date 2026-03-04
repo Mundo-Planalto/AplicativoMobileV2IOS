@@ -75,8 +75,8 @@ class ExtratoViewModel: ObservableObject {
     private func loadFinancialStatementFallback() {
         let currentYear = Calendar.current.component(.year, from: Date())
         allItems = [
-            FinancialStatementItem(id: "1", ventureName: "Residencial Parque das Flores", installmentNumber: "1/24", parcela: "1/24", dueDate: "15/01/\(currentYear)", amount: 1250.00, status: .paid),
-            FinancialStatementItem(id: "2", ventureName: "Residencial Parque das Flores", installmentNumber: "2/24", parcela: "2/24", dueDate: "15/02/\(currentYear)", amount: 1250.00, status: .upcoming),
+            FinancialStatementItem(id: "1", ventureName: "Residencial Parque das Flores", installmentNumber: "1/24", parcela: "1/24", dueDate: "15/01/\(currentYear)", amount: 1250.00, status: .paid, generatedBillet: true),
+            FinancialStatementItem(id: "2", ventureName: "Residencial Parque das Flores", installmentNumber: "2/24", parcela: "2/24", dueDate: "15/02/\(currentYear)", amount: 1250.00, status: .upcoming, generatedBillet: true),
         ]
         applyFilter()
     }
@@ -93,12 +93,51 @@ class ExtratoViewModel: ObservableObject {
 
     private func applyFilter() {
         var items = allItems
+        // 1) Somente registros com boleto gerado
+        items = items.filter { $0.generatedBillet == true }
+        // 2) Aba selecionada: A Vencer / Pagas / Vencidas
         if let status = selectedFilter.status {
             items = items.filter { $0.status == status }
         }
+        // 3) Filtro de empreendimento (modal)
         if filtroEmpreendimento == .hardRock {
             items = items.filter { $0.ventureName.contains("Hard Rock") || $0.ventureName.contains("Gramado") }
         }
+        // 4) Filtro de período (modal): vencimento dentro do intervalo (últimos X dias/meses/ano até hoje)
+        if filtroPeriodo != .todos {
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+            let endDate = calendar.date(byAdding: .day, value: 1, to: today) ?? today
+            let startDate: Date? = {
+                switch filtroPeriodo {
+                case .todos: return nil
+                case .ultimos30: return calendar.date(byAdding: .day, value: -30, to: today)
+                case .ultimos90: return calendar.date(byAdding: .day, value: -90, to: today)
+                case .ultimos6Meses: return calendar.date(byAdding: .month, value: -6, to: today)
+                case .ultimoAno: return calendar.date(byAdding: .year, value: -1, to: today)
+                }
+            }()
+            if let start = startDate {
+                items = items.filter { item in
+                    guard let due = parseDueDate(item.dueDate) else { return true }
+                    let dueStart = calendar.startOfDay(for: due)
+                    return dueStart >= start && dueStart < endDate
+                }
+            }
+        }
         filteredItems = items
+    }
+
+    /// Converte string de vencimento (dd/MM/yyyy ou yyyy-MM-dd) em Date.
+    private func parseDueDate(_ dueDate: String) -> Date? {
+        let trimmed = dueDate.trimmingCharacters(in: .whitespaces)
+        let fmtBr = DateFormatter()
+        fmtBr.dateFormat = "dd/MM/yyyy"
+        fmtBr.locale = Locale(identifier: "pt_BR")
+        if let d = fmtBr.date(from: trimmed) { return d }
+        let fmtIso = DateFormatter()
+        fmtIso.dateFormat = "yyyy-MM-dd"
+        fmtIso.locale = Locale(identifier: "en_US_POSIX")
+        return fmtIso.date(from: trimmed)
     }
 }

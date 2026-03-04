@@ -12,7 +12,7 @@ struct InformeRendimentosDetailView: View {
     let data: InformeRendimentosData
     @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
-    @State private var shareItem: Any? = nil
+    @State private var shareActivityItems: [Any] = []
     @State private var showShareSheet = false
     @State private var showSaveAlert = false
     @State private var saveMessage = ""
@@ -58,7 +58,7 @@ struct InformeRendimentosDetailView: View {
     }
 
     private func shareInforme() {
-        shareItem = informeAsText()
+        shareActivityItems = [informeAsText()]
         showShareSheet = true
     }
 
@@ -72,7 +72,7 @@ struct InformeRendimentosDetailView: View {
         let temp = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         do {
             try pdfData.write(to: temp)
-            shareItem = temp
+            shareActivityItems = [temp]
             showShareSheet = true
         } catch {
             saveMessage = "Não foi possível salvar o PDF."
@@ -216,7 +216,7 @@ struct InformeRendimentosDetailView: View {
                             } label: {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.down.doc.fill")
-                                    Text("Instalar PDF")
+                                    Text("Baixar PDF")
                                         .fontWeight(.semibold)
                                 }
                                 .foregroundColor(.white)
@@ -236,7 +236,7 @@ struct InformeRendimentosDetailView: View {
         }
         .navigationBarBackButtonHidden(true)
         .sheet(isPresented: $showShareSheet) {
-            ShareSheet(activityItems: (shareItem as? String).map { [$0 as Any] } ?? (shareItem as? URL).map { [$0 as Any] } ?? [])
+            ShareSheet(activityItems: shareActivityItems)
         }
         .alert("Informe", isPresented: $showSaveAlert) {
             Button("OK") { saveMessage = "" }

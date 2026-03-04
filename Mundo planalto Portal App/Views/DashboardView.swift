@@ -95,6 +95,8 @@ struct DashboardView: View {
                     }
                 }
             }
+            .presentationDetents([.height(410)])
+            .presentationDragIndicator(.visible)
         }
         .alert("Solicitação de Atendimento", isPresented: $showSupportAlert) {
             Button("OK") { supportAlertMessage = nil }

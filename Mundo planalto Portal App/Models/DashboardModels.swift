@@ -18,6 +18,17 @@ struct FinancialSummary: Codable {
     let upcomingAmount: Double
     let overdueInstallments: Int
     let totalAmount: Double
+    let nextDueDate: String?
+    let nextDueValue: Double
+
+    init(overdueAmount: Double, upcomingAmount: Double, overdueInstallments: Int, totalAmount: Double, nextDueDate: String? = nil, nextDueValue: Double = 0) {
+        self.overdueAmount = overdueAmount
+        self.upcomingAmount = upcomingAmount
+        self.overdueInstallments = overdueInstallments
+        self.totalAmount = totalAmount
+        self.nextDueDate = nextDueDate
+        self.nextDueValue = nextDueValue
+    }
 }
 
 struct Venture: Identifiable, Codable, Hashable {
@@ -26,6 +37,17 @@ struct Venture: Identifiable, Codable, Hashable {
     let imageUrl: String
     let progress: Double // 0.0 to 1.0
     let lastUpdate: String
+    /// Book de fotos/vídeos do empreendimento (YouTube, imagem, vídeo)
+    let photoBook: [PhotoBookItem]?
+
+    init(id: String, name: String, imageUrl: String, progress: Double, lastUpdate: String, photoBook: [PhotoBookItem]? = nil) {
+        self.id = id
+        self.name = name
+        self.imageUrl = imageUrl
+        self.progress = progress
+        self.lastUpdate = lastUpdate
+        self.photoBook = photoBook
+    }
 
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -34,6 +56,15 @@ struct Venture: Identifiable, Codable, Hashable {
     static func == (lhs: Venture, rhs: Venture) -> Bool {
         lhs.id == rhs.id
     }
+}
+
+/// Item do book de fotos: imagem, vídeo ou link YouTube
+struct PhotoBookItem: Identifiable, Codable, Hashable {
+    let id: Int
+    let photoUrl: String
+    let mediaType: String
+    let youtubeUrl: String?
+    let createdAt: String?
 }
 
 struct Notice: Identifiable, Codable, Hashable {
@@ -82,6 +113,8 @@ struct VentureUpdate: Identifiable, Codable {
     let title: String
     let description: String
     let images: [String]
+    let imageUrl: String?
+    let videoUrl: String?
     let isCompleted: Bool
 }
 
@@ -100,8 +133,10 @@ struct FinancialStatementItem: Identifiable, Codable {
     let installmentId: Int?
     let isEsolution: Bool?
     let esolutionBoletoId: Int?
+    /// Indica se o boleto já foi gerado pelo sistema (false/nil = precisa solicitar no WhatsApp, não exibir).
+    let generatedBillet: Bool?
 
-    init(id: String, ventureName: String, installmentNumber: String, parcela: String, dueDate: String, amount: Double, status: PaymentStatus, contractNumber: String? = nil, billReceivableId: Int? = nil, installmentId: Int? = nil, isEsolution: Bool? = nil, esolutionBoletoId: Int? = nil) {
+    init(id: String, ventureName: String, installmentNumber: String, parcela: String, dueDate: String, amount: Double, status: PaymentStatus, contractNumber: String? = nil, billReceivableId: Int? = nil, installmentId: Int? = nil, isEsolution: Bool? = nil, esolutionBoletoId: Int? = nil, generatedBillet: Bool? = nil) {
         self.id = id
         self.ventureName = ventureName
         self.installmentNumber = installmentNumber
@@ -114,6 +149,7 @@ struct FinancialStatementItem: Identifiable, Codable {
         self.installmentId = installmentId
         self.isEsolution = isEsolution
         self.esolutionBoletoId = esolutionBoletoId
+        self.generatedBillet = generatedBillet
     }
 }
 

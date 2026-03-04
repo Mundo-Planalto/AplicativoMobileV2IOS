@@ -160,7 +160,7 @@ struct PerfilView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $navigateToSistema) {
             SistemaView()
-        }
+        }/*
         .sheet(isPresented: $showAlterarSenha) {
             // TODO: tela Alterar Senha
             Text("Alterar Senha")
@@ -168,7 +168,7 @@ struct PerfilView: View {
         .sheet(isPresented: $showEnderecos) {
             // TODO: tela Endereços
             Text("Endereços")
-        }
+        }*/
         .sheet(isPresented: $showSolicitarAlteracaoEndereco) {
             SolicitarAlteracaoEnderecoView()
                 .environmentObject(appState)

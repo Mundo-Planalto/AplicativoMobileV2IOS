@@ -8,19 +8,24 @@
 import SwiftUI
 
 struct EmpreendimentosView: View {
+    @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = EmpreendimentosViewModel()
     @State private var selectedVenture: Venture?
 
+    private var isDark: Bool { appState.isDarkTheme }
+    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
+    private var textP: Color { AppColors.textPrimary(dark: isDark) }
+
     var body: some View {
         ZStack {
-            AppColors.backgroundPrimary
+            bg
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 if viewModel.isLoading {
                     Spacer()
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentCyan))
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentBlue))
                     Spacer()
                 } else if let error = viewModel.error {
                     Spacer()
@@ -29,33 +34,38 @@ struct EmpreendimentosView: View {
                             .font(.system(size: 50))
                             .foregroundColor(.orange)
                         Text(error)
-                            .foregroundColor(.white)
+                            .foregroundColor(textP)
                             .multilineTextAlignment(.center)
                         Button("Tentar Novamente") {
                             Task {
                                 await viewModel.loadVentures()
                             }
                         }
-                        .foregroundColor(AppColors.accentCyan)
+                        .foregroundColor(AppColors.accentBlue)
                     }
                     .padding()
                     Spacer()
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            ForEach(viewModel.ventures) { venture in
-                                EmpreendimentoCard(venture: venture)
-                                    .padding(.horizontal)
-                                    .onTapGesture {
-                                        selectedVenture = venture
-                                    }
+                    GeometryReader { geometry in
+                        ScrollView {
+                            LazyVStack(spacing: 16) {
+                                ForEach(viewModel.ventures) { venture in
+                                    EmpreendimentoCard(venture: venture, isDark: isDark)
+                                        .padding(.horizontal, geometry.size.width * 0.025)
+                                        .onTapGesture {
+                                            selectedVenture = venture
+                                        }
+                                }
                             }
+                            .padding(.vertical)
                         }
-                        .padding(.vertical)
                     }
                 }
             }
         }
+        .navigationTitle("Meus Empreendimentos")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarColorScheme(isDark ? .dark : .light, for: .navigationBar)
         .navigationDestination(item: $selectedVenture) { venture in
             DetalhesObraView(venture: venture)
         }
@@ -70,5 +80,6 @@ struct EmpreendimentosView: View {
 #Preview {
     NavigationStack {
         EmpreendimentosView()
+            .environmentObject(AppState.shared)
     }
 }

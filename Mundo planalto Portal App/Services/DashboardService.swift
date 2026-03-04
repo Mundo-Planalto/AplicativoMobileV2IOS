@@ -72,7 +72,9 @@ class DashboardService {
             overdueAmount: dto.totalOverdue,
             upcomingAmount: dto.totalDue,
             overdueInstallments: dto.overdueCount,
-            totalAmount: dto.totalOverdue + dto.totalDue
+            totalAmount: dto.totalOverdue + dto.totalDue,
+            nextDueDate: dto.nextDueDate,
+            nextDueValue: dto.nextDueValue
         )
         let notices: [Notice] = (dto.recentAnnouncements ?? []).map { a in
             Notice(

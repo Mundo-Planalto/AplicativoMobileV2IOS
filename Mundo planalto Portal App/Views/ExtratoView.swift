@@ -143,6 +143,8 @@ struct ParcelaCardExtrato: View {
     var isDark: Bool = true
     @State private var loadingBoleto = false
     @State private var showBoletoNaoGeradoModal = false
+    @State private var showBoletoShareSheet = false
+    @State private var boletoShareItems: [Any] = []
 
     private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
     private var textP: Color { AppColors.textPrimary(dark: isDark) }
@@ -174,7 +176,8 @@ struct ParcelaCardExtrato: View {
         }
     }
 
-    private func openBoleto() {
+    /// Ver Boleto: abre a URL no navegador.
+    private func verBoleto() {
         guard item.billReceivableId != nil || item.esolutionBoletoId != nil else {
             showBoletoNaoGeradoModal = true
             return
@@ -187,6 +190,52 @@ struct ParcelaCardExtrato: View {
                 if let url = url {
                     UIApplication.shared.open(url)
                 } else {
+                    showBoletoNaoGeradoModal = true
+                }
+            }
+        }
+    }
+
+    /// Instalar documento: baixa o PDF e abre direto o recurso da Apple (share sheet) para o usuário escolher onde salvar.
+    private func instalarDocumento() {
+        guard item.billReceivableId != nil || item.esolutionBoletoId != nil else {
+            showBoletoNaoGeradoModal = true
+            return
+        }
+        loadingBoleto = true
+        Task {
+            let url = await ExtratoService.shared.getBoletoPdfUrl(item: item)
+            guard let webUrl = url else {
+                await MainActor.run {
+                    loadingBoleto = false
+                    showBoletoNaoGeradoModal = true
+                }
+                return
+            }
+            var request = URLRequest(url: webUrl)
+            if let token = PreferencesManager.shared.getAuthToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+            guard let (data, response) = try? await URLSession.shared.data(for: request),
+                  (response as? HTTPURLResponse)?.statusCode == 200 else {
+                await MainActor.run {
+                    loadingBoleto = false
+                    showBoletoNaoGeradoModal = true
+                }
+                return
+            }
+            let fileName = "Boleto_\(item.parcela.replacingOccurrences(of: "/", with: "-")).pdf"
+            let temp = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+            do {
+                try data.write(to: temp)
+                await MainActor.run {
+                    loadingBoleto = false
+                    boletoShareItems = [temp]
+                    showBoletoShareSheet = true
+                }
+            } catch {
+                await MainActor.run {
+                    loadingBoleto = false
                     showBoletoNaoGeradoModal = true
                 }
             }
@@ -238,11 +287,11 @@ struct ParcelaCardExtrato: View {
                 }
             }
 
-            // Botões: Ver Boleto | Gerar 2ª Via — somente para "A Vencer"
+            // Botões: Ver Boleto | Gerar 2ª Via (instalar) — somente para "A Vencer"
             if mostraBotoesBoleto {
                 HStack(spacing: 12) {
                     Button {
-                        openBoleto()
+                        verBoleto()
                     } label: {
                         HStack(spacing: 6) {
                             if loadingBoleto {
@@ -267,16 +316,26 @@ struct ParcelaCardExtrato: View {
                     .disabled(loadingBoleto)
 
                     Button {
-                        openBoleto()
+                        instalarDocumento()
                     } label: {
-                        Text("Gerar 2ª Via")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                            .background(AppColors.accentBlue)
-                            .cornerRadius(10)
+                        HStack(spacing: 6) {
+                            if loadingBoleto {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(0.8)
+                            } else {
+                                Image(systemName: "arrow.down.doc.fill")
+                                    .font(.caption)
+                            }
+                            Text("Gerar 2ª Via")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(AppColors.accentBlue)
+                        .cornerRadius(10)
                     }
                     .buttonStyle(PlainButtonStyle())
                     .disabled(loadingBoleto)
@@ -288,6 +347,9 @@ struct ParcelaCardExtrato: View {
         .cornerRadius(12)
         .sheet(isPresented: $showBoletoNaoGeradoModal) {
             BoletoNaoGeradoModalView(item: item, isDark: isDark, onDismiss: { showBoletoNaoGeradoModal = false })
+        }
+        .sheet(isPresented: $showBoletoShareSheet) {
+            ShareSheet(activityItems: boletoShareItems)
         }
     }
 }
@@ -484,9 +546,8 @@ struct FiltrarParcelasModal: View {
             }
         }
         .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(cardBg)
-        .cornerRadius(16)
-        .padding(40)
     }
 }
 

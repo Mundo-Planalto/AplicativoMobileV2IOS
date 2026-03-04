@@ -18,7 +18,7 @@ struct SolicitarAtendimentoModal: View {
     private var textS: Color { AppColors.textSecondary(dark: isDark) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Solicitar Atendimento")
                 .font(.title3)
                 .fontWeight(.bold)
@@ -29,20 +29,20 @@ struct SolicitarAtendimentoModal: View {
                 .foregroundColor(textS)
 
             TextField("Mensagem", text: $message, axis: .vertical)
-                .lineLimit(4...8)
-                .padding(12)
+                .lineLimit(3...6)
+                .padding(10)
                 .background(cardBg)
                 .cornerRadius(10)
                 .foregroundColor(textP)
 
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Button("Cancelar") {
                     dismiss()
                 }
                 .font(.headline)
                 .foregroundColor(AppColors.accentBlue)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 12)
 
                 Button("Enviar") {
                     Task {
@@ -53,13 +53,14 @@ struct SolicitarAtendimentoModal: View {
                 .font(.headline)
                 .foregroundColor(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? textS : .white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 12)
                 .background(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? cardBg : AppColors.accentBlue)
                 .cornerRadius(10)
                 .disabled(message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
-        .padding(24)
+        .padding(16)
+        .frame(maxWidth: .infinity)
         .background(AppColors.backgroundPrimary(dark: isDark))
     }
 }
