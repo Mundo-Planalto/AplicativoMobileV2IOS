@@ -92,7 +92,12 @@ class PreferencesManager {
     }
 
     func saveUserName(_ name: String) {
-        userDefaults.set(name, forKey: userNameKey)
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            userDefaults.removeObject(forKey: userNameKey)
+        } else {
+            userDefaults.set(trimmed, forKey: userNameKey)
+        }
         userDefaults.synchronize()
     }
 

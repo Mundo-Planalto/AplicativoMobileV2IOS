@@ -26,7 +26,8 @@ final class MembersRepositoryMock: MembersRepository {
 
     func card() async throws -> MemberCard {
         let demo = MemberInfo.demo
-        let nome = AppState.shared.isDemoSession ? demo.nome : (PreferencesManager.shared.getUserName() ?? demo.nome)
+        // Sessão real: nome do cliente logado (nunca o do usuário fictício).
+        let nome = AppState.shared.isDemoSession ? demo.nome : (PreferencesManager.shared.getUserName() ?? "")
         return MemberCard(
             name: nome,
             level: .founder,

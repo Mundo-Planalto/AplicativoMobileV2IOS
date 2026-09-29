@@ -29,14 +29,36 @@ class AppState: ObservableObject {
         // Verificar se há token válido salvo
         isLoggedIn = preferencesManager.hasValidSession()
         if isLoggedIn {
-            Task { await refreshAllUnreadBadges() }
+            Task {
+                await refreshUserNameIfNeeded()
+                await refreshAllUnreadBadges()
+            }
         }
     }
 
     func login() {
         // Token e CPF já foram salvos pelo LoginViewModel após login com sucesso na API
         isLoggedIn = true
-        Task { await refreshAllUnreadBadges() }
+        Task {
+            await refreshUserNameIfNeeded()
+            await refreshAllUnreadBadges()
+        }
+    }
+
+    /// Nome exibido nos headers e no cartão. Se o login não trouxe `user.name`,
+    /// busca em GET auth/me + customers/data. Nunca usa o nome do usuário de demonstração.
+    @MainActor
+    func refreshUserNameIfNeeded() async {
+        guard isLoggedIn, !isDemoSession else { return }
+        let saved = preferencesManager.getUserName()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if saved.isEmpty || saved == MemberInfo.demo.nome {
+            preferencesManager.saveUserName("")
+            if let profile = try? await ProfileService.shared.getProfile().profile,
+               !profile.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                preferencesManager.saveUserName(profile.name)
+                objectWillChange.send()
+            }
+        }
     }
 
     /// "Acessar demonstração": grava o token DEMO-HRVC e o usuário fictício, sem chamar a API.
@@ -59,8 +81,9 @@ class AppState: ObservableObject {
     var currentMember: MemberInfo {
         if isDemoSession { return MemberInfo.demo }
         let demo = MemberInfo.demo
+        let savedName = preferencesManager.getUserName() ?? ""
         return MemberInfo(
-            nome: preferencesManager.getUserName() ?? "",
+            nome: savedName == demo.nome ? "" : savedName,
             numeroMembro: demo.numeroMembro,
             nivel: demo.nivel,
             desde: demo.desde,
