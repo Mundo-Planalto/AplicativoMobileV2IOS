@@ -1,8 +1,9 @@
 //
 //  LoginViewModel.swift
-//  Mundo planalto Portal App
+//  Hard Rock Hotel & Vacation Club
 //
-//  Created by matheus ferreira on 26/01/26.
+//  Login real (POST auth/login) e entrada em modo demonstração (sem API).
+//  Apenas o token JWT é persistido (Keychain); a senha nunca é armazenada.
 //
 
 import Foundation
@@ -24,18 +25,16 @@ class LoginViewModel: ObservableObject {
 
     private let authService = AuthService.shared
     private var appState: AppState = AppState.shared
-    
+
+    /// CPF (11) ou CNPJ (14) e senha com pelo menos 6 caracteres.
     var isFormValid: Bool {
-        !cpf.isEmpty && !password.isEmpty && CPFMask.unformat(cpf).count == 11
+        CPFMask.isValidDocumentLength(cpf) && password.count >= 6
     }
-    
+
     func login() {
-        // Evita múltiplas tentativas simultâneas.
-        if case .loading = state {
-            return
-        }
+        if case .loading = state { return }
         guard isFormValid else {
-            state = .error("Por favor, preencha todos os campos corretamente")
+            state = .error("Informe um CPF/CNPJ válido e uma senha com pelo menos 6 caracteres.")
             return
         }
         state = .loading
@@ -43,30 +42,23 @@ class LoginViewModel: ObservableObject {
             do {
                 let response = try await authService.login(document: cpf, password: password)
 
-                if response.success {
-                    if let token = response.token {
-                        PreferencesManager.shared.saveAuthToken(token)
-                        PreferencesManager.shared.saveUserCpfCnpj(response.user?.document ?? CPFMask.unformat(cpf))
-                        PreferencesManager.shared.saveLoginCredentials(document: CPFMask.unformat(cpf), password: password)
-                    }
+                if response.success, let token = response.token, !token.isEmpty {
+                    PreferencesManager.shared.saveAuthToken(token)
+                    PreferencesManager.shared.saveUserCpfCnpj(response.user?.document ?? CPFMask.unformat(cpf))
                     if let user = response.user {
                         PreferencesManager.shared.saveUserId("\(user.id)")
                         if let name = user.name { PreferencesManager.shared.saveUserName(name) }
                     }
+                    password = ""
                     appState.login()
                     state = .idle
-                    print("[LoginViewModel] ✅ Login realizado com sucesso.")
                 } else {
                     let msg = response.message ?? "Usuário ou senha incorreta."
-                    print("[LoginViewModel] ❌ Login falhou (API): \(msg)")
                     state = .error(msg)
                 }
             } catch AuthError.invalidCredentials {
-                print("[LoginViewModel] ❌ Credenciais inválidas.")
                 state = .error("Usuário ou senha incorreta.")
             } catch {
-                print("[LoginViewModel] ❌ Erro ao fazer login: \(error)")
-                print("[LoginViewModel]    Tipo: \(type(of: error)), descrição: \(error.localizedDescription)")
                 state = .error(
                     AppErrorMapper.userMessage(
                         for: error,
@@ -76,12 +68,16 @@ class LoginViewModel: ObservableObject {
             }
         }
     }
-    
-    func formatCPF(_ text: String) -> String {
-        // Remove formatação existente antes de aplicar nova formatação
-        let unformatted = CPFMask.unformat(text)
-        // Limita a 11 dígitos
-        let limited = String(unformatted.prefix(11))
-        return CPFMask.format(limited)
+
+    /// Entra com o usuário fictício José R. Castro, sem chamar a API.
+    func loginDemo() {
+        if case .loading = state { return }
+        password = ""
+        state = .idle
+        appState.loginDemo()
+    }
+
+    func formatDocument(_ text: String) -> String {
+        CPFMask.format(text)
     }
 }

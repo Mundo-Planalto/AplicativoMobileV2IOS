@@ -64,7 +64,6 @@ class PrimeiroAcessoViewModel: ObservableObject {
                     if let token = response.token {
                         PreferencesManager.shared.saveAuthToken(token)
                         PreferencesManager.shared.saveUserCpfCnpj(CPFMask.unformat(cpf))
-                        PreferencesManager.shared.saveLoginCredentials(document: CPFMask.unformat(cpf), password: password)
                     }
 
                     state = .success

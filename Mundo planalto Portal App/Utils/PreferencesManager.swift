@@ -62,25 +62,9 @@ class PreferencesManager {
         userDefaults.synchronize()
     }
 
-    // MARK: - Login Credentials (Auto Reauth)
-    func saveLoginCredentials(document: String, password: String) {
-        let doc = document.trimmingCharacters(in: .whitespacesAndNewlines)
-        let pwd = password.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !doc.isEmpty, !pwd.isEmpty else { return }
-        _ = KeychainHelper.save(service: keychainService, account: keychainLoginDocumentAccount, value: doc)
-        _ = KeychainHelper.save(service: keychainService, account: keychainLoginPasswordAccount, value: pwd)
-    }
-
-    func getSavedLoginCredentials() -> (document: String, password: String)? {
-        guard let document = KeychainHelper.load(service: keychainService, account: keychainLoginDocumentAccount),
-              let password = KeychainHelper.load(service: keychainService, account: keychainLoginPasswordAccount),
-              !document.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return nil
-        }
-        return (document, password)
-    }
-
+    // MARK: - Credenciais legadas
+    /// Versões anteriores guardavam documento e senha no Keychain para relogin automático.
+    /// A senha nunca mais é persistida; este método só remove o que ficou de instalações antigas.
     func clearLoginCredentials() {
         KeychainHelper.delete(service: keychainService, account: keychainLoginDocumentAccount)
         KeychainHelper.delete(service: keychainService, account: keychainLoginPasswordAccount)

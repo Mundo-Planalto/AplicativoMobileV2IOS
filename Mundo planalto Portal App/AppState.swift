@@ -39,17 +39,59 @@ class AppState: ObservableObject {
         Task { await refreshAllUnreadBadges() }
     }
 
-    func logout() async {
-        do {
-            // Tentar fazer logout na API
-            let authService = AuthService.shared
-            _ = try await authService.logout()
-        } catch {
-            // Mesmo se falhar, continua com o logout local
-            print("Erro ao fazer logout remoto: \(error)")
-        }
+    /// "Acessar demonstração": grava o token DEMO-HRVC e o usuário fictício, sem chamar a API.
+    func loginDemo() {
+        let demo = MemberInfo.demo
+        preferencesManager.saveAuthToken(AppConfig.demoToken)
+        preferencesManager.saveUserId("demo")
+        preferencesManager.saveUserName(demo.nome)
+        preferencesManager.saveUserCpfCnpj("")
+        isLoggedIn = true
+    }
 
-        // Limpar todos os dados locais
+    /// Sessão de demonstração (token DEMO-HRVC no Keychain).
+    var isDemoSession: Bool {
+        preferencesManager.getAuthToken() == AppConfig.demoToken
+    }
+
+    /// Dados do membro para cartão e headers. Sem a API nova (GET members/me/card),
+    /// usa o usuário de demonstração ou o nome salvo no login real.
+    var currentMember: MemberInfo {
+        if isDemoSession { return MemberInfo.demo }
+        let demo = MemberInfo.demo
+        return MemberInfo(
+            nome: preferencesManager.getUserName() ?? "",
+            numeroMembro: demo.numeroMembro,
+            nivel: demo.nivel,
+            desde: demo.desde,
+            verifyUrl: demo.verifyUrl
+        )
+    }
+
+    /// Primeiro nome para os headers ("ROBSON SILVA" → "Robson").
+    var firstName: String {
+        HrNames.firstName(from: preferencesManager.getUserName())
+    }
+
+    func logout() async {
+        if !isDemoSession {
+            do {
+                _ = try await AuthService.shared.logout()
+            } catch {
+                // Mesmo se falhar, continua com o logout local
+                print("Erro ao fazer logout remoto: \(error)")
+            }
+        }
+        clearLocalSession()
+    }
+
+    /// 401 da API: token inválido/expirado → volta ao Login (docs/api-existente.md).
+    func handleUnauthorized() {
+        guard isLoggedIn, !isDemoSession else { return }
+        clearLocalSession()
+    }
+
+    private func clearLocalSession() {
         preferencesManager.clearAllData()
         unreadNoticeCount = 0
         unreadUpcomingBoletoCount = 0

@@ -1,24 +1,17 @@
 //
 //  LoginView.swift
-//  Mundo planalto Portal App
+//  Hard Rock Hotel & Vacation Club
 //
-//  Tela de login: CPF/CNPJ, senha, Esqueceu senha, Primeiro Acesso.
+//  Login: CPF/CNPJ e senha contra a API do portal, "Esqueci minha senha",
+//  "Primeiro acesso" e "Acessar demonstração" (usuário fictício, sem API).
 //
 
 import SwiftUI
-
-private let forgotPasswordURL = "https://portal.mundoplanalto.com.br/Account/ForgotPassword"
 
 struct LoginView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = LoginViewModel()
     @State private var navigateToRegister = false
-
-    private var isDark: Bool { appState.isDarkTheme }
-    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
-    private var textP: Color { AppColors.textPrimary(dark: isDark) }
-    private var textS: Color { AppColors.textSecondary(dark: isDark) }
-    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
 
     private var isLoading: Bool {
         if case .loading = viewModel.state { return true }
@@ -28,93 +21,125 @@ struct LoginView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                bg.ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: 24) {
-                        LogoMundoPlanaltoImageView(isDark: isDark, size: 64)
-                            .padding(.top, 40)
-                        Text("Mundo Planalto Portal")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(textP)
-                        Text("Bem-vindo de volta")
-                            .font(.subheadline)
-                            .foregroundColor(textS)
+                Color.hrBlack.ignoresSafeArea()
+                RadialGradient(colors: [Color.hrGold.opacity(0.10), .clear], center: .top, startRadius: 0, endRadius: 320)
+                    .ignoresSafeArea()
 
-                        VStack(spacing: 16) {
-                            CustomTextField(
+                ScrollView {
+                    VStack(spacing: 0) {
+                        HrWordmark()
+                            .padding(.top, 48)
+                            .padding(.bottom, 36)
+
+                        Text("Bem-vindo ao seu clube")
+                            .font(HrFont.screenTitle)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                        Text("Acesse com seu CPF/CNPJ e senha")
+                            .font(HrFont.body)
+                            .foregroundColor(.hrTextMuted)
+                            .padding(.top, 6)
+                            .padding(.bottom, 28)
+
+                        VStack(spacing: 12) {
+                            HrTextField(
                                 title: "CPF/CNPJ",
                                 icon: "doc.text",
                                 text: $viewModel.cpf,
-                                isNumeric: true,
-                                onTextChange: { viewModel.formatCPF($0) },
-                                useLightInputStyle: !isDark
+                                keyboard: .numberPad,
+                                contentType: .username,
+                                onTextChange: { viewModel.formatDocument($0) }
                             )
-                            .padding(.horizontal, 20)
-
-                            CustomTextField(
+                            HrTextField(
                                 title: "Senha",
-                                icon: "lock.fill",
+                                icon: "lock",
                                 text: $viewModel.password,
                                 isSecure: true,
-                                useLightInputStyle: !isDark
+                                contentType: .password
                             )
-                            .padding(.horizontal, 20)
+                        }
 
-                            Button {
-                                viewModel.login()
-                            } label: {
-                                Group {
-                                    if isLoading {
-                                        ProgressView()
-                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    } else {
-                                        Text("Entrar")
-                                            .fontWeight(.bold)
-                                    }
-                                }
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(AppColors.accentBlue)
-                                .cornerRadius(12)
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 8)
-                            .disabled(!viewModel.isFormValid || isLoading)
+                        if case .error(let message) = viewModel.state {
+                            errorCard(message)
+                                .padding(.top, 12)
+                                .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
 
-                            if let url = URL(string: forgotPasswordURL) {
-                                Link("Esqueceu sua senha?", destination: url)
-                                    .font(.subheadline)
-                                    .foregroundColor(textS)
+                        HrGoldButton(
+                            text: "Entrar",
+                            isLoading: isLoading,
+                            isEnabled: viewModel.isFormValid
+                        ) {
+                            viewModel.login()
+                        }
+                        .padding(.top, 20)
+
+                        VStack(spacing: 14) {
+                            if let url = URL(string: AppConfig.forgotPasswordURL) {
+                                Link("Esqueci minha senha", destination: url)
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.hrGoldLight)
                             }
+
+                            Rectangle()
+                                .fill(Color.hrGoldBorder)
+                                .frame(width: 60, height: 1)
 
                             Button {
                                 navigateToRegister = true
                             } label: {
-                                Text("Primeiro Acesso? Cadastre-se")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(AppColors.accentBlue)
+                                Text("Primeiro acesso")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.hrGoldLight)
                             }
-                            .padding(.top, 8)
 
-                            if case .error(let message) = viewModel.state {
-                                Text(message)
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                    .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 20)
-                                    .padding(.top, 8)
+                            Button {
+                                viewModel.loginDemo()
+                            } label: {
+                                Text("Acessar demonstração")
+                                    .font(.system(size: 12, weight: .regular))
+                                    .foregroundColor(.hrTextMuted)
+                                    .underline()
                             }
+                            .disabled(isLoading)
                         }
+                        .padding(.top, 24)
+                        .padding(.bottom, 32)
                     }
+                    .padding(.horizontal, HrMetrics.screenMargin)
+                    .animation(.easeOut(duration: 0.2), value: viewModel.state)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
+            .navigationBarHidden(true)
             .navigationDestination(isPresented: $navigateToRegister) {
                 PrimeiroAcessoView()
             }
         }
+    }
+
+    /// Erro em card vermelho translúcido.
+    private func errorCard(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.hrError)
+            Text(message)
+                .font(HrFont.caption)
+                .foregroundColor(.white)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: HrMetrics.buttonRadius, style: .continuous)
+                .fill(Color.hrError.opacity(0.14))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: HrMetrics.buttonRadius, style: .continuous)
+                .stroke(Color.hrError.opacity(0.5), lineWidth: 1)
+        )
     }
 }
 

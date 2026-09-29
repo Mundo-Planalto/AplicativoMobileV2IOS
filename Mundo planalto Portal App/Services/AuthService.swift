@@ -170,34 +170,19 @@ class AuthService {
         }
     }
 
-    /// Tenta recuperar sessão automaticamente com credenciais salvas.
-    /// Retorna true quando conseguiu obter novo token.
+    /// Chamado pelos serviços ao receber 401/403. O app não guarda senha, então não há
+    /// relogin automático: a sessão local é encerrada e o usuário volta ao Login.
+    /// Retorna sempre `false` (nenhum token novo foi obtido).
     func recoverSessionIfNeeded() async -> Bool {
         if let task = await recoveryCoordinator.runningTask() {
             return await task.value
         }
-
-        let task = Task<Bool, Never> { [weak self] in
-            guard let self else { return false }
-            guard let creds = PreferencesManager.shared.getSavedLoginCredentials() else { return false }
-            do {
-                let response = try await self.login(document: creds.document, password: creds.password)
-                guard response.success, let token = response.token, !token.isEmpty else { return false }
-
-                PreferencesManager.shared.saveAuthToken(token)
-                if let user = response.user {
-                    PreferencesManager.shared.saveUserId("\(user.id)")
-                    PreferencesManager.shared.saveUserCpfCnpj(user.document)
-                    if let name = user.name, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        PreferencesManager.shared.saveUserName(name)
-                    }
-                }
-                return true
-            } catch {
-                return false
-            }
+        let task = Task<Bool, Never> {
+            // Limpa credenciais que versões antigas do app possam ter deixado no Keychain.
+            PreferencesManager.shared.clearLoginCredentials()
+            await MainActor.run { AppState.shared.handleUnauthorized() }
+            return false
         }
-
         await recoveryCoordinator.setTask(task)
         let ok = await task.value
         await recoveryCoordinator.setTask(nil)

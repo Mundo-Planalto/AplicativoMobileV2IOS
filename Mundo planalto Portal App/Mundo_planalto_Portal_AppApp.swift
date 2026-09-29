@@ -29,6 +29,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                      launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Apenas Firebase e delegates no launch. Permissão de notificação é pedida depois (separada do login do usuário) para evitar timeout.
         HrAppearance.apply()
+        #if DEBUG
+        // Atalhos de teste: `-hrResetSession` encerra a sessão salva; `-hrDemo` entra em demonstração.
+        let args = ProcessInfo.processInfo.arguments
+        if args.contains("-hrResetSession") { PreferencesManager.shared.clearAllData() }
+        if args.contains("-hrDemo") { AppState.shared.loginDemo(); AppState.shared.isLoggedIn = false }
+        #endif
         FirebaseApp.configure()
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
