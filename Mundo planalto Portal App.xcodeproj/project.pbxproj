@@ -13,8 +13,6 @@
 		58C874F12F4F7B7700AC13D1 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 58C874F02F4F7B7700AC13D1 /* FirebaseAnalyticsCore */; };
 		58C874F32F4F7B7700AC13D1 /* FirebaseAnalyticsIdentitySupport in Frameworks */ = {isa = PBXBuildFile; productRef = 58C874F22F4F7B7700AC13D1 /* FirebaseAnalyticsIdentitySupport */; };
 		58C874F62F4F7BB200AC13D1 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 58C874F52F4F7BB200AC13D1 /* FirebaseMessaging */; };
-		58DC2CB5300901300003B5CF /* Development.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 58DC2CB4300901300003B5CF /* Development.xcconfig */; };
-		58DC2CB7300901620003B5CF /* Production.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 58DC2CB6300901620003B5CF /* Production.xcconfig */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -173,8 +171,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				58DC2CB5300901300003B5CF /* Development.xcconfig in Resources */,
-				58DC2CB7300901620003B5CF /* Production.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -193,6 +189,7 @@
 /* Begin XCBuildConfiguration section */
 		C58A39842F27870700ABBDD7 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58DC2CB4300901300003B5CF /* Development.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -254,6 +251,7 @@
 		};
 		C58A39852F27870700ABBDD7 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 58DC2CB6300901620003B5CF /* Production.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;

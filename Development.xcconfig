@@ -2,8 +2,11 @@
 //  Development.xcconfig
 //  Mundo planalto Portal App
 //
-//  Created by PlanaltoTI on 16/07/26.
+//  Configuração Debug. Enquanto a homologação (api.portal.mundoplanalto.com.br)
+//  não está no ar, o desenvolvimento usa a base de produção (autorizado em 29/09/2026).
+//  Quando a homologação subir, troque para a linha comentada abaixo.
+//  Em xcconfig "//" inicia comentário, por isso a URL usa "$()" no meio das barras.
 //
 
-// Configuration settings file format documentation can be found at:
-// https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
+API_BASE_URL = https:/$()/portal.mundoplanalto.com.br/api/
+// API_BASE_URL = https:/$()/api.portal.mundoplanalto.com.br/api/

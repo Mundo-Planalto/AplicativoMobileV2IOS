@@ -2,8 +2,8 @@
 //  Production.xcconfig
 //  Mundo planalto Portal App
 //
-//  Created by PlanaltoTI on 16/07/26.
+//  Ambiente de produção (configuração Release). Só com cliente real e cuidado.
+//  Em xcconfig "//" inicia comentário, por isso a URL usa "$()" no meio das barras.
 //
 
-// Configuration settings file format documentation can be found at:
-// https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
+API_BASE_URL = https:/$()/portal.mundoplanalto.com.br/api/
