@@ -23,6 +23,13 @@ class InformeRendimentosViewModel: ObservableObject {
 
     /// Carrega anos: extrato (dueDate + pagamento) e API incometax/years. Se o POST `financial/refresh` falhar, tenta extrato sem refresh.
     func loadAvailableYears(forceRefresh: Bool = true) async {
+        if AppState.shared.isDemoSession {
+            availableYears = ["2025", "2026"]
+            if selectedYear.isEmpty { selectedYear = "2026" }
+            isLoadingYears = false
+            statusMessage = "Na demonstração o informe não é gerado. Entre com sua conta para emitir o documento."
+            return
+        }
         isLoadingYears = true
         defer { isLoadingYears = false }
 
@@ -100,6 +107,10 @@ class InformeRendimentosViewModel: ObservableObject {
     }
 
     func generateReport() async {
+        if AppState.shared.isDemoSession {
+            statusMessage = "Na demonstração o informe não é gerado. Entre com sua conta para emitir o documento."
+            return
+        }
         guard !selectedYear.isEmpty, let yearInt = Int(selectedYear) else {
             error = "Selecione um ano para gerar o informe"
             return

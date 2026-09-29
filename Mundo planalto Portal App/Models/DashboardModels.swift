@@ -7,12 +7,6 @@
 
 import Foundation
 
-struct ClientInfo: Identifiable, Codable {
-    var id = UUID()
-    let name: String
-    let totalVentures: Int
-}
-
 struct FinancialSummary: Codable {
     let overdueAmount: Double
     let upcomingAmount: Double
@@ -39,14 +33,17 @@ struct Venture: Identifiable, Codable, Hashable {
     let lastUpdate: String
     /// Book de fotos/vídeos do empreendimento (YouTube, imagem, vídeo)
     let photoBook: [PhotoBookItem]?
+    /// Unidade do cliente (ex.: "Unidade 1208 • Torre A"). A API `ventures` ainda não devolve.
+    let unit: String?
 
-    init(id: String, name: String, imageUrl: String, progress: Double, lastUpdate: String, photoBook: [PhotoBookItem]? = nil) {
+    init(id: String, name: String, imageUrl: String, progress: Double, lastUpdate: String, photoBook: [PhotoBookItem]? = nil, unit: String? = nil) {
         self.id = id
         self.name = name
         self.imageUrl = imageUrl
         self.progress = progress
         self.lastUpdate = lastUpdate
         self.photoBook = photoBook
+        self.unit = unit
     }
 
     func hash(into hasher: inout Hasher) {
@@ -161,19 +158,4 @@ enum PaymentStatus: String, Codable {
     case paid
     case upcoming
     case overdue
-}
-
-struct MenuItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let subtitle: String
-    let iconName: String
-    let destination: AppDestination
-}
-
-enum AppDestination {
-    case ventures
-    case financial
-    case notices
-    case profile
 }

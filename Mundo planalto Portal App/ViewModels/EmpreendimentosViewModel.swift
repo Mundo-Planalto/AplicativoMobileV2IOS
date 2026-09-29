@@ -15,8 +15,24 @@ class EmpreendimentosViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
+    /// Empreendimento de demonstração (docs/telas.md).
+    static let demoVenture = Venture(
+        id: "demo-1",
+        name: "Hard Rock Hotel Gramado",
+        imageUrl: FinanceiroRepositoryMock.imagemGramado,
+        progress: 0,
+        lastUpdate: "",
+        photoBook: nil,
+        unit: "Unidade 1208 • Torre A"
+    )
+
     func loadVentures(forceRefresh: Bool = false) async {
         error = nil
+        if AppState.shared.isDemoSession {
+            ventures = [Self.demoVenture]
+            isLoading = false
+            return
+        }
 
         // Se não for refresh forçado, tenta renderizar imediatamente usando cache.
         if !forceRefresh,

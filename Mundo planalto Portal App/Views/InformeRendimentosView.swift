@@ -25,34 +25,9 @@ struct InformeRendimentosView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                HStack(spacing: 16) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(isDark ? .white : .primary)
-                    }
-                    Spacer()
-                    Text("Informe de Rendimentos")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(textP)
-                    Spacer()
-                    Color.clear.frame(width: 32, height: 32)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(bg)
-
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
-                        Text("Informe de Rendimentos")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(textP)
-
-                        Text("Selecione o ano para gerar o informe de rendimentos")
-                            .font(.subheadline)
-                            .foregroundColor(textS)
+                        HrBackHeader(titulo: "Informe de rendimentos", subtitulo: "Selecione o ano para gerar o informe de rendimentos")
 
                         Group {
                             if viewModel.isLoadingYears {
@@ -91,25 +66,9 @@ struct InformeRendimentosView: View {
                                 ScrollView(.horizontal, showsIndicators: false) {
                                     HStack(spacing: 12) {
                                         ForEach(viewModel.availableYears, id: \.self) { year in
-                                            Button {
+                                            HrChip(text: year, selected: viewModel.selectedYear == year) {
                                                 viewModel.selectYear(year)
-                                            } label: {
-                                                Text(year)
-                                                    .font(.subheadline)
-                                                    .fontWeight(.medium)
-                                                    .foregroundColor(viewModel.selectedYear == year ? .white : textP)
-                                                    .padding(.horizontal, 20)
-                                                    .padding(.vertical, 12)
-                                                    .background(
-                                                        RoundedRectangle(cornerRadius: 10)
-                                                            .fill(viewModel.selectedYear == year ? AppColors.accentBlue : cardBg)
-                                                    )
-                                                    .overlay(
-                                                        RoundedRectangle(cornerRadius: 10)
-                                                            .stroke(viewModel.selectedYear == year ? Color.clear : textS.opacity(0.4), lineWidth: 1)
-                                                    )
                                             }
-                                            .buttonStyle(PlainButtonStyle())
                                         }
                                     }
                                     .padding(.horizontal, 4)
@@ -133,35 +92,12 @@ struct InformeRendimentosView: View {
                                 .cornerRadius(12)
                         }
 
-                        Button {
+                        HrGoldButton(text: "Gerar informe", isLoading: viewModel.isLoading, isEnabled: !viewModel.selectedYear.isEmpty) {
                             Task { await viewModel.generateReport() }
-                        } label: {
-                            Text("Gerar Informe")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
-                                .background(
-                                    LinearGradient(
-                                        colors: [AppColors.accentBlue, AppColors.accentBlue.opacity(0.85)],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
-                                )
-                                .cornerRadius(12)
-                        }
-                        .disabled(viewModel.isLoading || viewModel.selectedYear.isEmpty)
-                        .opacity(viewModel.isLoading ? 0.7 : 1)
-                        .overlay {
-                            if viewModel.isLoading {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            }
                         }
                         .padding(.top, 8)
                     }
-                    .padding(20)
+                    .padding(HrMetrics.screenMargin)
                 }
             }
         }

@@ -66,6 +66,12 @@ class ExtratoViewModel: ObservableObject {
     func loadFinancialStatement(forceRefresh: Bool = false) async {
         isLoading = true
         error = nil
+        if AppState.shared.isDemoSession {
+            allItems = Self.demoItems()
+            applyFilter()
+            isLoading = false
+            return
+        }
         do {
             let items = try await ExtratoService.shared.getExtrato(
                 showPaid: true,
@@ -89,13 +95,38 @@ class ExtratoViewModel: ObservableObject {
         isLoading = false
     }
 
+    /// Erro de rede/sessão: mantém a lista vazia e mostra a mensagem.
     private func loadFinancialStatementFallback() {
-        let currentYear = Calendar.current.component(.year, from: Date())
-        allItems = [
-            FinancialStatementItem(id: "1", ventureName: "Residencial Parque das Flores", installmentNumber: "1/24", parcela: "1/24", dueDate: "15/01/\(currentYear)", amount: 1250.00, status: .paid, generatedBillet: true),
-            FinancialStatementItem(id: "2", ventureName: "Residencial Parque das Flores", installmentNumber: "2/24", parcela: "2/24", dueDate: "15/02/\(currentYear)", amount: 1250.00, status: .upcoming, generatedBillet: true),
-        ]
+        allItems = []
         applyFilter()
+    }
+
+    /// Demonstração: 48 parcelas de R$ 2.480,00 do Hard Rock Hotel Gramado, 28 pagas e 20 a vencer
+    /// a partir de 15/10/2026 (coerente com a tela Financeiro de docs/telas.md).
+    static func demoItems() -> [FinancialStatementItem] {
+        let cal = Calendar(identifier: .gregorian)
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "pt_BR")
+        fmt.dateFormat = "dd/MM/yyyy"
+        var comps = DateComponents(); comps.year = 2026; comps.month = 10; comps.day = 15
+        guard let firstUpcoming = cal.date(from: comps) else { return [] }
+        return (1...48).map { n in
+            let due = cal.date(byAdding: .month, value: n - 29, to: firstUpcoming) ?? firstUpcoming
+            let paid = n <= 28
+            let paidDate = paid ? cal.date(byAdding: .day, value: -2, to: due) : nil
+            return FinancialStatementItem(
+                id: "demo-\(n)",
+                ventureName: "Hard Rock Hotel Gramado",
+                installmentNumber: "\(n)/48",
+                parcela: "\(n)/48",
+                dueDate: fmt.string(from: due),
+                paymentDate: paidDate.map { fmt.string(from: $0) },
+                amount: 2480.00,
+                status: paid ? .paid : .upcoming,
+                contractNumber: "HRVC-8150",
+                generatedBillet: !paid
+            )
+        }
     }
 
     func setFilter(_ filter: ExtratoFilter) {

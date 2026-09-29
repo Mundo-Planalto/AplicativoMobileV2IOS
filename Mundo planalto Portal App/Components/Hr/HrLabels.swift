@@ -41,6 +41,8 @@ struct HrChip: View {
         Button(action: action) {
             Text(text)
                 .font(.system(size: 13, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundColor(selected ? .black : .hrGoldLight)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)

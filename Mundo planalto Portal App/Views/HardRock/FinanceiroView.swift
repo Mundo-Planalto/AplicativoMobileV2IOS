@@ -127,17 +127,25 @@ struct FinanceiroView: View {
     }
 
     private func parcelaRow(_ p: ParcelaResumo) -> some View {
-        HrListRow(icon: "calendar", titulo: p.vencimento, subtitulo: nil) {
-            HStack(spacing: 10) {
-                Text(p.valor)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.hrGold)
-                    .lineLimit(1)
-                    .fixedSize()
-                HrTag(text: p.status.texto, color: p.status == .vencida ? .hrError : .hrWarning)
-                    .fixedSize()
-            }
+        HStack(spacing: 12) {
+            HrIconBox(icon: "calendar")
+            Text(p.vencimento)
+                .font(HrFont.itemTitle)
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 8)
+            Text(p.valor)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundColor(.hrGold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            HrTag(text: p.status.texto, color: p.status == .vencida ? .hrError : .hrWarning)
+                .fixedSize()
         }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.hrSurface))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Color.hrGoldBorder, lineWidth: 1))
     }
 }
 

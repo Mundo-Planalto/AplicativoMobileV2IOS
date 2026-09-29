@@ -31,7 +31,6 @@ enum AppErrorMapper {
 
         switch error {
         case AuthError.networkError,
-             DashboardError.networkError,
              NewsError.networkError,
              EmpreendimentosError.networkError,
              ExtratoError.networkError,
@@ -39,8 +38,7 @@ enum AppErrorMapper {
              ProfileError.networkError,
              SystemError.networkError,
              PDFError.networkError,
-             SupportError.networkError,
-             AIError.networkError:
+             SupportError.networkError:
             return true
         default:
             return false

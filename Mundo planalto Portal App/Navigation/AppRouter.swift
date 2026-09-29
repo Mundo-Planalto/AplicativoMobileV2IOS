@@ -93,6 +93,7 @@ extension AppRoute {
         case "avisos": return .avisosNoticias
         case "politica": return .politicaPrivacidade
         case "sistema": return .sistema
+        case "obra": return .detalhesObra(EmpreendimentosViewModel.demoVenture)
         default: return nil
         }
     }

@@ -1,8 +1,6 @@
 //
 //  AvisosNoticiasViewModel.swift
-//  Mundo planalto Portal App
-//
-//  Created by matheus ferreira on 26/01/26.
+//  Hard Rock Hotel & Vacation Club
 //
 
 import Foundation
@@ -15,9 +13,27 @@ class AvisosNoticiasViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
+    /// Avisos de demonstração (sem API). Textos provisórios, ver docs/PENDENCIAS.md.
+    static let demoNotices: [AppNotice] = [
+        AppNotice(id: "demo-1", title: "Atualização da obra — Setembro de 2026",
+                  description: "O novo vídeo do acompanhamento da obra do Hard Rock Hotel Gramado já está disponível na aba Empreendimentos.",
+                  date: "28/09/2026", type: .notice),
+        AppNotice(id: "demo-2", title: "Programa Unity disponível para membros",
+                  description: "Cadastre-se no Hard Rock Unity e aproveite vantagens em hotéis, restaurantes e experiências no mundo todo.",
+                  date: "15/09/2026", type: .news),
+        AppNotice(id: "demo-3", title: "Collection Hard Rock: sua 2ª camiseta foi enviada",
+                  description: "Mantenha as parcelas em dia para desbloquear as próximas peças da coleção.",
+                  date: "02/09/2026", type: .notice)
+    ]
+
     func loadNotices() async {
         isLoading = true
         error = nil
+        if AppState.shared.isDemoSession {
+            notices = Self.demoNotices
+            isLoading = false
+            return
+        }
         do {
             let list = try await NewsService.shared.getAnnouncements()
             notices = list

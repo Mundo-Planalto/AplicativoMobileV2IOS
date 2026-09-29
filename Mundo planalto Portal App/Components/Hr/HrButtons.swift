@@ -21,6 +21,8 @@ struct HrGoldButton: View {
                 HStack(spacing: 6) {
                     Text(text)
                         .font(HrFont.buttonPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                     if trailingArrow {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .bold))
@@ -61,6 +63,8 @@ struct HrOutlineButton: View {
                 }
                 Text(text)
                     .font(HrFont.buttonSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
             .foregroundColor(isEnabled ? .hrGoldLight : .hrTextMuted)
             .frame(maxWidth: .infinity)

@@ -1,7 +1,7 @@
 # Pendências (iOS Hard Rock Hotel & Vacation Club)
 
 O que não está documentado em `docs/telas.md`, `docs/api-existente.md` ou `docs/openapi-hardrock.yaml`
-fica em mock e é registrado aqui, com a decisão tomada no iOS. Atualizado em 29/09/2026.
+fica em mock e é registrado aqui, com a decisão tomada no iOS. Atualizado em 29/09/2026 (após a etapa 5, telas herdadas).
 
 ## Ambiente e configuração
 
@@ -39,4 +39,9 @@ fica em mock e é registrado aqui, com a decisão tomada no iOS. Atualizado em 2
 | "Gramado • RS" com login real | A API `ventures` não devolve cidade/UF; o seletor de empreendimento omite a linha |
 | Filtro dos chips em Benefícios (Todos, Viagens, Gramado, Milhas) | Viagens = certificado + Unity; Gramado = parceiro + lista de parceiros; Milhas = milhas + Unity |
 | Push por tópico `user_{id}` | Ainda não inscrito no iOS (só `announcements`); e `POST /devices` aguarda o backend |
-| Sessão de demonstração nas telas herdadas (Extrato, Informe, Empreendimentos, Avisos) | Em construção na etapa 5 (mock para a demonstração) |
+| Vídeo da obra na demonstração ("Atualização da obra — Setembro de 2026") | URL provisória do YouTube (`jNQXAC9IVRw`) até a diretoria indicar o vídeo oficial do Hard Rock Hotel Gramado |
+| Extrato na demonstração | 48 parcelas de R$ 2.480,00 (28 pagas, 20 a vencer a partir de 15/10/2026); "Ver boleto"/"Gerar 2ª via" abrem o modal "Boleto não gerado" porque não há API |
+| Informe de rendimentos na demonstração | Mostra os anos 2025 e 2026 e a mensagem de que o documento só é gerado com login real |
+| Avisos e notícias na demonstração | 3 avisos fictícios (obra de setembro, Unity, Collection); textos provisórios, alinhar com o Android |
+| Termos de uso (Sistema) | Sem URL/conteúdo oficial; hoje abre o mesmo placeholder da Política de privacidade |
+| Push: toggle "Notificações push" em Sistema | Só grava a preferência local (`notifications_enabled`); não desinscreve dos tópicos FCM |

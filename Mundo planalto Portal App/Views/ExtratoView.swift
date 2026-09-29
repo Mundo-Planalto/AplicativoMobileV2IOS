@@ -9,147 +9,86 @@ import SwiftUI
 
 struct ExtratoView: View {
     @EnvironmentObject private var appState: AppState
-    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ExtratoViewModel()
 
-    private var isDark: Bool { appState.isDarkTheme }
-    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
-    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
-    private var textP: Color { AppColors.textPrimary(dark: isDark) }
-    private var textS: Color { AppColors.textSecondary(dark: isDark) }
-
     var body: some View {
-        ZStack {
-            bg
-                .ignoresSafeArea()
+        ScrollView {
+            VStack(alignment: .leading, spacing: HrMetrics.cardSpacing) {
+                HrBackHeader(titulo: "Extrato financeiro", subtitulo: "Parcelas, boletos e histórico de pagamentos")
 
-            VStack(spacing: 0) {
-                // Barra superior: voltar + título
-                HStack(spacing: 16) {
-                    Button { dismiss() } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(isDark ? .white : .primary)
-                    }
-                    Spacer()
-                    Text("Extrato Financeiro")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(textP)
-                    Spacer()
-                    Color.clear.frame(width: 32, height: 32)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(bg)
-
-                if viewModel.isLoading {
-                    Spacer()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentBlue))
-                    Spacer()
-                } else if let error = viewModel.error {
-                    Spacer()
-                    VStack(spacing: 16) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 50))
-                            .foregroundColor(.orange)
-                        Text(error)
-                            .foregroundColor(textP)
-                            .multilineTextAlignment(.center)
-                        Button("Tentar Novamente") {
-                            Task { await viewModel.loadFinancialStatement(forceRefresh: true) }
-                        }
-                        .foregroundColor(AppColors.accentBlue)
-                    }
-                    .padding()
-                    Spacer()
-                } else {
-                    // Abas: A Vencer | Pagas | Vencidas  +  Filtros
-                    HStack(alignment: .center, spacing: 0) {
-                        ForEach(viewModel.tabOptions, id: \.rawValue) { tab in
-                            Button {
+                ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(viewModel.tabOptions, id: \.rawValue) { tab in
+                        ZStack(alignment: .topTrailing) {
+                            HrChip(text: tab.rawValue, selected: viewModel.selectedFilter == tab) {
                                 viewModel.setFilter(tab)
                                 if tab == .aVencer || tab == .vencidas {
                                     appState.markBoletoTabAsSeen(tab, items: viewModel.allItems)
                                 }
-                            } label: {
-                                VStack(spacing: 6) {
-                                    HStack(spacing: 5) {
-                                        Text(tab.rawValue)
-                                            .font(.subheadline)
-                                            .fontWeight(viewModel.selectedFilter == tab ? .semibold : .regular)
-                                            .foregroundColor(viewModel.selectedFilter == tab ? AppColors.accentBlue : textS)
-                                        UnreadCountBadge(count: appState.unreadBoletoCount(for: tab))
-                                    }
-                                    Rectangle()
-                                        .fill(viewModel.selectedFilter == tab ? AppColors.accentBlue : Color.clear)
-                                        .frame(height: 2)
-                                }
-                                .frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-
-                        Button {
-                            viewModel.showFilterModal = true
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "line.3.horizontal.decrease.circle")
-                                    .font(.body)
-                                Text("Filtros")
-                                    .font(.subheadline)
+                            let count = appState.unreadBoletoCount(for: tab)
+                            if count > 0 {
+                                Text("\(count)")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 5).padding(.vertical, 2)
+                                    .background(Capsule().fill(Color.hrGoldLight))
+                                    .offset(x: 6, y: -6)
                             }
-                            .foregroundColor(AppColors.accentBlue)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(AppColors.textSecondary(dark: isDark).opacity(0.5), lineWidth: 1)
-                            )
-                        }
-                        .padding(.leading, 8)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
-                    .background(bg)
-
-                    ScrollView {
-                        if viewModel.filteredItems.isEmpty {
-                            VStack(spacing: 10) {
-                                Text("Boleto não gerado")
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(textP)
-                                Text("Não há registros para exibir nesta aba.")
-                                    .font(.subheadline)
-                                    .foregroundColor(textS)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 60)
-                            .padding(.horizontal, 20)
-                        } else {
-                            LazyVStack(spacing: 12) {
-                                ForEach(viewModel.filteredItems) { item in
-                                    ParcelaCardExtrato(
-                                        item: item,
-                                        isDark: isDark,
-                                        isUnread: appState.isBoletoUnread(item.id)
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
                         }
                     }
-                    .refreshable {
-                        await viewModel.loadFinancialStatement(forceRefresh: true)
-                        await appState.refreshUnreadBoletoCounts(from: viewModel.allItems)
+                    Spacer()
+                    Button {
+                        viewModel.showFilterModal = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "line.3.horizontal.decrease.circle").font(.system(size: 14, weight: .semibold))
+                            Text("Filtros").font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                        }
+                        .fixedSize()
+                        .foregroundColor(.hrGoldLight)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(RoundedRectangle(cornerRadius: HrMetrics.chipRadius, style: .continuous).stroke(Color.hrGold, lineWidth: 1))
+                    }
+                    .buttonStyle(HrPressStyle())
+                }
+                .padding(.horizontal, HrMetrics.screenMargin)
+                }
+                .padding(.horizontal, -HrMetrics.screenMargin)
+
+                if viewModel.isLoading && viewModel.allItems.isEmpty {
+                    HrCard { HStack { Spacer(); ProgressView().tint(.hrGold); Spacer() } }
+                } else if let error = viewModel.error, viewModel.allItems.isEmpty {
+                    HrCard {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(error).font(HrFont.body).foregroundColor(.white)
+                            HrOutlineButton(text: "Tentar novamente") { Task { await viewModel.loadFinancialStatement(forceRefresh: true) } }
+                        }
+                    }
+                } else if viewModel.filteredItems.isEmpty {
+                    HrCard {
+                        HStack(spacing: 12) {
+                            HrIconBox(icon: "doc.text")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Boleto não gerado").font(HrFont.itemTitle).foregroundColor(.white)
+                                Text("Não há registros para exibir nesta aba.").font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
+                            }
+                        }
+                    }
+                } else {
+                    ForEach(viewModel.filteredItems) { item in
+                        ParcelaCardExtrato(item: item, isUnread: appState.isBoletoUnread(item.id))
                     }
                 }
             }
+            .padding(.horizontal, HrMetrics.screenMargin)
+            .padding(.bottom, HrMetrics.scrollBottomInset)
         }
+        .refreshable {
+            await viewModel.loadFinancialStatement(forceRefresh: true)
+            await appState.refreshUnreadBoletoCounts(from: viewModel.allItems)
+        }
+        .hrScreen()
         .sheet(isPresented: $viewModel.showFilterModal) {
             FiltrarParcelasModal(
                 empreendimento: $viewModel.filtroEmpreendimento,
@@ -157,19 +96,17 @@ struct ExtratoView: View {
                 periodo: $viewModel.filtroPeriodo,
                 onCancel: { viewModel.showFilterModal = false },
                 onApply: { viewModel.applyFiltersFromModal() },
-                isDark: isDark
+                isDark: true
             )
+            .presentationBackground(Color.hrBlack)
         }
-        .onAppear {
-            Task {
-                await viewModel.loadFinancialStatement()
-                await appState.refreshUnreadBoletoCounts(from: viewModel.allItems)
-                if viewModel.selectedFilter == .aVencer || viewModel.selectedFilter == .vencidas {
-                    appState.markBoletoTabAsSeen(viewModel.selectedFilter, items: viewModel.allItems)
-                }
+        .task {
+            await viewModel.loadFinancialStatement()
+            await appState.refreshUnreadBoletoCounts(from: viewModel.allItems)
+            if viewModel.selectedFilter == .aVencer || viewModel.selectedFilter == .vencidas {
+                appState.markBoletoTabAsSeen(viewModel.selectedFilter, items: viewModel.allItems)
             }
         }
-        .navigationBarBackButtonHidden(true)
     }
 }
 
@@ -282,136 +219,69 @@ struct ParcelaCardExtrato: View {
         }
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Linha 1: nome + parcela  |  tag (A Vencer / Vencidas / Pagas)
-            HStack(alignment: .top) {
-                Text("\(item.ventureName) - \(item.parcela)")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(textP)
-                    .lineLimit(2)
-                Spacer()
-                HStack(spacing: 6) {
-                    if isUnread && mostraBotoesBoleto {
-                        Text("Novo")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(AppColors.accentBlue)
-                            .clipShape(Capsule())
-                    }
-                    Text(statusText(item.status))
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(statusTagColor(item.status))
-                        )
-                }
-            }
-
-            // Linha 2: Vencimento (esq)  |  Valor (dir)
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Vencimento")
-                        .font(.caption)
-                        .foregroundColor(textS)
-                    Text(item.dueDate)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(textP)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("Valor")
-                        .font(.caption)
-                        .foregroundColor(textS)
-                    Text(formatCurrency(item.amount))
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(textP)
-                }
-            }
-
-            if item.status == .paid {
-                let paymentDate = item.paymentDate?.trimmingCharacters(in: .whitespacesAndNewlines)
-                HStack(alignment: .top) {
-                    Text("Data de pagamento")
-                        .font(.caption)
-                        .foregroundColor(textS)
-                    Spacer()
-                    Text((paymentDate?.isEmpty == false) ? paymentDate! : "Não informada")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(textP)
-                }
-            }
-
-            // Botões: Ver Boleto | Gerar 2ª Via (instalar) — somente para "A Vencer"
-            if mostraBotoesBoleto {
-                HStack(spacing: 12) {
-                    Button {
-                        verBoleto()
-                    } label: {
-                        HStack(spacing: 6) {
-                            if loadingBoleto {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "eye.fill")
-                                    .font(.caption)
-                            }
-                            Text("Ver Boleto")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(AppColors.accentBlue)
-                        .cornerRadius(10)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .disabled(loadingBoleto)
-
-                    Button {
-                        instalarDocumento()
-                    } label: {
-                        HStack(spacing: 6) {
-                            if loadingBoleto {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "arrow.down.doc.fill")
-                                    .font(.caption)
-                            }
-                            Text("Gerar 2ª Via")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(AppColors.accentBlue)
-                        .cornerRadius(10)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .disabled(loadingBoleto)
-                }
-            }
-
+    private var statusColor: Color {
+        switch item.status {
+        case .paid: return .hrSuccess
+        case .upcoming: return .hrWarning
+        case .overdue: return .hrError
         }
-        .padding()
-        .background(cardBg)
-        .cornerRadius(12)
+    }
+
+    var body: some View {
+        HrCard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.ventureName)
+                            .font(HrFont.itemTitle)
+                            .foregroundColor(.white)
+                            .lineLimit(2)
+                        Text("Parcela \(item.parcela)")
+                            .font(HrFont.captionSmall)
+                            .foregroundColor(.hrTextMuted)
+                    }
+                    Spacer()
+                    HStack(spacing: 6) {
+                        if isUnread && mostraBotoesBoleto {
+                            HrTag(text: "Novo", filled: true, color: .hrGoldLight)
+                        }
+                        HrTag(text: statusText(item.status), color: statusColor)
+                    }
+                }
+
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Vencimento").font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
+                        Text(item.dueDate).font(HrFont.body).foregroundColor(.white)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Valor").font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
+                        Text(formatCurrency(item.amount))
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.hrGold)
+                    }
+                }
+
+                if item.status == .paid {
+                    let paymentDate = item.paymentDate?.trimmingCharacters(in: .whitespacesAndNewlines)
+                    HStack {
+                        Text("Data de pagamento").font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
+                        Spacer()
+                        Text((paymentDate?.isEmpty == false) ? paymentDate! : "Não informada")
+                            .font(HrFont.body)
+                            .foregroundColor(.white)
+                    }
+                }
+
+                if mostraBotoesBoleto {
+                    HStack(spacing: 8) {
+                        HrOutlineButton(text: "Ver boleto", icon: "eye", isEnabled: !loadingBoleto) { verBoleto() }
+                        HrGoldButton(text: "Gerar 2ª via", trailingArrow: false, isLoading: loadingBoleto) { instalarDocumento() }
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $showBoletoNaoGeradoModal) {
             BoletoNaoGeradoModalView(item: item, isDark: isDark, onDismiss: { showBoletoNaoGeradoModal = false })
         }
@@ -606,10 +476,10 @@ struct FiltrarParcelasModal: View {
                     onApply()
                 }
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(AppColors.accentBlue)
+                .background(HrGradient.gold)
                 .cornerRadius(10)
             }
         }

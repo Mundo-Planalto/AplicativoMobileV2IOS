@@ -10,13 +10,12 @@ import AVKit
 
 struct PhotoBookView: View {
     let items: [PhotoBookItem]
-    var isDark: Bool = true
     @Environment(\.dismiss) private var dismiss
 
-    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
-    private var textP: Color { AppColors.textPrimary(dark: isDark) }
-    private var textS: Color { AppColors.textSecondary(dark: isDark) }
-    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
+    private var bg: Color { Color.hrBlack }
+    private var textP: Color { Color.white }
+    private var textS: Color { Color.hrTextMuted }
+    private var cardBg: Color { Color.hrSurface }
 
     var body: some View {
         NavigationStack {
@@ -46,7 +45,8 @@ struct PhotoBookView: View {
                                         }
                                     }
                                     if item.mediaType == "image" {
-                                        RemoteImageView(urlString: item.photoUrl, useAuth: true)
+                                        Color.clear
+                                            .overlay(RemoteImageView(urlString: item.photoUrl, useAuth: true))
                                             .frame(height: 220)
                                             .clipped()
                                             .cornerRadius(12)
@@ -61,7 +61,7 @@ struct PhotoBookView: View {
                     }
                 }
             }
-            .navigationTitle("Book de Fotos")
+            .navigationTitle("Galeria de fotos")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

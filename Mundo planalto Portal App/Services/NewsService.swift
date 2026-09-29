@@ -42,6 +42,18 @@ struct NewsDetailResponse: Codable {
     let message: String?
 }
 
+/// Item de GET /api/announcements (antes declarado no DashboardService removido).
+struct AnnouncementDto: Codable {
+    let id: Int
+    let title: String
+    let content: String
+    let postDate: String
+    let imageUrl: String?
+    let targetCostCenterId: Int?
+    /// Tipo vindo da API para diferenciar aviso vs notícia ("notice" | "news" ou "aviso" | "noticia").
+    let type: String?
+}
+
 class NewsService {
     static let shared = NewsService()
     private init() {}

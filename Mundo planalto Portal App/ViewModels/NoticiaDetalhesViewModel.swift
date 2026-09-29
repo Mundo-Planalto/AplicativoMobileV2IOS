@@ -27,7 +27,9 @@ class NoticiaDetalhesViewModel: ObservableObject {
 
         do {
             // Carrega da API (lista) e filtra pelo id
-            let list = try await NewsService.shared.getAnnouncements()
+            let list = AppState.shared.isDemoSession
+                ? AvisosNoticiasViewModel.demoNotices
+                : try await NewsService.shared.getAnnouncements()
             if let found = list.first(where: { $0.id == noticeId }) {
                 notice = found
                 AppState.shared.markNoticeAsRead(noticeId)

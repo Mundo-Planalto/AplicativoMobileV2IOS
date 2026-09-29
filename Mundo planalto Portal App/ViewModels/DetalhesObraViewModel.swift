@@ -23,6 +23,24 @@ class DetalhesObraViewModel: ObservableObject {
     func loadVentureDetails() async {
         isLoading = true
         error = nil
+        if AppState.shared.isDemoSession {
+            // Vídeo de demonstração: URL provisória até a diretoria indicar o vídeo oficial (docs/PENDENCIAS.md).
+            updates = [
+                VentureUpdate(
+                    id: "demo-1",
+                    date: "Setembro de 2026",
+                    title: "Atualização da obra — Setembro de 2026",
+                    description: "Acompanhe o andamento das obras do Hard Rock Hotel Gramado no vídeo acima.",
+                    images: [],
+                    imageUrl: nil,
+                    videoUrl: nil,
+                    youtubeUrl: "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+                    isCompleted: false
+                )
+            ]
+            isLoading = false
+            return
+        }
         let ventureId = Int(venture.id) ?? 0
         do {
             let dtos = try await EmpreendimentosService.shared.getVentureUpdates(ventureId: ventureId)
