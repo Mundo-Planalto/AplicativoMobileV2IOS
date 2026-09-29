@@ -1,29 +1,48 @@
 //
 //  AppNavigation.swift
-//  Mundo planalto Portal App
+//  Hard Rock Hotel & Vacation Club
 //
-//  Created by matheus ferreira on 26/01/26.
+//  Abas e rotas empilhadas (docs/telas.md, seção "Navegação").
 //
 
 import Foundation
 
-enum TabItem: String, CaseIterable {
-    case home = "Início"
-    case ventures = "Empreendimentos"
-    case news = "Notícias"
-    case profile = "Perfil"
+/// As 5 abas da tab bar.
+enum TabItem: String, CaseIterable, Identifiable {
+    case inicio = "Início"
+    case beneficios = "Benefícios"
+    case ofertas = "Ofertas"
+    case empreendimentos = "Empreendimentos"
+    case perfil = "Perfil"
+
+    var id: String { rawValue }
 
     var iconName: String {
         switch self {
-        case .home: return "house.fill"
-        case .ventures: return "building.2.fill"
-        case .news: return "bell.fill"
-        case .profile: return "person.fill"
+        case .inicio: return "house.fill"
+        case .beneficios: return "gift.fill"
+        case .ofertas: return "tag.fill"
+        case .empreendimentos: return "building.2.fill"
+        case .perfil: return "person.fill"
         }
     }
 }
 
-/// Ações rápidas do Dashboard, na ordem do anexo: 4 linhas x 2 colunas.
+/// Telas empilhadas (push) sobre uma aba.
+enum AppRoute: Hashable {
+    case financeiro
+    case extrato
+    case informeRendimentos
+    case certificados
+    case unityMilhas
+    case cartaoDigital
+    case avisosNoticias
+    case politicaPrivacidade
+    case sistema
+    case detalhesObra(Venture)
+}
+
+/// Ações rápidas da Início antiga (mantidas até a tela nova entrar).
 enum DashboardQuickAction: String, Identifiable, CaseIterable {
     case viewStatement = "Ver Extrato"
     case trackWorks = "Acompanhar Obras"
