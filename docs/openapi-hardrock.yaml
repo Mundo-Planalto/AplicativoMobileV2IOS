@@ -1,0 +1,934 @@
+openapi: 3.0.3
+info:
+  title: Portal Mundo Planalto - API do app Hard Rock Hotel & Vacation Club
+  version: 1.0.0-draft
+  description: |
+    Contratos dos recursos NOVOS consumidos pelo app mobile (Android/iOS).
+    Convenções herdadas do backend MundoPlanaltoPortal (.NET 10 / EF Core / PostgreSQL):
+    - Prefixo `/api`, sem versionamento (padrão atual do portal).
+    - Autenticação Bearer JWT emitido por `POST /api/auth/login` (claims NameIdentifier, Name, Document).
+    - Envelope de resposta `ApiResponse<T>`: `{ "success": bool, "message": string|null, "data": T|null }`.
+    - Erros: 400 validação, 401 sem token, 403 sem permissão, 404 não encontrado, 429 rate limit, 500 `{ success:false, message:"Erro interno do servidor" }`.
+    - Escrita administrativa exige política `AdminOnly`; leitura do cliente exige `ClientOnly`.
+    - Datas em ISO 8601 UTC. Valores monetários em decimal com 2 casas. Documentos sem máscara.
+    Rotas públicas (sem token) estão marcadas com `security: []` e DEVEM ter `limit_req` no Nginx.
+servers:
+  - url: https://api.portal.mundoplanalto.com.br/api
+    description: Homologação (portal_homolog, porta 5083)
+  - url: https://portal.mundoplanalto.com.br/api
+    description: Produção (portal.service, porta 5082)
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Membro
+    description: Cartão, nível, perfil de viagem e preferências do cliente logado
+  - name: Cartão (público)
+    description: Verificação do QR Code pelo parceiro, sem login do cliente
+  - name: Benefícios
+    description: Parceiros, cupons e registro de uso
+  - name: Certificados
+    description: Certificado de viagem (nacional/internacional) com ocorrência no CRM
+  - name: Ofertas
+  - name: Milhas
+  - name: Collection
+    description: Gamificação do kit de 6 camisetas
+  - name: Empreendimentos
+  - name: Dispositivos
+    description: Registro de token FCM/APNs por usuário
+  - name: Unity
+  - name: Admin
+    description: Cadastros usados pelo backoffice (Marketing / Pós-vendas)
+
+paths:
+
+  # ------------------------------------------------------------------ Membro
+  /members/me/card:
+    get:
+      tags: [Membro]
+      summary: Cartão digital do cliente logado (nível, número, status e token do QR)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/MemberCard" }
+
+  /members/me/travel-profile:
+    get:
+      tags: [Membro]
+      summary: Perfil de viagem (onde mora e destinos preferidos)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/TravelProfile" }
+    put:
+      tags: [Membro]
+      summary: Cria ou atualiza o perfil de viagem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TravelProfile" }
+      responses:
+        "200": { description: Atualizado }
+        "400": { description: Validação (destinos entre 1 e 4, cidade obrigatória) }
+
+  /members/me/notification-preferences:
+    get:
+      tags: [Membro]
+      summary: Preferências de notificação (promoções de milhas, avisos)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/NotificationPreferences" }
+    put:
+      tags: [Membro]
+      summary: Atualiza preferências (toggle "receber novas promoções")
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationPreferences" }
+      responses:
+        "200": { description: Atualizado }
+
+  # ------------------------------------------------------- Cartão (público)
+  /card/verify/{token}:
+    get:
+      tags: [Cartão (público)]
+      summary: Verificação do QR Code pelo parceiro (status ativo/inativo em tempo real)
+      description: |
+        Chamado pela página web `https://portal.mundoplanalto.com.br/card/{token}` que abre ao escanear o QR.
+        Não devolve dados sensíveis: só primeiro nome, nível, status e contagem de usos.
+        Deve ter rate limit (Nginx `limit_req`, ex.: 30 req/min por IP).
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CardToken"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/CardVerification" }
+        "404": { description: Token inválido }
+
+  /card/verify/{token}/redemptions:
+    post:
+      tags: [Cartão (público)]
+      summary: Parceiro registra o uso de um benefício para este cartão
+      description: |
+        O parceiro informa seu código e PIN (entregues no cadastro). Incrementa a contagem de usos
+        e respeita `usageLimitPerCustomer` do parceiro. Base para os relatórios do Comercial/Marketing.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/CardToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [partnerCode, partnerPin]
+              properties:
+                partnerCode: { type: string, example: "LUGANO" }
+                partnerPin: { type: string, example: "4821" }
+                note: { type: string, nullable: true }
+      responses:
+        "200":
+          description: Uso registrado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/BenefitRedemption" }
+        "403": { description: Cliente inativo/inadimplente ou PIN inválido }
+        "409": { description: Limite de usos atingido }
+
+  # ------------------------------------------------------------ Benefícios
+  /partners:
+    get:
+      tags: [Benefícios]
+      summary: Parceiros ativos (Gramado no MVP)
+      parameters:
+        - in: query
+          name: city
+          schema: { type: string, example: "Gramado" }
+        - in: query
+          name: category
+          schema: { $ref: "#/components/schemas/PartnerCategory" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Partner" }
+
+  /partners/{id}:
+    get:
+      tags: [Benefícios]
+      summary: Detalhe do parceiro (condições, cupom, endereço)
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/Partner" }
+        "404": { description: Não encontrado }
+
+  /partners/{id}/coupon:
+    post:
+      tags: [Benefícios]
+      summary: Cliente gera/recupera o cupom do parceiro ("Ver voucher")
+      description: Registra a intenção de uso; o uso efetivo é confirmado pelo parceiro via QR.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/Coupon" }
+        "403": { description: Cliente inativo }
+        "409": { description: Limite de usos atingido }
+
+  /members/me/redemptions:
+    get:
+      tags: [Benefícios]
+      summary: Utilizações recentes do cliente (tela do cartão)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/BenefitRedemption" }
+
+  # ---------------------------------------------------------- Certificados
+  /certificates/requests:
+    get:
+      tags: [Certificados]
+      summary: Solicitações de certificado do cliente
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/CertificateRequest" }
+    post:
+      tags: [Certificados]
+      summary: Solicita um código de certificado (gera ocorrência no CRM para o Pós-vendas)
+      description: Backend cria um incidente no Dynamics via `DynamicsService` e guarda `crmIncidentId`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type]
+              properties:
+                type: { $ref: "#/components/schemas/CertificateType" }
+                preferredDestination: { type: string, nullable: true, example: "Gramado" }
+                preferredPeriod: { type: string, nullable: true, example: "2027-01" }
+                notes: { type: string, nullable: true }
+      responses:
+        "201":
+          description: Criada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/CertificateRequest" }
+        "409": { description: Já existe solicitação em andamento do mesmo tipo }
+
+  /certificates/requests/{id}:
+    get:
+      tags: [Certificados]
+      summary: Status de uma solicitação
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/CertificateRequest" }
+
+  # --------------------------------------------------------------- Ofertas
+  /offers:
+    get:
+      tags: [Ofertas]
+      summary: Ofertas e campanhas ativas
+      parameters:
+        - in: query
+          name: category
+          schema: { $ref: "#/components/schemas/OfferCategory" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Offer" }
+
+  /offers/{id}:
+    get:
+      tags: [Ofertas]
+      summary: Detalhe da oferta
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/Offer" }
+
+  # ---------------------------------------------------------------- Milhas
+  /members/me/miles:
+    get:
+      tags: [Milhas]
+      summary: Saldo e histórico de milhas do cliente
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/MilesAccount" }
+
+  /miles/offers:
+    get:
+      tags: [Milhas]
+      summary: Ofertas de milhas capturadas pelo robô (grupos de WhatsApp)
+      description: |
+        Alimentado pelo robô (servidor separado) via `POST /admin/miles/offers`.
+        Quando `TravelProfile` existir, o backend filtra por destino preferido; senão devolve todas.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/MilesOffer" }
+
+  # ------------------------------------------------------------ Collection
+  /members/me/collection:
+    get:
+      tags: [Collection]
+      summary: Status das 6 camisetas do kit Collection
+      description: |
+        Regra (a confirmar por escrito): contrato de 6 semanas; camiseta 1 desbloqueia com a entrada (5%),
+        as demais a cada parcela paga em dia, na ordem. Status `sent` quando o Pós-vendas registra o envio.
+        Fonte das parcelas: `FinancialItemsCache` (IsPaid/PaidDate) por contrato.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/CollectionStatus" }
+
+  # -------------------------------------------------------- Empreendimentos
+  /ventures/{id}/videos:
+    get:
+      tags: [Empreendimentos]
+      summary: Vídeos de atualização da obra (YouTube) do empreendimento
+      description: Pode reaproveitar `VenturePhoto` com `MediaType = "video"` e `YoutubeUrl`.
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/VentureVideo" }
+
+  # ----------------------------------------------------------- Dispositivos
+  /devices:
+    post:
+      tags: [Dispositivos]
+      summary: Registra (ou renova) o token de push do dispositivo do usuário logado
+      description: Permite push direcionado por usuário (hoje o backend só envia por tópico). Idempotente por token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DeviceRegistration" }
+      responses:
+        "200": { description: Registrado }
+
+  /devices/{token}:
+    delete:
+      tags: [Dispositivos]
+      summary: Remove o token (logout / desinstalação)
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Removido }
+
+  # ------------------------------------------------------------------ Unity
+  /unity/interest:
+    post:
+      tags: [Unity]
+      summary: Registra que o cliente clicou em "Cadastrar no Unity" (lead para o CRM)
+      description: Cria atividade/lead no Dynamics para o Marketing acompanhar; o app abre o site do programa em seguida.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: object
+                        properties:
+                          registrationUrl: { type: string, format: uri, example: "https://www.hardrock.com/unity" }
+                          crmActivityId: { type: string, nullable: true }
+
+  # ------------------------------------------------------------------ Admin
+  /admin/partners:
+    get:
+      tags: [Admin]
+      summary: Lista todos os parceiros (inclusive inativos)
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Admin]
+      summary: Cadastra parceiro (com código e PIN para o registro de uso)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerUpsert" }
+      responses:
+        "201": { description: Criado }
+  /admin/partners/{id}:
+    put:
+      tags: [Admin]
+      summary: Atualiza parceiro
+      parameters: [ { $ref: "#/components/parameters/Id" } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PartnerUpsert" }
+      responses:
+        "200": { description: Atualizado }
+    delete:
+      tags: [Admin]
+      summary: Desativa parceiro (soft delete, padrão do portal)
+      parameters: [ { $ref: "#/components/parameters/Id" } ]
+      responses:
+        "200": { description: Desativado }
+
+  /admin/offers:
+    post:
+      tags: [Admin]
+      summary: Cadastra oferta/campanha
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferUpsert" }
+      responses:
+        "201": { description: Criada }
+  /admin/offers/{id}:
+    put:
+      tags: [Admin]
+      summary: Atualiza oferta
+      parameters: [ { $ref: "#/components/parameters/Id" } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OfferUpsert" }
+      responses:
+        "200": { description: Atualizada }
+    delete:
+      tags: [Admin]
+      summary: Desativa oferta
+      parameters: [ { $ref: "#/components/parameters/Id" } ]
+      responses:
+        "200": { description: Desativada }
+
+  /admin/members/{customerUserId}/level:
+    put:
+      tags: [Admin]
+      summary: Define o nível do cliente (Founder, Legacy, Discovery)
+      parameters:
+        - in: path
+          name: customerUserId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [level]
+              properties:
+                level: { $ref: "#/components/schemas/MemberLevel" }
+                memberSince: { type: string, format: date, nullable: true }
+      responses:
+        "200": { description: Atualizado }
+
+  /admin/certificates/requests/{id}/status:
+    put:
+      tags: [Admin]
+      summary: Pós-vendas atualiza o status e informa o código emitido
+      parameters: [ { $ref: "#/components/parameters/Id" } ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: "#/components/schemas/CertificateStatus" }
+                certificateCode: { type: string, nullable: true }
+                adminNotes: { type: string, nullable: true }
+      responses:
+        "200": { description: Atualizado }
+
+  /admin/collection/{customerUserId}/items/{index}/shipped:
+    post:
+      tags: [Admin]
+      summary: Pós-vendas registra o envio de uma camiseta
+      parameters:
+        - in: path
+          name: customerUserId
+          required: true
+          schema: { type: integer }
+        - in: path
+          name: index
+          required: true
+          schema: { type: integer, minimum: 1, maximum: 6 }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                trackingCode: { type: string, nullable: true }
+      responses:
+        "200": { description: Registrado }
+
+  /admin/miles/offers:
+    post:
+      tags: [Admin]
+      summary: Robô de milhas publica uma oferta capturada (autenticado por API key do robô)
+      security:
+        - robotApiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MilesOfferUpsert" }
+      responses:
+        "201": { description: Publicada; backend dispara push para quem tem `milesOffers = true` }
+
+  /admin/miles/{customerUserId}/entries:
+    post:
+      tags: [Admin]
+      summary: Lança crédito/débito de milhas para um cliente
+      parameters:
+        - in: path
+          name: customerUserId
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, description]
+              properties:
+                amount: { type: integer, description: "Positivo credita, negativo debita" }
+                description: { type: string }
+      responses:
+        "201": { description: Lançado }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    robotApiKey:
+      type: apiKey
+      in: header
+      name: X-Robot-Key
+
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer }
+    CardToken:
+      in: path
+      name: token
+      required: true
+      description: Token opaco do cartão (não é o número do membro nem o CPF)
+      schema: { type: string, example: "HRVC-8f3a2c1e9b" }
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        data: { nullable: true }
+
+    MemberLevel:
+      type: string
+      enum: [Founder, Legacy, Discovery]
+
+    MemberStatus:
+      type: string
+      enum: [active, inactive]
+      description: "`inactive` quando inadimplente ou contrato cancelado (regra em FinancialDataCache.TotalOverdue e CustomerCostCenter.ContractSituation)"
+
+    MemberCard:
+      type: object
+      properties:
+        name: { type: string, example: "José R. Castro" }
+        level: { $ref: "#/components/schemas/MemberLevel" }
+        memberNumber: { type: string, example: "8150" }
+        memberSince: { type: string, format: date, example: "2026-01-15" }
+        status: { $ref: "#/components/schemas/MemberStatus" }
+        cardToken: { type: string, example: "HRVC-8f3a2c1e9b" }
+        verifyUrl: { type: string, format: uri, example: "https://portal.mundoplanalto.com.br/card/HRVC-8f3a2c1e9b" }
+        benefitUsageCount: { type: integer }
+
+    CardVerification:
+      type: object
+      properties:
+        status: { $ref: "#/components/schemas/MemberStatus" }
+        firstName: { type: string, example: "José" }
+        level: { $ref: "#/components/schemas/MemberLevel" }
+        memberNumber: { type: string, example: "8150" }
+        benefitUsageCount: { type: integer }
+        checkedAt: { type: string, format: date-time }
+
+    PartnerCategory:
+      type: string
+      enum: [gastronomia, hospedagem, experiencias, compras, outros]
+
+    ValidationType:
+      type: string
+      enum: [coupon, qr, card]
+      description: Como o desconto é validado no parceiro (padrão da reunião - cupom)
+
+    Partner:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string, example: "Chocolates Lugano" }
+        category: { $ref: "#/components/schemas/PartnerCategory" }
+        city: { type: string, example: "Gramado" }
+        state: { type: string, example: "RS" }
+        discountPercent: { type: integer, minimum: 10, example: 10 }
+        discountText: { type: string, example: "10% de desconto em toda a loja" }
+        terms: { type: string, nullable: true }
+        validationType: { $ref: "#/components/schemas/ValidationType" }
+        logoUrl: { type: string, format: uri, nullable: true }
+        imageUrl: { type: string, format: uri, nullable: true }
+        address: { type: string, nullable: true }
+        usageLimitPerCustomer: { type: integer, nullable: true, description: "null = ilimitado" }
+        validUntil: { type: string, format: date, nullable: true }
+        isActive: { type: boolean }
+
+    PartnerUpsert:
+      type: object
+      required: [name, category, city, state, discountPercent, discountText, validationType, partnerCode, partnerPin]
+      properties:
+        name: { type: string }
+        category: { $ref: "#/components/schemas/PartnerCategory" }
+        city: { type: string }
+        state: { type: string }
+        discountPercent: { type: integer, minimum: 10 }
+        discountText: { type: string }
+        terms: { type: string, nullable: true }
+        validationType: { $ref: "#/components/schemas/ValidationType" }
+        couponCode: { type: string, nullable: true, example: "HRVC-LUGANO10" }
+        partnerCode: { type: string, example: "LUGANO" }
+        partnerPin: { type: string, description: "Armazenar como hash" }
+        logoUrl: { type: string, nullable: true }
+        imageUrl: { type: string, nullable: true }
+        address: { type: string, nullable: true }
+        usageLimitPerCustomer: { type: integer, nullable: true }
+        validUntil: { type: string, format: date, nullable: true }
+        isActive: { type: boolean, default: true }
+
+    Coupon:
+      type: object
+      properties:
+        partnerId: { type: integer }
+        partnerName: { type: string }
+        code: { type: string, example: "HRVC-LUGANO10" }
+        discountText: { type: string }
+        validUntil: { type: string, format: date, nullable: true }
+        remainingUses: { type: integer, nullable: true }
+        instructions: { type: string, example: "Apresente este código no parceiro" }
+
+    BenefitRedemption:
+      type: object
+      properties:
+        id: { type: integer }
+        partnerId: { type: integer }
+        partnerName: { type: string }
+        discountText: { type: string }
+        usedAt: { type: string, format: date-time }
+        source: { type: string, enum: [qr, coupon, card] }
+
+    CertificateType:
+      type: string
+      enum: [national, international]
+
+    CertificateStatus:
+      type: string
+      enum: [requested, in_progress, issued, cancelled]
+
+    CertificateRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        type: { $ref: "#/components/schemas/CertificateType" }
+        status: { $ref: "#/components/schemas/CertificateStatus" }
+        protocol: { type: string, example: "CERT-2026-000123" }
+        crmIncidentId: { type: string, nullable: true }
+        preferredDestination: { type: string, nullable: true }
+        preferredPeriod: { type: string, nullable: true }
+        certificateCode: { type: string, nullable: true, description: "Preenchido pelo Pós-vendas quando status = issued" }
+        requestedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time, nullable: true }
+
+    OfferCategory:
+      type: string
+      enum: [hospedagem, gastronomia, experiencias, milhas]
+
+    Offer:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string, example: "20% de desconto" }
+        subtitle: { type: string, example: "Restaurantes parceiros em Gramado" }
+        description: { type: string, nullable: true }
+        category: { $ref: "#/components/schemas/OfferCategory" }
+        imageUrl: { type: string, format: uri, nullable: true }
+        isFeatured: { type: boolean }
+        ctaLabel: { type: string, example: "Ver oferta" }
+        ctaUrl: { type: string, format: uri, nullable: true }
+        partnerId: { type: integer, nullable: true }
+        validFrom: { type: string, format: date, nullable: true }
+        validUntil: { type: string, format: date, nullable: true }
+
+    OfferUpsert:
+      type: object
+      required: [title, subtitle, category]
+      properties:
+        title: { type: string }
+        subtitle: { type: string }
+        description: { type: string, nullable: true }
+        category: { $ref: "#/components/schemas/OfferCategory" }
+        imageUrl: { type: string, nullable: true }
+        isFeatured: { type: boolean, default: false }
+        ctaLabel: { type: string, nullable: true }
+        ctaUrl: { type: string, nullable: true }
+        partnerId: { type: integer, nullable: true }
+        validFrom: { type: string, format: date, nullable: true }
+        validUntil: { type: string, format: date, nullable: true }
+        isActive: { type: boolean, default: true }
+
+    MilesAccount:
+      type: object
+      properties:
+        balance: { type: integer, example: 12500 }
+        entries:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              amount: { type: integer, example: 2000 }
+              description: { type: string, example: "Campanha Milhas em dobro" }
+              createdAt: { type: string, format: date-time }
+
+    MilesOffer:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string, example: "Passagens GRU-MCO a partir de 45 mil milhas" }
+        summary: { type: string }
+        destination: { type: string, nullable: true, example: "Orlando" }
+        program: { type: string, nullable: true, example: "Smiles" }
+        sourceGroup: { type: string, nullable: true }
+        url: { type: string, format: uri, nullable: true }
+        capturedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time, nullable: true }
+
+    MilesOfferUpsert:
+      type: object
+      required: [title, summary, capturedAt]
+      properties:
+        title: { type: string }
+        summary: { type: string }
+        destination: { type: string, nullable: true }
+        program: { type: string, nullable: true }
+        sourceGroup: { type: string, nullable: true }
+        url: { type: string, nullable: true }
+        capturedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time, nullable: true }
+        externalId: { type: string, description: "Hash da mensagem original, para idempotência" }
+
+    TravelProfile:
+      type: object
+      required: [homeCity, homeState, preferredDestinations]
+      properties:
+        homeCity: { type: string, example: "Goiânia" }
+        homeState: { type: string, example: "GO" }
+        preferredDestinations:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items: { type: string }
+          example: ["Gramado", "Orlando", "Cancún", "Lisboa"]
+        updatedAt: { type: string, format: date-time, readOnly: true }
+
+    NotificationPreferences:
+      type: object
+      properties:
+        milesOffers: { type: boolean, default: true, description: "Receber promoções de milhas" }
+        announcements: { type: boolean, default: true }
+        updatedAt: { type: string, format: date-time, readOnly: true }
+
+    CollectionStatus:
+      type: object
+      properties:
+        contractNumber: { type: string, nullable: true }
+        eligible: { type: boolean, description: "Contrato de 6 semanas" }
+        totalItems: { type: integer, example: 6 }
+        unlockedCount: { type: integer, example: 2 }
+        paidInstallments: { type: integer }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              index: { type: integer, minimum: 1, maximum: 6 }
+              name: { type: string, example: "Camiseta Collection #1" }
+              imageUrl: { type: string, format: uri, nullable: true }
+              status: { type: string, enum: [locked, unlocked, sent] }
+              unlockedAt: { type: string, format: date-time, nullable: true }
+              shippedAt: { type: string, format: date-time, nullable: true }
+              trackingCode: { type: string, nullable: true }
+
+    VentureVideo:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string, example: "Atualização da obra - Setembro de 2026" }
+        youtubeUrl: { type: string, format: uri }
+        thumbnailUrl: { type: string, format: uri, nullable: true }
+        publishedAt: { type: string, format: date-time }
+
+    DeviceRegistration:
+      type: object
+      required: [token, platform]
+      properties:
+        token: { type: string }
+        platform: { type: string, enum: [android, ios] }
+        appVersion: { type: string, nullable: true, example: "2.0.0" }
+        deviceModel: { type: string, nullable: true }

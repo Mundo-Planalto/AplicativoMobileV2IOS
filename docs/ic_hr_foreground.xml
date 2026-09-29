@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Foreground do ícone adaptativo Hard Rock Hotel & Vacation Club.
+    Estrela dourada de 5 pontas com anel fino, centrada na área segura (66dp) do canvas 108dp.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Anel dourado fino (raio 30, centro 54,54) -->
+    <path
+        android:pathData="M24,54 A30,30 0 1,1 84,54 A30,30 0 1,1 24,54 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round" />
+
+    <!-- Estrela de 5 pontas (raio externo 22, interno 8.5, centro 54,54) -->
+    <path
+        android:pathData="M54,32 L59,47.12 L74.92,47.2 L62.08,56.63 L66.93,71.8 L54,62.5 L41.07,71.8 L45.92,56.63 L33.08,47.2 L49,47.12 Z"
+        android:fillColor="#D4AF37" />
+</vector>
