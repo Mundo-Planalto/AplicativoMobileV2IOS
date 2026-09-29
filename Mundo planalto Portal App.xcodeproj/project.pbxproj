@@ -317,7 +317,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Mundo planalto Portal App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Mundo Planalto Portal";
+				INFOPLIST_KEY_CFBundleDisplayName = "Hard Rock Vacation Club";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -366,7 +366,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = "Mundo planalto Portal App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = "Mundo Planalto Portal";
+				INFOPLIST_KEY_CFBundleDisplayName = "Hard Rock Vacation Club";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.business";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

@@ -19,7 +19,7 @@ struct ContentView: View {
             }
         }
         .environmentObject(appState)
-        .preferredColorScheme(appState.isDarkTheme ? .dark : .light)
+        .preferredColorScheme(.dark)
         .onAppear {
             // Firebase push: em momento separado do login do usuário para evitar timeout.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {

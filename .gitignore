@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Xcode: estado de usuário e builds
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# Segredos (nunca no repositório)
+GoogleService-Info.plist
+Config.plist
+
+# Swift Package Manager
+.build/
+.swiftpm/

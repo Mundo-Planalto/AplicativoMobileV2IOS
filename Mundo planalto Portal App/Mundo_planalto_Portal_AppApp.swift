@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(_ application: UIApplication, didFinishLaunchingWithOptions
                      launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Apenas Firebase e delegates no launch. Permissão de notificação é pedida depois (separada do login do usuário) para evitar timeout.
+        HrAppearance.apply()
         FirebaseApp.configure()
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
@@ -149,6 +150,6 @@ struct SplashScreenWithTimer: View {
                 ContentView()
             }
         }
-        .preferredColorScheme(appState.isDarkTheme ? .dark : .light)
+        .preferredColorScheme(.dark)
     }
 }
