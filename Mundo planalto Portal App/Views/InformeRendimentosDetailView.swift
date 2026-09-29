@@ -36,22 +36,65 @@ struct InformeRendimentosDetailView: View {
         return "\(digits.prefix(3)).\(digits.dropFirst(3).prefix(3)).\(digits.dropFirst(6).prefix(3))-\(digits.suffix(2))"
     }
 
+    private func formatDate(_ value: String?) -> String {
+        DateDisplayFormatter.toPtBRDate(value)
+    }
+
+    private func formatPaymentDate(_ value: String?) -> String {
+        guard let v = value?.trimmingCharacters(in: .whitespacesAndNewlines), !v.isEmpty else {
+            return "Não informada"
+        }
+        let d = DateDisplayFormatter.toPtBRDate(v)
+        return (d == "-" || d.isEmpty) ? v : d
+    }
+
+    private var contribuinteNome: String {
+        let fromData = data.contribuinte?.nome.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !fromData.isEmpty { return fromData }
+        let fromPrefs = PreferencesManager.shared.getUserName()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return fromPrefs.isEmpty ? "Não informado" : fromPrefs
+    }
+
+    private var contribuinteCpf: String {
+        let fromData = data.contribuinte?.cpf.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !fromData.isEmpty { return fromData }
+        let fromPrefs = PreferencesManager.shared.getUserCpfCnpj()?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return fromPrefs.isEmpty ? "Não informado" : fromPrefs
+    }
+
+    private var anoBaseDisplay: String {
+        let fromContrib = data.contribuinte?.anoBase.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !fromContrib.isEmpty { return fromContrib }
+        let fromData = data.anoBase.trimmingCharacters(in: .whitespacesAndNewlines)
+        return fromData.isEmpty ? "Não informado" : fromData
+    }
+
     private func informeAsText() -> String {
         var lines: [String] = []
-        lines.append("INFORME DE RENDIMENTOS \(data.anoBase)")
-        if let c = data.contribuinte {
-            lines.append("Contribuinte: \(c.nome)")
-            lines.append("CPF: \(formatCPF(c.cpf))")
-            lines.append("Ano base: \(c.anoBase)")
-        }
+        lines.append("INFORME DE RENDIMENTOS")
+        lines.append("Ano base: \(anoBaseDisplay)")
+        lines.append("")
+        lines.append("DADOS DO CONTRIBUINTE")
+        lines.append("Nome: \(contribuinteNome)")
+        lines.append("CPF: \(formatCPF(contribuinteCpf))")
+        lines.append("")
         if let r = data.resumo {
+            lines.append("RESUMO")
             lines.append("Total de pagamentos: \(r.totalPagamentos)")
-            lines.append("Valor total: \(formatCurrency(r.valorTotalRendimentos))")
+            lines.append("Valor total dos rendimentos: \(formatCurrency(r.valorTotalRendimentos))")
+            lines.append("")
         }
         if let list = data.pagamentos, !list.isEmpty {
-            lines.append("Detalhamento:")
+            lines.append("DETALHAMENTO DOS PAGAMENTOS")
             for p in list {
-                lines.append("  \(p.data) - \(p.transacaoId) - \(formatCurrency(p.valor)) - \(p.empresa)")
+                let dataPagamento = formatPaymentDate(p.dataPagamento)
+                lines.append("- Data de pagamento: \(dataPagamento)")
+                lines.append("  Data de referência: \(formatDate(p.data))")
+                lines.append("  Referência: \(p.transacaoId)")
+                lines.append("  Empresa: \(p.empresa)")
+                lines.append("  Método: \(p.metodo)")
+                lines.append("  Valor: \(formatCurrency(p.valor))")
+                lines.append("")
             }
         }
         return lines.joined(separator: "\n")
@@ -93,7 +136,7 @@ struct InformeRendimentosDetailView: View {
                             .foregroundColor(isDark ? .white : .primary)
                     }
                     Spacer()
-                    Text("Informe de Rendimentos \(data.anoBase)")
+                    Text("Informe de Rendimentos \(anoBaseDisplay)")
                         .font(.headline)
                         .fontWeight(.bold)
                         .foregroundColor(textP)
@@ -107,21 +150,19 @@ struct InformeRendimentosDetailView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        if let c = data.contribuinte {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Informações do Contribuinte")
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(textP)
-                                InformeDetailRow(label: "Nome", value: c.nome)
-                                InformeDetailRow(label: "CPF", value: formatCPF(c.cpf))
-                                InformeDetailRow(label: "Ano Base", value: c.anoBase)
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(cardBg)
-                            .cornerRadius(12)
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Informações do Contribuinte")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(textP)
+                            InformeDetailRow(label: "Nome", value: contribuinteNome, isDark: isDark)
+                            InformeDetailRow(label: "CPF", value: formatCPF(contribuinteCpf), isDark: isDark)
+                            InformeDetailRow(label: "Ano Base", value: anoBaseDisplay, isDark: isDark)
                         }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(cardBg)
+                        .cornerRadius(12)
 
                         if let r = data.resumo {
                             VStack(alignment: .leading, spacing: 12) {
@@ -161,7 +202,7 @@ struct InformeRendimentosDetailView: View {
                             ForEach(list) { p in
                                 VStack(alignment: .leading, spacing: 8) {
                                     HStack {
-                                        Text(p.data)
+                                        Text("Pagamento: \(formatPaymentDate(p.dataPagamento))")
                                             .font(.subheadline)
                                             .foregroundColor(textS)
                                         Spacer()
@@ -183,6 +224,15 @@ struct InformeRendimentosDetailView: View {
                                             .foregroundColor(textS)
                                         Spacer()
                                         Text(p.metodo)
+                                            .font(.caption)
+                                            .foregroundColor(textP)
+                                    }
+                                    HStack {
+                                        Text("Data de referência:")
+                                            .font(.caption)
+                                            .foregroundColor(textS)
+                                        Spacer()
+                                        Text(formatDate(p.data))
                                             .font(.caption)
                                             .foregroundColor(textP)
                                     }
@@ -278,7 +328,7 @@ struct ShareSheet: UIViewControllerRepresentable {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         InformeRendimentosDetailView(
             data: InformeRendimentosData(
                 anoBase: "2025",

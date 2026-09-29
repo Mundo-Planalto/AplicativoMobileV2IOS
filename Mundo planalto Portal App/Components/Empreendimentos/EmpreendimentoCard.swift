@@ -10,9 +10,9 @@ import SwiftUI
 struct EmpreendimentoCard: View {
     let venture: Venture
     var isDark: Bool = true
+    var onOpenDetails: (() -> Void)? = nil
     @State private var showPhotoBook = false
 
-    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
     private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
     private var textP: Color { AppColors.textPrimary(dark: isDark) }
     private var textS: Color { AppColors.textSecondary(dark: isDark) }
@@ -27,88 +27,83 @@ struct EmpreendimentoCard: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Imagem de fundo (URL do servidor ou ícone) — ocupa toda a largura do card
-            Group {
-                if imageUrlIsRemote {
-                    RemoteImageView(urlString: venture.imageUrl, useAuth: true)
-                } else {
-                    Rectangle()
-                        .fill(textS.opacity(0.15))
-                        .overlay(
-                            Image(systemName: "building.2.fill")
-                                .font(.system(size: 80))
-                                .foregroundColor(textS.opacity(0.4))
-                        )
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .frame(height: 260)
-            .clipped()
-            .cornerRadius(16)
-            .contentShape(Rectangle())
-
-            LinearGradient(
-                gradient: Gradient(colors: [.clear, .clear, bg.opacity(0.95)]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .cornerRadius(16)
-
-            VStack(alignment: .leading, spacing: 0) {
-                Spacer(minLength: 0)
-
-                // Caixa de overlay (cantos superiores arredondados) — nome do empreendimento + botão
-                VStack(alignment: .center, spacing: 12) {
-                    Text(venture.name)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(textP)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-
-                    if hasPhotoBook {
-                        Button {
-                            showPhotoBook = true
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "photo.on.rectangle.angled")
-                                    .font(.caption)
-                                Text("Ver Galeria de Fotos")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                            }
-                            .foregroundColor(AppColors.accentBlue)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(cardBg)
-                            .cornerRadius(8)
+        VStack(spacing: 10) {
+            ZStack(alignment: .topLeading) {
+                Group {
+                    if imageUrlIsRemote {
+                        RemoteImageView(urlString: venture.imageUrl, useAuth: true)
+                    } else {
+                        Rectangle()
+                            .fill(textS.opacity(0.15))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(AppColors.accentBlue, lineWidth: 1.5)
+                                Image(systemName: "building.2.fill")
+                                    .font(.system(size: 80))
+                                    .foregroundColor(textS.opacity(0.4))
                             )
-                        }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(16)
-                .background(cardBg)
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 16,
-                        bottomLeadingRadius: 0,
-                        bottomTrailingRadius: 0,
-                        topTrailingRadius: 16
-                    )
-                )
+                .frame(height: 220)
+                .clipped()
+
+                Text(venture.name)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .lineLimit(2)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)//estava 10
+                    .background(Color.black.opacity(0.35))
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .padding(.top, 14)
+                    .padding(.leading, 14)
+                    .offset(x: 20)
             }
-            .padding(12)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+
+            // Uma linha, duas colunas: menos espaço entre os botões = cada um fica um pouco mais largo.
+            HStack(spacing: 8) {
+                Button {
+                    if hasPhotoBook {
+                        showPhotoBook = true
+                    }
+                } label: {
+                    Text("Galeria de Fotos")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(AppColors.accentBlue.opacity(hasPhotoBook ? 1 : 0.5))
+                        .clipShape(RoundedRectangle(cornerRadius: 13))
+                }
+                .disabled(!hasPhotoBook)
+                .frame(maxWidth: .infinity)
+
+                Button {
+                    onOpenDetails?()
+                } label: {
+                    Text("Acompanhamento de Obras")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.60)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 48)
+                        .background(AppColors.accentBlue)
+                        .clipShape(RoundedRectangle(cornerRadius: 13))
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 250)
-        .cornerRadius(16)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 14)
+        .background(cardBg)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
         .sheet(isPresented: $showPhotoBook) {
             PhotoBookView(items: venture.photoBook ?? [], isDark: isDark)
         }

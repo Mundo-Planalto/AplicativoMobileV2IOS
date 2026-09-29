@@ -31,8 +31,9 @@ struct InformeResumo: Codable, Equatable {
 
 /// Item do detalhamento de pagamentos (seção "Detalhamento dos Pagamentos").
 struct InformePagamento: Codable, Identifiable, Equatable {
-    var id: String { "\(transacaoId)-\(data)" }
+    let id: String
     let data: String
+    let dataPagamento: String?
     let valor: Double
     let transacaoId: String
     let empresa: String

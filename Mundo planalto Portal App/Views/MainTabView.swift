@@ -37,6 +37,7 @@ struct MainTabView: View {
             .tabItem {
                 Label("Notícias", systemImage: "bell.fill")
             }
+            .badge(appState.unreadNoticeCount > 0 ? appState.unreadNoticeCount : 0)
             .tag(TabItem.news)
 
             NavigationStack {
@@ -48,11 +49,22 @@ struct MainTabView: View {
             .tag(TabItem.profile)
         }
         .tint(AppColors.accentBlue)
+        .task {
+            await appState.refreshAllUnreadBadges()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .noticeUnreadCountShouldRefresh)) { _ in
+            Task { await appState.refreshAllUnreadBadges() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToNews"))) { _ in
             selectedTab = .news
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToVentures"))) { _ in
             selectedTab = .ventures
+        }
+        .onChange(of: selectedTab) { _, tab in
+            if tab == .news {
+                Task { await appState.refreshUnreadNoticeCount() }
+            }
         }
     }
 }

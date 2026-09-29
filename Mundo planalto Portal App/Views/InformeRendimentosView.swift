@@ -54,31 +54,67 @@ struct InformeRendimentosView: View {
                             .font(.subheadline)
                             .foregroundColor(textS)
 
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 12) {
-                                ForEach(viewModel.availableYears, id: \.self) { year in
-                                    Button {
-                                        viewModel.selectYear(year)
-                                    } label: {
-                                        Text(year)
-                                            .font(.subheadline)
-                                            .fontWeight(.medium)
-                                            .foregroundColor(viewModel.selectedYear == year ? .white : textP)
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 12)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .fill(viewModel.selectedYear == year ? AppColors.accentBlue : cardBg)
-                                            )
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .stroke(viewModel.selectedYear == year ? Color.clear : textS.opacity(0.4), lineWidth: 1)
-                                            )
+                        Group {
+                            if viewModel.isLoadingYears {
+                                VStack(alignment: .leading, spacing: 14) {
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 12) {
+                                            ForEach(0..<8, id: \.self) { _ in
+                                                ShimmerSkeletonCard(height: 44, isDark: isDark)
+                                                    .frame(width: 76)
+                                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                            }
+                                        }
+                                        .padding(.horizontal, 2)
                                     }
-                                    .buttonStyle(PlainButtonStyle())
+                                    HStack(spacing: 10) {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentBlue))
+                                        Text("Buscando anos no seu extrato…")
+                                            .font(.subheadline)
+                                            .foregroundColor(textS)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 4)
+                                .accessibilityElement(children: .combine)
+                                .accessibilityLabel("Carregando anos disponíveis")
+                            } else if viewModel.availableYears.isEmpty {
+                                if viewModel.error == nil {
+                                    Text("Nenhum ano encontrado no extrato. Abra o extrato financeiro ou tente novamente em instantes.")
+                                        .font(.subheadline)
+                                        .foregroundColor(textS)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            } else {
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 12) {
+                                        ForEach(viewModel.availableYears, id: \.self) { year in
+                                            Button {
+                                                viewModel.selectYear(year)
+                                            } label: {
+                                                Text(year)
+                                                    .font(.subheadline)
+                                                    .fontWeight(.medium)
+                                                    .foregroundColor(viewModel.selectedYear == year ? .white : textP)
+                                                    .padding(.horizontal, 20)
+                                                    .padding(.vertical, 12)
+                                                    .background(
+                                                        RoundedRectangle(cornerRadius: 10)
+                                                            .fill(viewModel.selectedYear == year ? AppColors.accentBlue : cardBg)
+                                                    )
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 10)
+                                                            .stroke(viewModel.selectedYear == year ? Color.clear : textS.opacity(0.4), lineWidth: 1)
+                                                    )
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
+                                    }
+                                    .padding(.horizontal, 4)
                                 }
                             }
-                            .padding(.horizontal, 4)
                         }
 
                         if let status = viewModel.statusMessage, viewModel.error == nil {
@@ -129,6 +165,9 @@ struct InformeRendimentosView: View {
                 }
             }
         }
+        .task {
+            await viewModel.loadAvailableYears(forceRefresh: true)
+        }
         .onChange(of: viewModel.generatedData) { _, newValue in
             if newValue != nil { showDetail = true }
         }
@@ -142,7 +181,7 @@ struct InformeRendimentosView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         InformeRendimentosView()
             .environmentObject(AppState.shared)
     }

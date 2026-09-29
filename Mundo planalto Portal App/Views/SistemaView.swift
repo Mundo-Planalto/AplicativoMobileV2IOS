@@ -21,12 +21,6 @@ struct SistemaView: View {
 
     private let configItems: [SistemaMenuItem] = [
         SistemaMenuItem(
-            title: "Atendimento com IA",
-            subtitle: "Converse com nosso assistente virtual",
-            iconName: "bubble.left.and.bubble.right.fill",
-            action: .chatIA
-        ),
-        SistemaMenuItem(
             title: "Tema",
             subtitle: "Alterar aparência do aplicativo",
             iconName: "gearshape.fill",
@@ -111,7 +105,7 @@ struct SistemaView: View {
                         }
                         .padding(.horizontal, 20)
 
-                        Text("Versão 1.0.0")
+                        Text("Versão \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
                             .font(.caption)
                             .foregroundColor(textS)
                             .frame(maxWidth: .infinity)
@@ -207,7 +201,7 @@ struct SistemaMenuItemView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         SistemaView()
             .environmentObject(AppState.shared)
     }

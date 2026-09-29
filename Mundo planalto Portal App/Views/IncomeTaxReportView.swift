@@ -116,7 +116,7 @@ struct IncomeTaxReportView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         IncomeTaxReportView(pdfUrl: "https://example.com/informe-2024.pdf")
     }
 }

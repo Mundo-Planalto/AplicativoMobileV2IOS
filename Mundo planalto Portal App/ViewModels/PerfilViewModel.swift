@@ -52,10 +52,19 @@ class PerfilViewModel: ObservableObject {
             userName = p.name
             userDocument = p.cpf
             userEmail = p.email ?? ""
-            userPhone = p.phone ?? "Não possui"
-            if let addr = p.address, !addr.isEmpty {
+            userPhone = p.phone ?? "Não informado"
+
+            let z1 = p.addressLine1?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let z2 = p.addressLine2?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            let z3 = p.addressZipLine?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+            if !z1.isEmpty || !z2.isEmpty || !z3.isEmpty {
+                userAddressLine1 = z1.isEmpty ? "—" : z1
+                userAddressLine2 = z2.isEmpty ? "—" : z2
+                userAddressCep = z3.isEmpty ? "CEP: não informado" : z3
+            } else if let addr = p.address, !addr.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 userAddressLine1 = addr
-                userAddressLine2 = addr
+                userAddressLine2 = "—"
                 userAddressCep = ""
             } else {
                 userAddressLine1 = "Sem Informação, Sem Informação"
@@ -66,7 +75,7 @@ class PerfilViewModel: ObservableObject {
             userName = "Usuário"
             userDocument = PreferencesManager.shared.getUserCpfCnpj() ?? ""
             userEmail = ""
-            userPhone = "Não possui"
+            userPhone = "Não informado"
             userAddressLine1 = "Sem Informação, Sem Informação"
             userAddressLine2 = "Sem Informação - Sem Informação"
             userAddressCep = "CEP: Sem Informação"
@@ -86,8 +95,6 @@ class PerfilViewModel: ObservableObject {
     }
 
     private func logout() {
-        // Limpar dados do usuário conforme documentação
-        UserDefaults.standard.removeObject(forKey: "auth_token")
         Task {
             await AppState.shared.logout()
         }

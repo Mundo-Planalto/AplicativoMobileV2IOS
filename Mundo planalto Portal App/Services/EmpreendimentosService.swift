@@ -70,6 +70,7 @@ struct VentureUpdateDto: Codable {
     let content: String
     let imageUrl: String?
     let videoUrl: String?
+    let youtubeUrl: String?
     let postDate: String
 }
 
@@ -78,6 +79,16 @@ class EmpreendimentosService {
     private init() {}
 
     private var baseURL: String { ApiConfig.baseURL + "/" }
+
+    private func empreendimentosCacheKey() -> String {
+        let userId = PreferencesManager.shared.getUserId() ?? "anon"
+        return "empreendimentos|user:\(userId)"
+    }
+
+    func getEmpreendimentosCached() -> EmpreendimentosResponse? {
+        let cacheKey = empreendimentosCacheKey()
+        return ApiCache.shared.get(EmpreendimentosResponse.self, key: cacheKey)
+    }
 
     private func createAuthorizedRequest(url: URL, method: String = "GET") -> URLRequest {
         var request = URLRequest(url: url)
@@ -114,17 +125,89 @@ class EmpreendimentosService {
     }
 
     /// GET /api/ventures ou /api/customers/ventures - lista empreendimentos do cliente
-    func getEmpreendimentos() async throws -> EmpreendimentosResponse {
-        let path = baseURL + "ventures"
-        guard let url = URL(string: path) else { throw EmpreendimentosError.networkError }
-        let request = createAuthorizedRequest(url: url)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw EmpreendimentosError.invalidResponse }
-        if http.statusCode == 401 { throw EmpreendimentosError.invalidCredentials }
-        guard http.statusCode == 200 else { throw EmpreendimentosError.invalidResponse }
+    func getEmpreendimentos(
+        useCache: Bool = true,
+        forceRefresh: Bool = false,
+        cacheTTL: TimeInterval = 10 * 60
+    ) async throws -> EmpreendimentosResponse {
+        let cacheKey = empreendimentosCacheKey()
+        if useCache, !forceRefresh,
+           let cached: EmpreendimentosResponse = ApiCache.shared.get(EmpreendimentosResponse.self, key: cacheKey) {
+            return cached
+        }
 
-        let decoded = try JSONDecoder().decode(ApiResponse<[CostCenterDto]>.self, from: data)
-        guard let list = decoded.data else { throw EmpreendimentosError.invalidResponse }
+        // Alguns ambientes expõem /ventures e outros /customers/ventures.
+        let pathsToTry = ["ventures", "customers/ventures"]
+        var lastError: Error = EmpreendimentosError.invalidResponse
+
+        for p in pathsToTry {
+            let path = baseURL + p
+            guard let url = URL(string: path) else {
+                lastError = EmpreendimentosError.networkError
+                continue
+            }
+            var request = createAuthorizedRequest(url: url)
+            var (data, response) = try await URLSession.shared.data(for: request)
+            guard var http = response as? HTTPURLResponse else {
+                lastError = EmpreendimentosError.invalidResponse
+                continue
+            }
+            if http.statusCode == 401 {
+                let recovered = await AuthService.shared.recoverSessionIfNeeded()
+                guard recovered else { throw EmpreendimentosError.invalidCredentials }
+                request = createAuthorizedRequest(url: url)
+                let retry = try await URLSession.shared.data(for: request)
+                data = retry.0
+                response = retry.1
+                guard let retryHttp = response as? HTTPURLResponse else {
+                    lastError = EmpreendimentosError.invalidResponse
+                    continue
+                }
+                http = retryHttp
+            }
+            if http.statusCode == 401 { throw EmpreendimentosError.invalidCredentials }
+            guard http.statusCode == 200 else {
+                lastError = EmpreendimentosError.invalidResponse
+                continue
+            }
+
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+            // Padrão: ApiResponse<[CostCenterDto]>
+            if let decoded = try? decoder.decode(ApiResponse<[CostCenterDto]>.self, from: data),
+               let list = decoded.data {
+                let ventures = mapCostCenters(list)
+                let response = EmpreendimentosResponse(empreendimentos: ventures, totalCount: ventures.count, success: true, message: nil)
+                if useCache {
+                    ApiCache.shared.set(response, key: cacheKey, ttl: cacheTTL)
+                }
+                return response
+            }
+            // Fallback: array puro
+            if let list = try? decoder.decode([CostCenterDto].self, from: data) {
+                let ventures = mapCostCenters(list)
+                let response = EmpreendimentosResponse(empreendimentos: ventures, totalCount: ventures.count, success: true, message: nil)
+                if useCache {
+                    ApiCache.shared.set(response, key: cacheKey, ttl: cacheTTL)
+                }
+                return response
+            }
+
+            lastError = EmpreendimentosError.invalidResponse
+        }
+
+        // Se falhar, tenta reaproveitar cache (evita tela vazia).
+        if useCache {
+            if let cached: EmpreendimentosResponse = ApiCache.shared.get(EmpreendimentosResponse.self, key: cacheKey) {
+                return cached
+            }
+        }
+
+        throw lastError
+    }
+
+    private func mapCostCenters(_ list: [CostCenterDto]) -> [Venture] {
         let ventures = list.map { dto in
             let photoBook = (dto.photoBook ?? []).map { p in
                 PhotoBookItem(
@@ -144,15 +227,25 @@ class EmpreendimentosService {
                 photoBook: photoBook.isEmpty ? nil : photoBook
             )
         }
-        return EmpreendimentosResponse(empreendimentos: ventures, totalCount: ventures.count, success: true, message: nil)
+        return ventures
     }
 
     /// GET /api/costcenters/{id} - detalhe (fallback se não houver endpoint específico de detalhe)
     func getEmpreendimentoDetail(id: String) async throws -> EmpreendimentoDetailResponse {
         guard let url = URL(string: baseURL + "costcenters/\(id)") else { throw EmpreendimentosError.networkError }
-        let request = createAuthorizedRequest(url: url)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse else { throw EmpreendimentosError.invalidResponse }
+        var request = createAuthorizedRequest(url: url)
+        var (data, response) = try await URLSession.shared.data(for: request)
+        guard var http = response as? HTTPURLResponse else { throw EmpreendimentosError.invalidResponse }
+        if http.statusCode == 401 {
+            let recovered = await AuthService.shared.recoverSessionIfNeeded()
+            guard recovered else { throw EmpreendimentosError.invalidCredentials }
+            request = createAuthorizedRequest(url: url)
+            let retry = try await URLSession.shared.data(for: request)
+            data = retry.0
+            response = retry.1
+            guard let retryHttp = response as? HTTPURLResponse else { throw EmpreendimentosError.invalidResponse }
+            http = retryHttp
+        }
         if http.statusCode == 401 { throw EmpreendimentosError.invalidCredentials }
         if http.statusCode == 404 { throw EmpreendimentosError.invalidResponse }
         guard http.statusCode == 200 else { throw EmpreendimentosError.invalidResponse }

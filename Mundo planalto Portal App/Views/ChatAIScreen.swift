@@ -11,6 +11,8 @@ struct ChatAIScreen: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = ChatIAViewModel()
     @State private var newMessage = ""
+    @State private var showHistory = false
+    @State private var selectedHistorySessionId: UUID?
 
     var body: some View {
         NavigationView {
@@ -37,6 +39,15 @@ struct ChatAIScreen: View {
                             .foregroundColor(.white)
 
                         Spacer()
+
+                        Button {
+                            selectedHistorySessionId = nil
+                            showHistory = true
+                        } label: {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .foregroundColor(.white)
+                                .font(.title2)
+                        }
                     }
                     .padding()
                     .background(AppColors.cardBackground)
@@ -59,7 +70,7 @@ struct ChatAIScreen: View {
                                 }
                             }
                             .padding(.vertical)
-                            .onChange(of: viewModel.messages.count) { _ in
+                            .onChange(of: viewModel.messages.count) { _, _ in
                                 withAnimation {
                                     if let lastMessageId = viewModel.messages.last?.id {
                                         scrollView.scrollTo(lastMessageId, anchor: .bottom)
@@ -76,11 +87,15 @@ struct ChatAIScreen: View {
                             .background(AppColors.cardBackground)
                             .cornerRadius(20)
                             .foregroundColor(.white)
+                            .disabled(viewModel.isLoading)
 
                         Button(action: {
+                            let messageToSend = newMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !messageToSend.isEmpty, !viewModel.isLoading else { return }
+                            // Limpa o input imediatamente após enviar.
+                            newMessage = ""
                             Task {
-                                await viewModel.sendMessage(newMessage)
-                                newMessage = ""
+                                await viewModel.sendMessage(messageToSend)
                             }
                         }) {
                             Image(systemName: "paperplane.fill")
@@ -88,7 +103,7 @@ struct ChatAIScreen: View {
                                 .font(.title2)
                                 .padding(8)
                         }
-                        .disabled(newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(viewModel.isLoading || newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 8)
@@ -102,6 +117,75 @@ struct ChatAIScreen: View {
             }
         } message: {
             Text(viewModel.error ?? "")
+        }
+        .sheet(isPresented: $showHistory) {
+            ChatHistorySheet(
+                sessions: viewModel.allSessionsForHistory(),
+                selectedSessionId: $selectedHistorySessionId,
+                messagesProvider: { id in viewModel.loadSessionMessages(sessionId: id) }
+            )
+        }
+    }
+}
+
+private struct ChatHistorySheet: View {
+    let sessions: [ChatSession]
+    @Binding var selectedSessionId: UUID?
+    let messagesProvider: (UUID) -> [ChatMessage]
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        let baseView = NavigationView {
+            Group {
+                if let selected = selectedSessionId {
+                    ChatHistoryDetail(messages: messagesProvider(selected))
+                } else {
+                    List {
+                        ForEach(sessions) { session in
+                            Button {
+                                selectedSessionId = session.id
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(session.title)
+                                        .font(.headline)
+                                    Text("\(session.messages.count) mensagens")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.vertical, 6)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Histórico")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Fechar") { dismiss() }
+                }
+            }
+        }
+        if #available(iOS 16.0, *) {
+            baseView
+                .presentationDetents([.medium, .large])
+        } else {
+            baseView
+        }
+    }
+}
+
+private struct ChatHistoryDetail: View {
+    let messages: [ChatMessage]
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(messages, id: \.id) { message in
+                    ChatBubble(message: message)
+                }
+            }
+            .padding(.vertical)
         }
     }
 }

@@ -35,6 +35,10 @@ class DetalhesObraViewModel: ObservableObject {
                     let full = EmpreendimentosService.mediaURL(for: s)
                     return full.isEmpty ? nil : full
                 }
+                let ytUrl = dto.youtubeUrl.flatMap { s in
+                    let full = EmpreendimentosService.mediaURL(for: s)
+                    return full.isEmpty ? nil : full
+                }
                 return VentureUpdate(
                     id: "\(dto.id)",
                     date: formatPostDate(dto.postDate),
@@ -43,11 +47,15 @@ class DetalhesObraViewModel: ObservableObject {
                     images: imgUrl.map { [$0] } ?? [],
                     imageUrl: imgUrl,
                     videoUrl: vidUrl,
+                    youtubeUrl: ytUrl,
                     isCompleted: false
                 )
             }
         } catch {
-            self.error = "Erro ao carregar detalhes da obra"
+            self.error = AppErrorMapper.userMessage(
+                for: error,
+                fallback: "Erro ao carregar detalhes da obra"
+            )
         }
         isLoading = false
     }

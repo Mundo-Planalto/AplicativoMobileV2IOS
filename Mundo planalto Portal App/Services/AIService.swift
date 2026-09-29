@@ -28,10 +28,14 @@ enum MessageRole: String, Codable {
     case system
 }
 
-/// Request para o webhook: { "message": "...", "chat": "sessionId" }
+/// Request para o webhook.
 struct ChatWebhookRequest: Codable {
     let message: String
     let chat: String
+    let document: String
+    let idportal: String
+    let name: String
+    let number: String
 }
 
 /// Resposta esperada do webhook (ajustar conforme API real)
@@ -61,7 +65,15 @@ class AIService {
     func sendMessage(message: String) async throws -> (content: String, sessionId: String) {
         guard let url = URL(string: webhookURL) else { throw AIError.networkError }
         let sessionId = chatSessionId()
-        let body = ChatWebhookRequest(message: message, chat: sessionId)
+        let prefs = PreferencesManager.shared
+        let body = ChatWebhookRequest(
+            message: message,
+            chat: sessionId,
+            document: prefs.getUserCpfCnpj() ?? "",
+            idportal: prefs.getUserId() ?? "",
+            name: prefs.getUserName() ?? "",
+            number: Self.resolveUserNumber()
+        )
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -72,6 +84,18 @@ class AIService {
         let rawString = String(data: data, encoding: .utf8) ?? "Resposta indisponível."
         let displayText = Self.extractMessageOnly(from: data, rawString: rawString)
         return (displayText, sessionId)
+    }
+
+    /// Compatibilidade para diferentes chaves já usadas no app/backend para telefone/número.
+    private static func resolveUserNumber() -> String {
+        let defaults = UserDefaults.standard
+        let candidateKeys = ["user_phone", "user_number", "phone", "number"]
+        for key in candidateKeys {
+            if let value = defaults.string(forKey: key), !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return value
+            }
+        }
+        return ""
     }
 
     /// Extrai apenas o texto da mensagem. Suporta resposta como array (ex: [{"output":"..."}]) ou objeto.

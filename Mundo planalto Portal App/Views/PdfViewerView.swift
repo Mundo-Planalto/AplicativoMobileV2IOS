@@ -171,7 +171,7 @@ struct FeatureItem: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         PdfViewerView(pdfUrl: "https://example.com/document.pdf")
     }
 }

@@ -26,39 +26,21 @@ class NoticiaDetalhesViewModel: ObservableObject {
         error = nil
 
         do {
-            // Simular carregamento da notícia específica pela API
-            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 segundo
-
-            // Em produção, faria: GET /announcements/{noticeId}
-            // Por enquanto, simula busca no array de dados mockados
-            if let mockNotice = getMockNoticeById(noticeId) {
-                notice = mockNotice
+            // Carrega da API (lista) e filtra pelo id
+            let list = try await NewsService.shared.getAnnouncements()
+            if let found = list.first(where: { $0.id == noticeId }) {
+                notice = found
+                AppState.shared.markNoticeAsRead(noticeId)
             } else {
-                error = "Notícia não encontrada"
+                error = "Aviso/Notícia não encontrado(a)"
             }
-
         } catch {
-            self.error = "Erro ao carregar detalhes da notícia"
+            self.error = AppErrorMapper.userMessage(
+                for: error,
+                fallback: "Erro ao carregar detalhes da notícia"
+            )
         }
 
         isLoading = false
-    }
-
-    private func getMockNoticeById(_ id: String) -> AppNotice? {
-        // Dados mockados - em produção viria da API
-        let mockNotices = [
-            AppNotice(id: "1",
-                  title: "Reunião de Condôminos - Residencial Parque das Flores",
-                  description: "Reunião marcada para o dia 15/02 às 19h na sala de eventos do prédio. Ordem do dia: prestação de contas, manutenção preventiva e sugestões dos moradores. Todos os condôminos estão convidados a participar desta importante reunião onde serão discutidos os assuntos administrativos do condomínio, incluindo a aprovação do orçamento para o próximo ano, planejamento de manutenções preventivas e espaço para sugestões e reclamações dos moradores. A presença de todos é fundamental para a boa gestão do nosso lar.",
-                  date: "10/01/2025",
-                  type: .notice),
-            AppNotice(id: "2",
-                  title: "Nova Fase da Obra - Condomínio Vista Verde",
-                  description: "Iniciamos a construção da torre norte com previsão de entrega para dezembro de 2025. Acompanhe o progresso através do nosso aplicativo. Esta nova fase inclui a construção de 48 apartamentos de alto padrão com vista para o parque municipal.",
-                  date: "08/01/2025",
-                  type: .news)
-        ]
-
-        return mockNotices.first { $0.id == id }
     }
 }

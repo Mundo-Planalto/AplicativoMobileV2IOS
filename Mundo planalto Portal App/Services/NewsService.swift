@@ -48,6 +48,22 @@ class NewsService {
 
     private var baseURL: String { ApiConfig.baseURL + "/" }
 
+    private func mapNoticeType(_ rawType: String?) -> NoticeType {
+        guard let rawType else { return .news }
+        let normalized = rawType
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+
+        switch normalized {
+        case "aviso", "avisos", "notice", "notificacao", "alerta":
+            return .notice
+        case "noticia", "noticias", "news", "informativo":
+            return .news
+        default:
+            return .news
+        }
+    }
+
     private func createAuthorizedRequest(url: URL, method: String = "GET", body: Data? = nil) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
@@ -66,15 +82,29 @@ class NewsService {
             urlString += "?costCenterId=\(id)"
         }
         guard let url = URL(string: urlString) else { throw NewsError.networkError }
-        let request = createAuthorizedRequest(url: url)
-        let (data, response) = try await URLSession.shared.data(for: request)
+        var request = createAuthorizedRequest(url: url)
+        var (data, response) = try await URLSession.shared.data(for: request)
+        if (response as? HTTPURLResponse)?.statusCode == 401 {
+            let recovered = await AuthService.shared.recoverSessionIfNeeded()
+            guard recovered else { throw NewsError.invalidCredentials }
+            request = createAuthorizedRequest(url: url)
+            let retry = try await URLSession.shared.data(for: request)
+            data = retry.0
+            response = retry.1
+        }
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             if (response as? HTTPURLResponse)?.statusCode == 401 { throw NewsError.invalidCredentials }
             throw NewsError.invalidResponse
         }
         let decoded = try JSONDecoder().decode(ApiResponse<[AnnouncementDto]>.self, from: data)
         return (decoded.data ?? []).map { a in
-            Notice(id: "\(a.id)", title: a.title, description: a.content, date: a.postDate, type: .news)
+            Notice(
+                id: "\(a.id)",
+                title: a.title,
+                description: a.content,
+                date: a.postDate,
+                type: mapNoticeType(a.type)
+            )
         }
     }
 

@@ -45,28 +45,11 @@ struct PhotoBookView: View {
                                             .cornerRadius(12)
                                         }
                                     }
-                                    if item.mediaType == "image", let url = URL(string: item.photoUrl) {
-                                        AsyncImage(url: url) { phase in
-                                            switch phase {
-                                            case .success(let image):
-                                                image
-                                                    .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                            case .failure:
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(textS.opacity(0.2))
-                                                    .frame(height: 200)
-                                                    .overlay(Image(systemName: "photo").foregroundColor(textS))
-                                            default:
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(textS.opacity(0.2))
-                                                    .frame(height: 200)
-                                                    .overlay(ProgressView())
-                                            }
-                                        }
-                                        .frame(maxHeight: 300)
-                                        .clipped()
-                                        .cornerRadius(12)
+                                    if item.mediaType == "image" {
+                                        RemoteImageView(urlString: item.photoUrl, useAuth: true)
+                                            .frame(height: 220)
+                                            .clipped()
+                                            .cornerRadius(12)
                                     }
                                     if item.mediaType == "video" {
                                         VideoPlayerView(urlString: item.photoUrl)

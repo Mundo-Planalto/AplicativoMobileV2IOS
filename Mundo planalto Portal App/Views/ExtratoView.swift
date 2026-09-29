@@ -58,7 +58,7 @@ struct ExtratoView: View {
                             .foregroundColor(textP)
                             .multilineTextAlignment(.center)
                         Button("Tentar Novamente") {
-                            Task { await viewModel.loadFinancialStatement() }
+                            Task { await viewModel.loadFinancialStatement(forceRefresh: true) }
                         }
                         .foregroundColor(AppColors.accentBlue)
                     }
@@ -70,12 +70,18 @@ struct ExtratoView: View {
                         ForEach(viewModel.tabOptions, id: \.rawValue) { tab in
                             Button {
                                 viewModel.setFilter(tab)
+                                if tab == .aVencer || tab == .vencidas {
+                                    appState.markBoletoTabAsSeen(tab, items: viewModel.allItems)
+                                }
                             } label: {
                                 VStack(spacing: 6) {
-                                    Text(tab.rawValue)
-                                        .font(.subheadline)
-                                        .fontWeight(viewModel.selectedFilter == tab ? .semibold : .regular)
-                                        .foregroundColor(viewModel.selectedFilter == tab ? AppColors.accentBlue : textS)
+                                    HStack(spacing: 5) {
+                                        Text(tab.rawValue)
+                                            .font(.subheadline)
+                                            .fontWeight(viewModel.selectedFilter == tab ? .semibold : .regular)
+                                            .foregroundColor(viewModel.selectedFilter == tab ? AppColors.accentBlue : textS)
+                                        UnreadCountBadge(count: appState.unreadBoletoCount(for: tab))
+                                    }
                                     Rectangle()
                                         .fill(viewModel.selectedFilter == tab ? AppColors.accentBlue : Color.clear)
                                         .frame(height: 2)
@@ -110,13 +116,36 @@ struct ExtratoView: View {
                     .background(bg)
 
                     ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(viewModel.filteredItems) { item in
-                                ParcelaCardExtrato(item: item, isDark: isDark)
+                        if viewModel.filteredItems.isEmpty {
+                            VStack(spacing: 10) {
+                                Text("Boleto não gerado")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(textP)
+                                Text("Não há registros para exibir nesta aba.")
+                                    .font(.subheadline)
+                                    .foregroundColor(textS)
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 60)
+                            .padding(.horizontal, 20)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(viewModel.filteredItems) { item in
+                                    ParcelaCardExtrato(
+                                        item: item,
+                                        isDark: isDark,
+                                        isUnread: appState.isBoletoUnread(item.id)
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 16)
+                    }
+                    .refreshable {
+                        await viewModel.loadFinancialStatement(forceRefresh: true)
+                        await appState.refreshUnreadBoletoCounts(from: viewModel.allItems)
                     }
                 }
             }
@@ -124,6 +153,7 @@ struct ExtratoView: View {
         .sheet(isPresented: $viewModel.showFilterModal) {
             FiltrarParcelasModal(
                 empreendimento: $viewModel.filtroEmpreendimento,
+                empreendimentoOptions: viewModel.empreendimentoOptions,
                 periodo: $viewModel.filtroPeriodo,
                 onCancel: { viewModel.showFilterModal = false },
                 onApply: { viewModel.applyFiltersFromModal() },
@@ -131,7 +161,13 @@ struct ExtratoView: View {
             )
         }
         .onAppear {
-            Task { await viewModel.loadFinancialStatement() }
+            Task {
+                await viewModel.loadFinancialStatement()
+                await appState.refreshUnreadBoletoCounts(from: viewModel.allItems)
+                if viewModel.selectedFilter == .aVencer || viewModel.selectedFilter == .vencidas {
+                    appState.markBoletoTabAsSeen(viewModel.selectedFilter, items: viewModel.allItems)
+                }
+            }
         }
         .navigationBarBackButtonHidden(true)
     }
@@ -141,6 +177,8 @@ struct ExtratoView: View {
 struct ParcelaCardExtrato: View {
     let item: FinancialStatementItem
     var isDark: Bool = true
+    var isUnread: Bool = false
+    @EnvironmentObject private var appState: AppState
     @State private var loadingBoleto = false
     @State private var showBoletoNaoGeradoModal = false
     @State private var showBoletoShareSheet = false
@@ -150,8 +188,8 @@ struct ParcelaCardExtrato: View {
     private var textP: Color { AppColors.textPrimary(dark: isDark) }
     private var textS: Color { AppColors.textSecondary(dark: isDark) }
 
-    /// Exibir botões Ver Boleto e Gerar 2ª Via apenas para parcelas "A Vencer".
-    private var mostraBotoesBoleto: Bool { item.status == .upcoming }
+    /// Exibir botões de boleto para parcelas a vencer e vencidas.
+    private var mostraBotoesBoleto: Bool { item.status == .upcoming || item.status == .overdue }
 
     private func formatCurrency(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -188,6 +226,7 @@ struct ParcelaCardExtrato: View {
             await MainActor.run {
                 loadingBoleto = false
                 if let url = url {
+                    appState.markBoletoAsRead(item)
                     UIApplication.shared.open(url)
                 } else {
                     showBoletoNaoGeradoModal = true
@@ -230,6 +269,7 @@ struct ParcelaCardExtrato: View {
                 try data.write(to: temp)
                 await MainActor.run {
                     loadingBoleto = false
+                    appState.markBoletoAsRead(item)
                     boletoShareItems = [temp]
                     showBoletoShareSheet = true
                 }
@@ -252,16 +292,28 @@ struct ParcelaCardExtrato: View {
                     .foregroundColor(textP)
                     .lineLimit(2)
                 Spacer()
-                Text(statusText(item.status))
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(statusTagColor(item.status))
-                    )
+                HStack(spacing: 6) {
+                    if isUnread && mostraBotoesBoleto {
+                        Text("Novo")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(AppColors.accentBlue)
+                            .clipShape(Capsule())
+                    }
+                    Text(statusText(item.status))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(statusTagColor(item.status))
+                        )
+                }
             }
 
             // Linha 2: Vencimento (esq)  |  Valor (dir)
@@ -283,6 +335,20 @@ struct ParcelaCardExtrato: View {
                     Text(formatCurrency(item.amount))
                         .font(.headline)
                         .fontWeight(.bold)
+                        .foregroundColor(textP)
+                }
+            }
+
+            if item.status == .paid {
+                let paymentDate = item.paymentDate?.trimmingCharacters(in: .whitespacesAndNewlines)
+                HStack(alignment: .top) {
+                    Text("Data de pagamento")
+                        .font(.caption)
+                        .foregroundColor(textS)
+                    Spacer()
+                    Text((paymentDate?.isEmpty == false) ? paymentDate! : "Não informada")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                         .foregroundColor(textP)
                 }
             }
@@ -341,6 +407,7 @@ struct ParcelaCardExtrato: View {
                     .disabled(loadingBoleto)
                 }
             }
+
         }
         .padding()
         .background(cardBg)
@@ -457,7 +524,8 @@ private struct BoletoNaoGeradoModalView: View {
 
 // MARK: - Modal Filtrar Parcelas
 struct FiltrarParcelasModal: View {
-    @Binding var empreendimento: FiltroEmpreendimento
+    @Binding var empreendimento: String
+    let empreendimentoOptions: [String]
     @Binding var periodo: FiltroPeriodo
     var onCancel: () -> Void
     var onApply: () -> Void
@@ -480,14 +548,14 @@ struct FiltrarParcelasModal: View {
                     .font(.subheadline)
                     .fontWeight(.bold)
                     .foregroundColor(textP)
-                ForEach(FiltroEmpreendimento.allCases, id: \.rawValue) { opt in
+                ForEach(empreendimentoOptions, id: \.self) { opt in
                     Button {
                         empreendimento = opt
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: empreendimento == opt ? "circle.inset.filled" : "circle")
                                 .foregroundColor(AppColors.accentBlue)
-                            Text(opt.rawValue)
+                            Text(opt)
                                 .font(.subheadline)
                                 .foregroundColor(textP)
                             Spacer()
@@ -552,7 +620,7 @@ struct FiltrarParcelasModal: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         ExtratoView()
             .environmentObject(AppState.shared)
     }

@@ -11,6 +11,8 @@ struct FinancialOverviewCard: View {
     let summary: FinancialSummary?
     var isDark: Bool = true
     var onVerExtrato: (() -> Void)? = nil
+    var isLoading: Bool = false
+    @EnvironmentObject private var appState: AppState
     
     private func formatCurrency(_ value: Double) -> String {
         let formatter = NumberFormatter()
@@ -18,14 +20,28 @@ struct FinancialOverviewCard: View {
         formatter.locale = Locale(identifier: "pt_BR")
         return formatter.string(from: NSNumber(value: value)) ?? "R$ 0,00"
     }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Resumo Financeiro")
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(AppColors.textPrimary(dark: isDark))
-            
+
+    @ViewBuilder
+    private func loadingSkeleton(isDark: Bool) -> some View {
+        let placeholder = AppColors.cardBackground(dark: isDark).opacity(0.6)
+        VStack(spacing: 12) {
+            ShimmerBox(height: 44, isDark: isDark)
+            ShimmerBox(height: 44, isDark: isDark)
+            ShimmerBox(height: 44, isDark: isDark)
+            ShimmerBox(height: 44, isDark: isDark)
+            ShimmerBox(height: 44, isDark: isDark)
+            RoundedRectangle(cornerRadius: 12)
+                .fill(placeholder)
+                .frame(height: 48)
+        }
+        .padding()
+        .background(AppColors.cardBackground(dark: isDark))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private var financialContent: some View {
             VStack(spacing: 12) {
                 FinancialItemView(
                     title: "Dívidas Vencidas",
@@ -90,11 +106,48 @@ struct FinancialOverviewCard: View {
                         .background(AppColors.accentBlue)
                         .cornerRadius(12)
                 }
+                .overlay(alignment: .topTrailing) {
+                    UnreadCountBadge(count: appState.unreadBoletoCount)
+                        .offset(x: 6, y: -6)
+                }
             }
             .padding()
             .background(AppColors.cardBackground(dark: isDark))
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center) {
+                Text("Resumo Financeiro")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(AppColors.textPrimary(dark: isDark))
+                Spacer()
+                if isLoading {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentBlue))
+                            .scaleEffect(0.85)
+                        Text("Atualizando…")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(AppColors.textSecondary(dark: isDark))
+                    }
+                }
+            }
+
+            Group {
+                if isLoading {
+                    loadingSkeleton(isDark: isDark)
+                        .transition(.opacity.combined(with: .scale(scale: 0.98)))
+                } else {
+                    financialContent
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeInOut(duration: 0.28), value: isLoading)
         }
     }
     
@@ -138,6 +191,46 @@ struct FinancialOverviewCard: View {
         }
     }
 }
+
+// MARK: - Skeleton com animação de carregamento (shimmer)
+private struct ShimmerBox: View {
+    let height: CGFloat
+    let isDark: Bool
+    @State private var phase: CGFloat = 0
+
+    private var baseColor: Color {
+        AppColors.cardBackground(dark: isDark).opacity(0.6)
+    }
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(baseColor)
+            .overlay(
+                GeometryReader { geo in
+                    let width = geo.size.width * 0.4
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(
+                            LinearGradient(
+                                colors: [.clear, (isDark ? Color.white : Color.gray).opacity(0.15), .clear],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: width)
+                        .offset(x: -width + (geo.size.width + width) * phase)
+                }
+                .clipped()
+            )
+            .frame(height: height)
+            .clipped()
+            .onAppear {
+                withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: true)) {
+                    phase = 1
+                }
+            }
+    }
+}
+
     #Preview {
         FinancialOverviewCard(summary: FinancialSummary(
             overdueAmount: 2500.50,
@@ -147,6 +240,7 @@ struct FinancialOverviewCard: View {
             nextDueDate: "15/02/2025",
             nextDueValue: 1250.00
         ))
+        .environmentObject(AppState.shared)
         .padding()
         .background(AppColors.backgroundPrimary)
     }

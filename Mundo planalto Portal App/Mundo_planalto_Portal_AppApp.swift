@@ -27,19 +27,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions
                      launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Apenas Firebase e delegates no launch. Permissão de notificação é pedida depois (separada do login do usuário) para evitar timeout.
         FirebaseApp.configure()
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
-        requestNotificationAuthorization(application: application)
-        // Se já tiver permissão (ex.: segundo launch), registra para push na hora
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
+        return true
+    }
+
+    /// Chamado pela UI depois do splash/login, em momento separado do login do usuário, para evitar timeout.
+    func setupPushNotificationsIfNeeded() {
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
             DispatchQueue.main.async {
+                let app = UIApplication.shared
                 if settings.authorizationStatus == .authorized {
-                    application.registerForRemoteNotifications()
+                    app.registerForRemoteNotifications()
+                } else if settings.authorizationStatus == .notDetermined {
+                    self?.requestNotificationAuthorization(application: app)
                 }
             }
         }
-        return true
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
@@ -51,6 +57,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
                 }
             }
         }
+        NotificationCenter.default.post(name: .noticeUnreadCountShouldRefresh, object: nil)
     }
 
     private func requestNotificationAuthorization(application: UIApplication) {
@@ -86,6 +93,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         #if DEBUG
         print("[FCM] Token: \(token)")
         #endif
+        // Todas as instalações se inscrevem no tópico "announcements".
+        Messaging.messaging().subscribe(toTopic: "announcements") { error in
+            #if DEBUG
+            if let e = error { print("[FCM] Erro ao inscrever em announcements: \(e.localizedDescription)") }
+            else { print("[FCM] Inscrito no tópico announcements") }
+            #endif
+        }
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
@@ -93,6 +107,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         print("[Push] Notificação recebida em primeiro plano: \(notification.request.content.title)")
         #endif
         // Exibir banner, som e badge mesmo com app aberto (iOS 14+)
+        NotificationCenter.default.post(name: .noticeUnreadCountShouldRefresh, object: nil)
         if #available(iOS 14.0, *) {
             completionHandler([.banner, .badge, .sound, .list])
         } else {
@@ -104,6 +119,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         #if DEBUG
         print("[Push] Usuário tocou na notificação: \(response.notification.request.content.userInfo)")
         #endif
+        NotificationCenter.default.post(name: .noticeUnreadCountShouldRefresh, object: nil)
+        NotificationCenter.default.post(name: NSNotification.Name("SwitchToNews"), object: nil)
         completionHandler()
     }
 }

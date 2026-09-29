@@ -2,7 +2,7 @@
 //  DashboardView.swift
 //  Mundo planalto Portal App
 //
-//  Created by matheus ferreira on 26/01/26.
+//  Tela principal do app (resumo financeiro, ações rápidas, empreendimentos).
 //
 
 import SwiftUI
@@ -13,6 +13,7 @@ private let whatsAppURL = "https://api.whatsapp.com/send/?phone=556240002200&tex
 struct DashboardView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = DashboardViewModel()
+
     @State private var navigateToSupport = false
     @State private var showChatScreen = false
     @State private var navigateToFinancial = false
@@ -34,51 +35,55 @@ struct DashboardView: View {
                     HeaderSection(greeting: viewModel.greeting, isDark: isDark)
                         .padding(.horizontal)
 
-                    if viewModel.isLoading {
-                        ProgressView()
-                            .padding(.top, 50)
-                    } else {
-                        if let summary = viewModel.financialSummary {
-                            FinancialOverviewCard(summary: summary, isDark: isDark, onVerExtrato: { navigateToFinancial = true })
-                                .padding(.horizontal)
-                        }
+                    FinancialOverviewCard(
+                        summary: viewModel.financialSummary,
+                        isDark: isDark,
+                        onVerExtrato: { navigateToFinancial = true },
+                        isLoading: viewModel.isLoadingFinancial
+                    )
+                    .padding(.horizontal)
 
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text("Ações Rápidas")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(AppColors.textPrimary(dark: isDark))
-                                .padding(.horizontal)
-
-                            LazyVGrid(columns: [
-                                GridItem(.flexible(), spacing: 12),
-                                GridItem(.flexible(), spacing: 12)
-                            ], spacing: 12) {
-                                ForEach(DashboardQuickAction.allCases) { action in
-                                    QuickActionButton(action: action, isDark: isDark)
-                                        .onTapGesture {
-                                            handleQuickAction(action)
-                                        }
-                                }
-                            }
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Ações Rápidas")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .foregroundColor(AppColors.textPrimary(dark: isDark))
                             .padding(.horizontal)
 
-                            MeusEmpreendimentosCard(isDark: isDark)
-                                .padding(.horizontal)
-                                .onTapGesture {
-                                    NotificationCenter.default.post(name: NSNotification.Name("SwitchToVentures"), object: nil)
-                                }
+                        LazyVGrid(columns: [
+                            GridItem(.flexible(), spacing: 12),
+                            GridItem(.flexible(), spacing: 12)
+                        ], spacing: 12) {
+                            ForEach(DashboardQuickAction.allCases.filter { $0 != .chatAI }) { action in
+                                QuickActionButton(action: action, isDark: isDark)
+                                    .onTapGesture {
+                                        handleQuickAction(action)
+                                    }
+                            }
                         }
+                        .padding(.horizontal)
+
+                        MeusEmpreendimentosCard(isDark: isDark)
+                            .padding(.horizontal)
+                            .onTapGesture {
+                                NotificationCenter.default.post(name: NSNotification.Name("SwitchToVentures"), object: nil)
+                            }
                     }
                 }
                 .padding(.vertical)
+            }
+            .refreshable {
+                await viewModel.refreshFinancialOverview()
             }
         }
         .sheet(isPresented: $showChatScreen) {
             ChatAIScreen()
         }
         .sheet(isPresented: $showSolicitarAtendimento) {
-            SolicitarAtendimentoModal(message: $solicitarAtendimentoMessage, isDark: isDark) { msg in
+            SolicitarAtendimentoModal(
+                message: $solicitarAtendimentoMessage,
+                isDark: isDark
+            ) { msg in
                 let cpf = PreferencesManager.shared.getUserCpfCnpj() ?? ""
                 do {
                     let result = try await SupportService.shared.sendExternalSupportRequest(cpf: cpf, message: msg)
@@ -101,17 +106,19 @@ struct DashboardView: View {
         .alert("Solicitação de Atendimento", isPresented: $showSupportAlert) {
             Button("OK") { supportAlertMessage = nil }
         } message: {
-            if let msg = supportAlertMessage { Text(msg) }
+            if let msg = supportAlertMessage {
+                Text(msg)
+            }
         }
-            .navigationDestination(isPresented: $navigateToFinancial) {
-                ExtratoView()
-            }
-            .navigationDestination(isPresented: $navigateToInforme) {
-                InformeRendimentosView()
-            }
-            .navigationDestination(isPresented: $navigateToSupport) {
-                CriarTicketView()
-            }
+        .navigationDestination(isPresented: $navigateToFinancial) {
+            ExtratoView()
+        }
+        .navigationDestination(isPresented: $navigateToInforme) {
+            InformeRendimentosView()
+        }
+        .navigationDestination(isPresented: $navigateToSupport) {
+            CriarTicketView()
+        }
         .onAppear {
             Task {
                 await viewModel.loadDashboardData()
@@ -151,3 +158,4 @@ struct DashboardView: View {
     DashboardView()
         .environmentObject(AppState.shared)
 }
+

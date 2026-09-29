@@ -22,7 +22,10 @@ class AvisosNoticiasViewModel: ObservableObject {
             let list = try await NewsService.shared.getAnnouncements()
             notices = list
         } catch {
-            self.error = "Erro ao carregar avisos e notícias"
+            self.error = AppErrorMapper.userMessage(
+                for: error,
+                fallback: "Erro ao carregar avisos e notícias"
+            )
         }
         isLoading = false
     }

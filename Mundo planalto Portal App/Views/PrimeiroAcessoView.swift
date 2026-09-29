@@ -135,7 +135,7 @@ struct PrimeiroAcessoView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         PrimeiroAcessoView()
             .environmentObject(AppState.shared)
     }

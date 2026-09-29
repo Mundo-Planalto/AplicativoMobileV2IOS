@@ -28,12 +28,22 @@ struct SolicitarAtendimentoModal: View {
                 .font(.subheadline)
                 .foregroundColor(textS)
 
-            TextField("Mensagem", text: $message, axis: .vertical)
-                .lineLimit(3...6)
-                .padding(10)
-                .background(cardBg)
-                .cornerRadius(10)
-                .foregroundColor(textP)
+            ZStack(alignment: .topLeading) {
+                if message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Mensagem")
+                        .foregroundColor(textS.opacity(0.8))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 14)
+                }
+                TextEditor(text: $message)
+                    .frame(minHeight: 90, maxHeight: 150)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(Color.clear)
+                    .foregroundColor(textP)
+            }
+            .background(cardBg)
+            .cornerRadius(10)
 
             HStack(spacing: 10) {
                 Button("Cancelar") {

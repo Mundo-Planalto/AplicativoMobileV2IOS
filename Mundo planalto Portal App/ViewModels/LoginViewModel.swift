@@ -30,18 +30,15 @@ class LoginViewModel: ObservableObject {
     }
     
     func login() {
-        // Prevent multiple simultaneous login attempts
-        guard case .idle = state else {
+        // Evita múltiplas tentativas simultâneas.
+        if case .loading = state {
             return
         }
-
         guard isFormValid else {
             state = .error("Por favor, preencha todos os campos corretamente")
             return
         }
-
         state = .loading
-
         Task {
             do {
                 let response = try await authService.login(document: cpf, password: password)
@@ -50,6 +47,7 @@ class LoginViewModel: ObservableObject {
                     if let token = response.token {
                         PreferencesManager.shared.saveAuthToken(token)
                         PreferencesManager.shared.saveUserCpfCnpj(response.user?.document ?? CPFMask.unformat(cpf))
+                        PreferencesManager.shared.saveLoginCredentials(document: CPFMask.unformat(cpf), password: password)
                     }
                     if let user = response.user {
                         PreferencesManager.shared.saveUserId("\(user.id)")
@@ -69,7 +67,12 @@ class LoginViewModel: ObservableObject {
             } catch {
                 print("[LoginViewModel] ❌ Erro ao fazer login: \(error)")
                 print("[LoginViewModel]    Tipo: \(type(of: error)), descrição: \(error.localizedDescription)")
-                state = .error("Erro ao fazer login. Verifique sua conexão e tente novamente.")
+                state = .error(
+                    AppErrorMapper.userMessage(
+                        for: error,
+                        fallback: "Erro ao fazer login. Tente novamente."
+                    )
+                )
             }
         }
     }

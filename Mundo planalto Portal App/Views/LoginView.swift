@@ -2,7 +2,7 @@
 //  LoginView.swift
 //  Mundo planalto Portal App
 //
-//  Created by matheus ferreira on 26/01/26.
+//  Tela de login: CPF/CNPJ, senha, Esqueceu senha, Primeiro Acesso.
 //
 
 import SwiftUI
@@ -61,15 +61,27 @@ struct LoginView: View {
                             )
                             .padding(.horizontal, 20)
 
-                            PrimaryButton(
-                                title: "Entrar",
-                                action: { viewModel.login() },
-                                isLoading: isLoading,
-                                isEnabled: viewModel.isFormValid,
-                                isDark: isDark
-                            )
+                            Button {
+                                viewModel.login()
+                            } label: {
+                                Group {
+                                    if isLoading {
+                                        ProgressView()
+                                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    } else {
+                                        Text("Entrar")
+                                            .fontWeight(.bold)
+                                    }
+                                }
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(AppColors.accentBlue)
+                                .cornerRadius(12)
+                            }
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
+                            .disabled(!viewModel.isFormValid || isLoading)
 
                             if let url = URL(string: forgotPasswordURL) {
                                 Link("Esqueceu sua senha?", destination: url)
@@ -82,18 +94,19 @@ struct LoginView: View {
                             } label: {
                                 Text("Primeiro Acesso? Cadastre-se")
                                     .font(.subheadline)
+                                    .fontWeight(.medium)
                                     .foregroundColor(AppColors.accentBlue)
                             }
                             .padding(.top, 8)
-                        }
-                        .padding(.vertical, 24)
 
-                        if case .error(let message) = viewModel.state {
-                            Text(message)
-                                .font(.caption)
-                                .foregroundColor(.red)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 20)
+                            if case .error(let message) = viewModel.state {
+                                Text(message)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 8)
+                            }
                         }
                     }
                 }
@@ -102,36 +115,6 @@ struct LoginView: View {
                 PrimeiroAcessoView()
             }
         }
-    }
-}
-
-/// Botão primário azul (tema: fundo claro ou escuro)
-private struct PrimaryButton: View {
-    let title: String
-    let action: () -> Void
-    var isLoading: Bool = false
-    var isEnabled: Bool = true
-    var isDark: Bool = true
-
-    var body: some View {
-        Button(action: action) {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                } else {
-                    Text(title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .background(AppColors.accentBlue)
-            .cornerRadius(12)
-        }
-        .disabled(!isEnabled || isLoading)
-        .opacity(isEnabled && !isLoading ? 1 : 0.6)
     }
 }
 

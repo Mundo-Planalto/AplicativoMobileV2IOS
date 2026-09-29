@@ -13,8 +13,16 @@ enum AuthError: Error {
     case invalidResponse
 }
 
+actor SessionRecoveryCoordinator {
+    private var currentTask: Task<Bool, Never>?
+
+    func runningTask() -> Task<Bool, Never>? { currentTask }
+    func setTask(_ task: Task<Bool, Never>?) { currentTask = task }
+}
+
 class AuthService {
     static let shared = AuthService()
+    private let recoveryCoordinator = SessionRecoveryCoordinator()
     private init() {}
 
     private var baseURL: String { ApiConfig.baseURL + "/" }
@@ -160,5 +168,39 @@ class AuthService {
         } catch {
             throw AuthError.networkError
         }
+    }
+
+    /// Tenta recuperar sessão automaticamente com credenciais salvas.
+    /// Retorna true quando conseguiu obter novo token.
+    func recoverSessionIfNeeded() async -> Bool {
+        if let task = await recoveryCoordinator.runningTask() {
+            return await task.value
+        }
+
+        let task = Task<Bool, Never> { [weak self] in
+            guard let self else { return false }
+            guard let creds = PreferencesManager.shared.getSavedLoginCredentials() else { return false }
+            do {
+                let response = try await self.login(document: creds.document, password: creds.password)
+                guard response.success, let token = response.token, !token.isEmpty else { return false }
+
+                PreferencesManager.shared.saveAuthToken(token)
+                if let user = response.user {
+                    PreferencesManager.shared.saveUserId("\(user.id)")
+                    PreferencesManager.shared.saveUserCpfCnpj(user.document)
+                    if let name = user.name, !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        PreferencesManager.shared.saveUserName(name)
+                    }
+                }
+                return true
+            } catch {
+                return false
+            }
+        }
+
+        await recoveryCoordinator.setTask(task)
+        let ok = await task.value
+        await recoveryCoordinator.setTask(nil)
+        return ok
     }
 }

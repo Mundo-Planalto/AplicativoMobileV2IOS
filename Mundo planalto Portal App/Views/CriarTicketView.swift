@@ -10,7 +10,6 @@ import SwiftUI
 struct CriarTicketView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = CriarTicketViewModel()
-    @State private var navigateBack = false
 
     var body: some View {
         ZStack {
@@ -105,7 +104,7 @@ struct CriarTicketView: View {
                                     .background(AppColors.cardBackground)
                                     .cornerRadius(8)
                                     .foregroundColor(.white)
-                                    .scrollContentBackground(.hidden)
+                                    .applyHiddenScrollBackgroundIfAvailable()
                             }
                         }
                         .padding(.horizontal)
@@ -163,7 +162,7 @@ struct CriarTicketView: View {
                                         .font(.subheadline)
 
                                     Button("Voltar") {
-                                        navigateBack = true
+                                        dismiss()
                                     }
                                     .foregroundColor(AppColors.accentCyan)
                                     .padding(.top, 8)
@@ -183,11 +182,18 @@ struct CriarTicketView: View {
                 }
             }
         }
-        .navigationDestination(isPresented: $navigateBack) {
-            // Voltar para a tela anterior
-            EmptyView()
-        }
         .navigationBarBackButtonHidden(true)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyHiddenScrollBackgroundIfAvailable() -> some View {
+        if #available(iOS 16.0, *) {
+            self.scrollContentBackground(.hidden)
+        } else {
+            self
+        }
     }
 }
 
@@ -218,7 +224,7 @@ struct TicketInfoRow: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         CriarTicketView()
     }
 }

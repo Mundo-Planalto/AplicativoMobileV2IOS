@@ -10,6 +10,8 @@ import SwiftUI
 struct NoticiaDetalhesView: View {
     let noticeId: String
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appState: AppState
+    @Environment(\.horizontalSizeClass) private var hSizeClass
     @StateObject private var viewModel: NoticiaDetalhesViewModel
 
     init(noticeId: String) {
@@ -17,15 +19,44 @@ struct NoticiaDetalhesView: View {
         self._viewModel = StateObject(wrappedValue: NoticiaDetalhesViewModel(noticeId: noticeId))
     }
 
+    private func attributedDescription(from html: String) -> AttributedString {
+        let trimmed = html.trimmingCharacters(in: .whitespacesAndNewlines)
+        let textColor = UIColor(AppColors.textPrimary(dark: appState.isDarkTheme))
+        let linkColor = UIColor(AppColors.accentCyan)
+        let ns = SafeHTMLParser.attributedString(
+            from: trimmed,
+            font: .systemFont(ofSize: 16),
+            textColor: textColor,
+            linkColor: linkColor
+        )
+        if var attributed = try? AttributedString(ns, including: \.uiKit) {
+            return attributed
+        }
+        return AttributedString(trimmed.plainTextFromHTML())
+    }
+
     var body: some View {
+        let isDark = appState.isDarkTheme
+        let bg = AppColors.backgroundPrimary(dark: isDark)
+        let textP = AppColors.textPrimary(dark: isDark)
+        let textS = AppColors.textSecondary(dark: isDark)
+        let cardBg = AppColors.cardBackground(dark: isDark)
+        let isPad = UIDevice.current.userInterfaceIdiom == .pad || hSizeClass == .regular
+        let titleFont: Font = isPad ? .title : .headline
+        let titleSpacing: CGFloat = isPad ? 12 : 8
+        let contentPadding: CGFloat = isPad ? 18 : 14
+        let sidePadding: CGFloat = isPad ? 20 : 14
+        let maxContentWidth: CGFloat = isPad ? 720 : .infinity
+        let cardCorner: CGFloat = isPad ? 14 : 12
+
         ZStack {
-            AppColors.backgroundPrimary
+            bg
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // TopAppBar
                 ZStack {
-                    AppColors.backgroundPrimary
+                    bg
                         .ignoresSafeArea()
 
                     HStack {
@@ -33,17 +64,17 @@ struct NoticiaDetalhesView: View {
                             dismiss()
                         }) {
                             Image(systemName: "chevron.left")
-                                .foregroundColor(.white)
+                                .foregroundColor(textP)
                                 .font(.title2)
                         }
 
                         Spacer()
 
                         if let notice = viewModel.notice {
-                            Text(notice.intelligentType == .notice ? "Aviso" : "Notícia")
+                            Text(notice.type == .notice ? "Aviso" : "Notícia")
                                 .font(.title2)
                                 .fontWeight(.bold)
-                                .foregroundColor(.white)
+                                .foregroundColor(textP)
                         }
 
                         Spacer()
@@ -53,18 +84,29 @@ struct NoticiaDetalhesView: View {
                 .frame(height: 60)
 
                 if viewModel.isLoading {
-                    Spacer()
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentCyan))
-                    Spacer()
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ShimmerSkeletonCard(height: 220, isDark: isDark)
+                            ShimmerSkeletonCard(height: 14, isDark: isDark)
+                                .padding(.horizontal, 20)
+                            ShimmerSkeletonCard(height: 14, isDark: isDark)
+                                .padding(.horizontal, 20)
+                            ShimmerSkeletonCard(height: 14, isDark: isDark)
+                                .padding(.horizontal, 20)
+                            ShimmerSkeletonCard(height: 180, isDark: isDark)
+                                .padding(.horizontal, 20)
+                        }
+                        .padding(.top, 20)
+                        .padding(.bottom, 24)
+                    }
                 } else {
                     if let notice = viewModel.notice {
                         ScrollView {
-                            VStack(alignment: .leading, spacing: 20) {
+                            VStack(alignment: .leading, spacing: titleSpacing) {
                                 // Badge tipo canto superior direito
                                 HStack {
                                     Spacer()
-                                    Text(notice.intelligentType == .notice ? "AVISO" : "NOTÍCIA")
+                                    Text(notice.type == .notice ? "AVISO" : "NOTÍCIA")
                                         .font(.caption)
                                         .fontWeight(.bold)
                                         .foregroundColor(.white)
@@ -72,47 +114,55 @@ struct NoticiaDetalhesView: View {
                                         .padding(.vertical, 6)
                                         .background(
                                             RoundedRectangle(cornerRadius: 12)
-                                                .fill(notice.intelligentType == .notice ? Color.orange : AppColors.accentBlue)
+                                                .fill(notice.type == .notice ? Color.orange : AppColors.accentBlue)
                                         )
                                 }
 
                                 // Header com tipo e data
                                 HStack {
                                     HStack(spacing: 6) {
-                                        Image(systemName: notice.intelligentType == .notice ? "bell.fill" : "newspaper.fill")
-                                            .foregroundColor(notice.intelligentType == .notice ? .orange : AppColors.accentBlue)
+                                        Image(systemName: notice.type == .notice ? "bell.fill" : "newspaper.fill")
+                                            .foregroundColor(notice.type == .notice ? .orange : AppColors.accentBlue)
 
-                                        Text(notice.intelligentType == .notice ? "Aviso" : "Notícia")
+                                        Text(notice.type == .notice ? "Aviso" : "Notícia")
                                             .font(.subheadline)
                                             .fontWeight(.semibold)
-                                            .foregroundColor(notice.intelligentType == .notice ? .orange : AppColors.accentBlue)
+                                            .foregroundColor(notice.type == .notice ? .orange : AppColors.accentBlue)
                                     }
 
                                     Spacer()
 
                                     Text(notice.date)
                                         .font(.subheadline)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(textS)
                                 }
 
-                                // Título grande
+                                // Título (mais legível no celular)
                                 Text(notice.title)
-                                    .font(.largeTitle)
+                                    .font(titleFont)
                                     .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                    .lineSpacing(8)
+                                    .foregroundColor(textP)
+                                    .lineLimit(nil)
+                                    .fixedSize(horizontal: false, vertical: true)
 
-                                // Conteúdo completo
-                                Text(notice.description)
+                                // Conteúdo no estilo antigo, com links clicáveis ("clique aqui").
+                                Text(attributedDescription(from: notice.description))
                                     .font(.body)
-                                    .foregroundColor(.white.opacity(0.9))
+                                    .foregroundColor(textP)
                                     .lineSpacing(6)
                                     .multilineTextAlignment(.leading)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
 
                                 // Espaço adicional no final
                                 Spacer(minLength: 32)
                             }
-                            .padding()
+                            .padding(contentPadding)
+                            .frame(maxWidth: maxContentWidth, alignment: .leading)
+                            .background(cardBg)
+                            .cornerRadius(cardCorner)
+                            .padding(.horizontal, sidePadding)
+                            .padding(.top, 12)
+                            .padding(.bottom, 24)
                         }
                     } else if let error = viewModel.error {
                         VStack(spacing: 16) {
@@ -120,7 +170,7 @@ struct NoticiaDetalhesView: View {
                                 .font(.system(size: 50))
                                 .foregroundColor(.orange)
                             Text(error)
-                                .foregroundColor(.white)
+                                .foregroundColor(textP)
                                 .multilineTextAlignment(.center)
                             Button("Tentar Novamente") {
                                 Task {
@@ -144,7 +194,7 @@ struct NoticiaDetalhesView: View {
 }
 
 #Preview {
-    NavigationStack {
+    NavigationView {
         NoticiaDetalhesView(noticeId: "1")
     }
 }

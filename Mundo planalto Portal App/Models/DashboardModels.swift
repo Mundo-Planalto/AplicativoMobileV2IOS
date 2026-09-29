@@ -115,6 +115,8 @@ struct VentureUpdate: Identifiable, Codable {
     let images: [String]
     let imageUrl: String?
     let videoUrl: String?
+    /// Link direto do YouTube quando a API envia em campo separado (`youtubeUrl`).
+    let youtubeUrl: String?
     let isCompleted: Bool
 }
 
@@ -124,6 +126,7 @@ struct FinancialStatementItem: Identifiable, Codable {
     let installmentNumber: String // "1/24"
     let parcela: String // Mesmo que installmentNumber para compatibilidade
     let dueDate: String
+    let paymentDate: String?
     let amount: Double
     let status: PaymentStatus
     /// Número do contrato (ex: CT-5235) para exibição e link WhatsApp.
@@ -136,12 +139,13 @@ struct FinancialStatementItem: Identifiable, Codable {
     /// Indica se o boleto já foi gerado pelo sistema (false/nil = precisa solicitar no WhatsApp, não exibir).
     let generatedBillet: Bool?
 
-    init(id: String, ventureName: String, installmentNumber: String, parcela: String, dueDate: String, amount: Double, status: PaymentStatus, contractNumber: String? = nil, billReceivableId: Int? = nil, installmentId: Int? = nil, isEsolution: Bool? = nil, esolutionBoletoId: Int? = nil, generatedBillet: Bool? = nil) {
+    init(id: String, ventureName: String, installmentNumber: String, parcela: String, dueDate: String, paymentDate: String? = nil, amount: Double, status: PaymentStatus, contractNumber: String? = nil, billReceivableId: Int? = nil, installmentId: Int? = nil, isEsolution: Bool? = nil, esolutionBoletoId: Int? = nil, generatedBillet: Bool? = nil) {
         self.id = id
         self.ventureName = ventureName
         self.installmentNumber = installmentNumber
         self.parcela = parcela
         self.dueDate = dueDate
+        self.paymentDate = paymentDate
         self.amount = amount
         self.status = status
         self.contractNumber = contractNumber

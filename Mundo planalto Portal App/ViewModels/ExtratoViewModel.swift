@@ -28,11 +28,6 @@ enum ExtratoFilter: String, CaseIterable {
     static var tabCases: [ExtratoFilter] { [.aVencer, .pagas, .vencidas] }
 }
 
-enum FiltroEmpreendimento: String, CaseIterable {
-    case todos = "Todos os empreendimentos"
-    case hardRock = "Hard Rock Hotel Gramado"
-}
-
 enum FiltroPeriodo: String, CaseIterable {
     case todos = "Todos os períodos"
     case ultimos30 = "Últimos 30 dias"
@@ -49,8 +44,18 @@ class ExtratoViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
     @Published var showFilterModal = false
-    @Published var filtroEmpreendimento: FiltroEmpreendimento = .todos
+    @Published var filtroEmpreendimento: String = "Todos os empreendimentos"
     @Published var filtroPeriodo: FiltroPeriodo = .todos
+
+    private let todosEmpreendimentosLabel = "Todos os empreendimentos"
+
+    var empreendimentoOptions: [String] {
+        let names = allItems
+            .map { $0.ventureName.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let uniqueSorted = Array(Set(names)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+        return [todosEmpreendimentosLabel] + uniqueSorted
+    }
 
     var tabOptions: [ExtratoFilter] { ExtratoFilter.tabCases }
 
@@ -58,15 +63,27 @@ class ExtratoViewModel: ObservableObject {
         selectedFilter.rawValue
     }
 
-    func loadFinancialStatement() async {
+    func loadFinancialStatement(forceRefresh: Bool = false) async {
         isLoading = true
         error = nil
         do {
-            let items = try await ExtratoService.shared.getExtrato(showPaid: true, showOverdue: true, showDue: true)
+            let items = try await ExtratoService.shared.getExtrato(
+                showPaid: true,
+                showOverdue: true,
+                showDue: true,
+                useCache: true,
+                forceRefresh: forceRefresh
+            )
             allItems = items
             applyFilter()
+        } catch ExtratoError.invalidCredentials {
+            self.error = "Não foi possível validar sua sessão no momento. Tente novamente em instantes."
+            loadFinancialStatementFallback()
+        } catch ExtratoError.networkError {
+            self.error = "Verifique sua conexão e tente novamente."
+            loadFinancialStatementFallback()
         } catch {
-            self.error = "Erro ao carregar extrato financeiro"
+            self.error = "Não foi possível carregar o extrato. Tente novamente."
             loadFinancialStatementFallback()
         }
         isLoading = false
@@ -93,15 +110,21 @@ class ExtratoViewModel: ObservableObject {
 
     private func applyFilter() {
         var items = allItems
-        // 1) Somente registros com boleto gerado
-        items = items.filter { $0.generatedBillet == true }
-        // 2) Aba selecionada: A Vencer / Pagas / Vencidas
+        // Aba selecionada: A Vencer / Pagas / Vencidas
         if let status = selectedFilter.status {
             items = items.filter { $0.status == status }
+            // Só em "A Vencer": exibir apenas itens com boleto gerado (generatedBillet == true)
+            if selectedFilter == .aVencer {
+                items = items.filter { $0.generatedBillet == true }
+            }
         }
-        // 3) Filtro de empreendimento (modal)
-        if filtroEmpreendimento == .hardRock {
-            items = items.filter { $0.ventureName.contains("Hard Rock") || $0.ventureName.contains("Gramado") }
+        // Filtro de empreendimento (modal)
+        if filtroEmpreendimento != todosEmpreendimentosLabel {
+            let selected = filtroEmpreendimento.trimmingCharacters(in: .whitespacesAndNewlines)
+            items = items.filter {
+                $0.ventureName.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .localizedCaseInsensitiveCompare(selected) == .orderedSame
+            }
         }
         // 4) Filtro de período (modal): vencimento dentro do intervalo (últimos X dias/meses/ano até hoje)
         if filtroPeriodo != .todos {

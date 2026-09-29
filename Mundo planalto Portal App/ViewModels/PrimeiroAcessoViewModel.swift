@@ -64,6 +64,7 @@ class PrimeiroAcessoViewModel: ObservableObject {
                     if let token = response.token {
                         PreferencesManager.shared.saveAuthToken(token)
                         PreferencesManager.shared.saveUserCpfCnpj(CPFMask.unformat(cpf))
+                        PreferencesManager.shared.saveLoginCredentials(document: CPFMask.unformat(cpf), password: password)
                     }
 
                     state = .success
@@ -73,7 +74,12 @@ class PrimeiroAcessoViewModel: ObservableObject {
                 }
 
             } catch {
-                state = .error("Erro ao criar conta. Tente novamente.")
+                state = .error(
+                    AppErrorMapper.userMessage(
+                        for: error,
+                        fallback: "Erro ao criar conta. Tente novamente."
+                    )
+                )
             }
         }
     }
