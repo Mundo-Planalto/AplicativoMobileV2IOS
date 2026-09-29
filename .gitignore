@@ -9,10 +9,17 @@ build/
 *.moved-aside
 *.xccheckout
 *.xcscmblueprint
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
 
-# Segredos (nunca no repositório)
+# Segredos e configuração local (nunca no repositório)
 GoogleService-Info.plist
 Config.plist
+*.p8
+*.p12
+*.mobileprovision
 
 # Swift Package Manager
 .build/

@@ -1,5 +1,3 @@
-<!-- Cópia de https://github.com/rodrigoasilva1/AplicativoMobileV2IOS (clone local em ~/projetos/AplicativoMobileV2IOS). Os arquivos docs/*.md citados abaixo estão nesse repositório de documentação. -->
-
 # App iOS Hard Rock Hotel & Vacation Club
 
 Você é o agente que transforma o app iOS existente do **Mundo Planalto Portal** (Swift, Xcode) no app **Hard Rock Hotel & Vacation Club**, exatamente como foi feito na versão Android em 28/09/2026. O app é do clube de férias operado pela Mundo Planalto (Goiânia/GO). Responda e escreva textos de interface em **português do Brasil**.
