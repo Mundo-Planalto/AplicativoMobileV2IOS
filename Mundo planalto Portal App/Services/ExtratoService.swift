@@ -407,6 +407,9 @@ class ExtratoService {
                     lastNon200Status = nil
                     continue
                 }
+                #if DEBUG
+                print("[ExtratoService] GET \(path) → HTTP \(http.statusCode), \(data.count) bytes")
+                #endif
 
                 if http.statusCode == 401 {
                     let recovered = await AuthService.shared.recoverSessionIfNeeded()
@@ -494,6 +497,9 @@ class ExtratoService {
             guard let retryHttp = response as? HTTPURLResponse else { throw ExtratoError.invalidResponse }
             http = retryHttp
         }
+        #if DEBUG
+        print("[ExtratoService] GET financial/resumo → HTTP \(http.statusCode), \(data.count) bytes")
+        #endif
         if http.statusCode == 401 || http.statusCode == 403 { throw ExtratoError.invalidCredentials }
         guard http.statusCode == 200 else { throw ExtratoError.invalidResponse }
 
@@ -501,6 +507,9 @@ class ExtratoService {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
 
         let wrapped = try decoder.decode(ApiResponse<FinancialSummaryResponseDto>.self, from: data)
+        #if DEBUG
+        print("[ExtratoService] financial/resumo decodificado: success=\(wrapped.success), data=\(wrapped.data != nil ? "sim" : "nil"), message=\(wrapped.message ?? "-")")
+        #endif
         guard let dto = wrapped.data else { throw ExtratoError.invalidResponse }
 
         let overdue = dto.totalOverdue ?? dto.totalVencido ?? 0
