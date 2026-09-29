@@ -36,15 +36,22 @@ class PerfilViewModel: ObservableObject {
                           action: .logout)
     ]
 
-    init() {
-        Task {
-            await loadUserData()
-        }
-    }
-
     func loadUserData() async {
         isLoading = true
         error = nil
+
+        // Demonstração: sem API. Dados fictícios do membro José R. Castro (ver docs/PENDENCIAS.md).
+        if AppState.shared.isDemoSession {
+            userName = MemberInfo.demo.nome
+            userDocument = "***.456.789-**"
+            userEmail = "jose.castro@exemplo.com"
+            userPhone = "(62) 98888-0000"
+            userAddressLine1 = "Rua T-63, 1200 — Apto 1208"
+            userAddressLine2 = "Setor Bueno — Goiânia/GO"
+            userAddressCep = "CEP: 74230-100"
+            isLoading = false
+            return
+        }
 
         do {
             let response = try await ProfileService.shared.getProfile()

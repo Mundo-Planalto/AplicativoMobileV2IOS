@@ -60,18 +60,24 @@ struct HrPhoto: View {
         ZStack {
             HrGradient.photoPlaceholder
             if let url, let parsed = URL(string: url) {
-                AsyncImage(url: parsed, transaction: Transaction(animation: .easeIn(duration: 0.25))) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        placeholder
-                    case .empty:
-                        ProgressView().tint(.hrGoldLight)
-                    @unknown default:
-                        placeholder
-                    }
-                }
+                // Color.clear define o tamanho do layout; a imagem em scaledToFill só desenha
+                // por cima e é recortada, sem alargar o card além da largura proposta.
+                Color.clear
+                    .overlay(
+                        AsyncImage(url: parsed, transaction: Transaction(animation: .easeIn(duration: 0.25))) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image.resizable().scaledToFill()
+                            case .failure:
+                                placeholder
+                            case .empty:
+                                ProgressView().tint(.hrGoldLight)
+                            @unknown default:
+                                placeholder
+                            }
+                        }
+                    )
+                    .clipped()
             } else {
                 placeholder
             }

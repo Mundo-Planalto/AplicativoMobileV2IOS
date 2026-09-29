@@ -1,236 +1,175 @@
 //
 //  PerfilView.swift
-//  Mundo planalto Portal App
+//  Hard Rock Hotel & Vacation Club
 //
-//  Created by matheus ferreira on 26/01/26.
+//  Aba Perfil: cartão do membro, dados pessoais em linhas expansíveis e "Sair" (docs/telas.md).
 //
 
 import SwiftUI
 
 struct PerfilView: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var router: AppRouter
     @StateObject private var viewModel = PerfilViewModel()
-    @State private var navigateToSistema = false
-    @State private var showAlterarSenha = false
-    @State private var showEnderecos = false
+    @State private var expandida: PerfilSecao?
     @State private var showSolicitarAlteracaoEndereco = false
+    @State private var confirmarSaida = false
+    @State private var mostrarEmBreve = false
+    @State private var receberPromocoes = true
+    @State private var receberAvisos = true
 
-    private var isDark: Bool { appState.isDarkTheme }
-    private var bg: Color { AppColors.backgroundPrimary(dark: isDark) }
-    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
-    private var textP: Color { AppColors.textPrimary(dark: isDark) }
-    private var textS: Color { AppColors.textSecondary(dark: isDark) }
+    enum PerfilSecao { case pessoais, endereco, preferencias, seguranca }
 
     var body: some View {
-        ZStack {
-            bg
-                .ignoresSafeArea()
-
-            if viewModel.isLoading {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: AppColors.accentBlue))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let err = viewModel.error {
-                VStack(spacing: 16) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.system(size: 50))
-                        .foregroundColor(.orange)
-                    Text(err)
-                        .foregroundColor(textP)
-                        .multilineTextAlignment(.center)
-                    Button("Tentar Novamente") {
-                        Task { await viewModel.loadUserData() }
-                    }
-                    .foregroundColor(AppColors.accentBlue)
+        let member = appState.currentMember
+        ScrollView {
+            VStack(alignment: .leading, spacing: HrMetrics.cardSpacing) {
+                HrHeader(nome: member.nome, titulo: "Perfil", subtitulo: "Sua jornada, ainda mais especial.") {
+                    router.push(.avisosNoticias)
                 }
-                .padding()
-            } else {
-                ScrollView {
-                    VStack(spacing: 24) {
-                        Text("Perfil")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(textP)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 20)
-                            .padding(.top, 8)
 
-                        // Card: avatar + nome + documento + email + telefone
-                        VStack(spacing: 16) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 60)
-                                    .fill(cardBg)
-                                    .frame(height: 80)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 60)
-                                            .stroke(textS.opacity(0.3), lineWidth: 1)
-                                    )
-                                Image(systemName: "person.circle.fill")
-                                    .font(.system(size: 56))
-                                    .foregroundColor(textS.opacity(0.6))
-                            }
-                            .padding(.top, 8)
-
-                            Text(viewModel.userName)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(textP)
-                                .multilineTextAlignment(.center)
-
-                            Text(viewModel.userDocument)
-                                .font(.subheadline)
-                                .foregroundColor(textP)
-
-                            HStack(spacing: 8) {
-                                Image(systemName: "envelope.fill")
-                                    .font(.caption)
-                                    .foregroundColor(textS)
-                                Text(viewModel.userEmail.isEmpty ? "—" : viewModel.userEmail)
-                                    .font(.subheadline)
-                                    .foregroundColor(textP)
-                            }
-
-                            HStack(spacing: 8) {
-                                Image(systemName: "phone.fill")
-                                    .font(.caption)
-                                    .foregroundColor(textS)
-                                Text(viewModel.userPhone)
-                                    .font(.subheadline)
-                                    .foregroundColor(textP)
-                            }
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(cardBg)
-                        .cornerRadius(16)
-                        .padding(.horizontal, 20)
-
-                        // Card: Endereço de Correspondência
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Endereço de Correspondência")
-                                .font(.headline)
-                                .fontWeight(.bold)
-                                .foregroundColor(textP)
-
-                            Text(viewModel.userAddressLine1)
-                                .font(.subheadline)
-                                .foregroundColor(textP)
-                            Text(viewModel.userAddressLine2)
-                                .font(.subheadline)
-                                .foregroundColor(textP)
-                            Text(viewModel.userAddressCep)
-                                .font(.subheadline)
-                                .foregroundColor(textP)
-
-                            Button("Solicitar Alteração") {
-                                showSolicitarAlteracaoEndereco = true
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(AppColors.accentBlue)
-                            .cornerRadius(12)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(cardBg)
-                        .cornerRadius(16)
-                        .padding(.horizontal, 20)
-
-                        // Lista: Alterar Senha, Endereços, Sistema, Sair
-                        VStack(spacing: 0) {
-                            ForEach(viewModel.menuOptions) { option in
-                                ProfileMenuRow(
-                                    option: option,
-                                    isDark: isDark,
-                                    isLogout: option.action == .logout
-                                ) {
-                                    handleMenuAction(option.action)
-                                }
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 32)
-                    }
-                    .padding(.vertical, 16)
+                CartaoDigitalCard(
+                    nome: viewModel.userName.isEmpty ? member.nome : viewModel.userName,
+                    nivel: member.nivel,
+                    numeroMembro: member.numeroMembro,
+                    desde: member.desde
+                ) {
+                    router.push(.cartaoDigital)
                 }
+
+                HStack(spacing: 10) {
+                    HrGoldButton(text: "Ver benefícios") { router.switchTab(.beneficios) }
+                    HrIconSquareButton(icon: "qrcode") { router.push(.cartaoDigital) }
+                }
+
+                HrSectionTitle(titulo: "Dados pessoais", subtitulo: "Gerencie suas informações e preferências.")
+                    .padding(.top, 8)
+
+                secao(.pessoais, icon: "person.fill", titulo: "Informações pessoais", subtitulo: "Seu nome, e-mail e telefone") {
+                    infoLinha("Nome", viewModel.userName)
+                    infoLinha("CPF/CNPJ", viewModel.userDocument)
+                    infoLinha("E-mail", viewModel.userEmail.isEmpty ? "—" : viewModel.userEmail)
+                    infoLinha("Telefone", viewModel.userPhone)
+                }
+
+                secao(.endereco, icon: "house.fill", titulo: "Endereço de correspondência", subtitulo: "Seu endereço cadastrado") {
+                    Text(viewModel.userAddressLine1).font(HrFont.body).foregroundColor(.white)
+                    Text(viewModel.userAddressLine2).font(HrFont.body).foregroundColor(.white)
+                    if !viewModel.userAddressCep.isEmpty {
+                        Text(viewModel.userAddressCep).font(HrFont.caption).foregroundColor(.hrTextMuted)
+                    }
+                    HrOutlineButton(text: "Solicitar alteração") { showSolicitarAlteracaoEndereco = true }
+                        .padding(.top, 4)
+                }
+
+                secao(.preferencias, icon: "slider.horizontal.3", titulo: "Preferências", subtitulo: "Comunicações e experiências") {
+                    Toggle(isOn: $receberPromocoes) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Receber novas promoções").font(HrFont.itemTitle).foregroundColor(.white)
+                            Text("Ofertas, milhas e benefícios").font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
+                        }
+                    }
+                    .tint(.hrGold)
+                    Toggle(isOn: $receberAvisos) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Avisos do empreendimento").font(HrFont.itemTitle).foregroundColor(.white)
+                            Text("Notícias e comunicados").font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
+                        }
+                    }
+                    .tint(.hrGold)
+                }
+
+                secao(.seguranca, icon: "shield.fill", titulo: "Segurança", subtitulo: "Senha, acesso e dispositivos") {
+                    HrListRow(icon: "key.fill", titulo: "Alterar senha", subtitulo: "Troque sua senha de acesso") { mostrarEmBreve = true }
+                    HrListRow(icon: "gearshape.fill", titulo: "Sistema", subtitulo: "Notificações, política e versão") { router.push(.sistema) }
+                    HrListRow(icon: "hand.raised.fill", titulo: "Política de privacidade", subtitulo: "Como tratamos seus dados") { router.push(.politicaPrivacidade) }
+                }
+
+                HrListRow(
+                    icon: "rectangle.portrait.and.arrow.right",
+                    titulo: "Sair",
+                    subtitulo: "Encerrar a sessão neste dispositivo",
+                    iconColor: .hrError,
+                    titleColor: .hrError
+                ) { confirmarSaida = true }
+                .padding(.top, 8)
+            }
+            .padding(.horizontal, HrMetrics.screenMargin)
+            .padding(.bottom, HrMetrics.scrollBottomInset)
+        }
+        .hrScreen()
+        .task {
+            await viewModel.loadUserData()
+            if let prefs = try? await RepositoryProvider.members.notificationPreferences() {
+                receberPromocoes = prefs.milesOffers
+                receberAvisos = prefs.announcements
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $navigateToSistema) {
-            SistemaView()
-        }/*
-        .sheet(isPresented: $showAlterarSenha) {
-            // TODO: tela Alterar Senha
-            Text("Alterar Senha")
-        }
-        .sheet(isPresented: $showEnderecos) {
-            // TODO: tela Endereços
-            Text("Endereços")
-        }*/
+        .onChange(of: receberPromocoes) { _, _ in salvarPreferencias() }
+        .onChange(of: receberAvisos) { _, _ in salvarPreferencias() }
         .sheet(isPresented: $showSolicitarAlteracaoEndereco) {
             SolicitarAlteracaoEnderecoView()
                 .environmentObject(appState)
         }
-        .onAppear {
-            Task { await viewModel.loadUserData() }
-        }
-    }
-
-    private func handleMenuAction(_ action: ProfileAction) {
-        switch action {
-        case .alterarSenha:
-            showAlterarSenha = true
-        case .enderecos:
-            showEnderecos = true
-        case .sistema:
-            navigateToSistema = true
-        case .logout:
-            viewModel.performAction(.logout)
-        }
-    }
-}
-
-struct ProfileMenuRow: View {
-    let option: ProfileMenuOption
-    let isDark: Bool
-    var isLogout: Bool = false
-    let action: () -> Void
-
-    private var cardBg: Color { AppColors.cardBackground(dark: isDark) }
-    private var textP: Color { AppColors.textPrimary(dark: isDark) }
-    private var textS: Color { AppColors.textSecondary(dark: isDark) }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 16) {
-                Image(systemName: option.iconName)
-                    .font(.title3)
-                    .foregroundColor(isLogout ? AppColors.logoutRed : AppColors.accentBlue)
-                    .frame(width: 28, height: 28)
-
-                Text(option.title)
-                    .font(.headline)
-                    .foregroundColor(isLogout ? AppColors.logoutRed : textP)
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(textS)
+        .alert("Sair", isPresented: $confirmarSaida) {
+            Button("Cancelar", role: .cancel) {}
+            Button("Sair", role: .destructive) {
+                Task { await appState.logout() }
             }
-            .padding()
-            .background(cardBg)
-            .contentShape(Rectangle())
+        } message: {
+            Text("Deseja encerrar a sessão neste dispositivo?")
         }
-        .buttonStyle(PlainButtonStyle())
+        .alert("Em breve", isPresented: $mostrarEmBreve) {
+            Button("OK") {}
+        } message: {
+            Text("A alteração de senha pelo app estará disponível em breve.")
+        }
+    }
+
+    private func salvarPreferencias() {
+        let prefs = NotificationPreferences(milesOffers: receberPromocoes, announcements: receberAvisos)
+        Task { _ = try? await RepositoryProvider.members.updateNotificationPreferences(prefs) }
+    }
+
+    private func infoLinha(_ rotulo: String, _ valor: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(rotulo).font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
+            Text(valor.isEmpty ? "—" : valor).font(HrFont.body).foregroundColor(.white)
+        }
+    }
+
+    /// Linha expansível: HrListRow com chevron que gira e conteúdo abaixo.
+    private func secao<Content: View>(
+        _ id: PerfilSecao, icon: String, titulo: String, subtitulo: String,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        let aberta = expandida == id
+        return VStack(spacing: 0) {
+            HrListRow(icon: icon, titulo: titulo, subtitulo: subtitulo, onTap: {
+                withAnimation(.easeInOut(duration: 0.2)) { expandida = aberta ? nil : id }
+            }) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.hrGold)
+                    .rotationEffect(.degrees(aberta ? 180 : 0))
+            }
+            if aberta {
+                VStack(alignment: .leading, spacing: 10) {
+                    content()
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.hrSurfaceElevated))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Color.hrGoldBorder, lineWidth: 1))
+                .padding(.top, 6)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
     }
 }
 
 #Preview {
-    NavigationStack {
-        PerfilView()
-            .environmentObject(AppState.shared)
-    }
+    NavigationStack { PerfilView() }
+        .environmentObject(AppState.shared)
+        .environmentObject(AppRouter())
 }

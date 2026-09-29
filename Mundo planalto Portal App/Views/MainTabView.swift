@@ -15,7 +15,7 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $router.selectedTab) {
-            tabContent(.inicio) { DashboardView() }
+            tabContent(.inicio) { InicioView() }
             tabContent(.beneficios) { BeneficiosView() }
             tabContent(.ofertas) { OfertasView() }
             tabContent(.empreendimentos) { EmpreendimentosView() }

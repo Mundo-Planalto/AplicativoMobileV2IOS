@@ -132,7 +132,8 @@ struct HrStatPill: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.hrGold)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                    .minimumScaleFactor(0.5)
+                    .layoutPriority(1)
             }
             Text(rotulo)
                 .font(.system(size: 10, weight: .regular))
