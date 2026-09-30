@@ -22,6 +22,7 @@ struct PerfilView: View {
 
     var body: some View {
         let member = appState.currentMember
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: HrMetrics.cardSpacing) {
                 HrHeader(nome: member.nome, titulo: "Perfil", subtitulo: "Sua jornada, ainda mais especial.") {
@@ -93,9 +94,21 @@ struct PerfilView: View {
                     titleColor: .hrError
                 ) { confirmarSaida = true }
                 .padding(.top, 8)
+                .id("sair")
             }
             .padding(.horizontal, HrMetrics.screenMargin)
             .padding(.bottom, HrMetrics.scrollBottomInset)
+        }
+        .onAppear {
+            #if DEBUG
+            // Atalho de teste: `-hrScrollBottom` rola até o "Sair" para conferir o recuo da tab bar.
+            if ProcessInfo.processInfo.arguments.contains("-hrScrollBottom") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    withAnimation { proxy.scrollTo("sair", anchor: .bottom) }
+                }
+            }
+            #endif
+        }
         }
         .hrScreen()
         .task {

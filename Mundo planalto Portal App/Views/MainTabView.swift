@@ -4,7 +4,7 @@
 //
 //  TabView com 5 abas (Início, Benefícios, Ofertas, Empreendimentos, Perfil),
 //  cada uma com sua NavigationStack e rotas de AppRoute. A tab bar do sistema fica
-//  oculta e a HrTabBar é desenhada como safeAreaInset inferior de cada aba.
+//  oculta e a HrTabBar fica abaixo do TabView, com espaço próprio.
 //
 
 import SwiftUI
@@ -14,13 +14,20 @@ struct MainTabView: View {
     @StateObject private var router = AppRouter()
 
     var body: some View {
-        TabView(selection: $router.selectedTab) {
-            tabContent(.inicio) { InicioView() }
-            tabContent(.beneficios) { BeneficiosView() }
-            tabContent(.ofertas) { OfertasView() }
-            tabContent(.empreendimentos) { EmpreendimentosView() }
-            tabContent(.perfil) { PerfilView() }
+        // A HrTabBar ocupa espaço próprio abaixo do TabView (não flutua por cima do conteúdo),
+        // então o fim de toda rolagem, inclusive das telas empilhadas, termina acima dela.
+        VStack(spacing: 0) {
+            TabView(selection: $router.selectedTab) {
+                tabContent(.inicio) { InicioView() }
+                tabContent(.beneficios) { BeneficiosView() }
+                tabContent(.ofertas) { OfertasView() }
+                tabContent(.empreendimentos) { EmpreendimentosView() }
+                tabContent(.perfil) { PerfilView() }
+            }
+            HrTabBar(selected: $router.selectedTab)
         }
+        .background(Color.hrBlack.ignoresSafeArea())
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .environmentObject(router)
         .task {
             await appState.refreshAllUnreadBadges()
@@ -44,11 +51,6 @@ struct MainTabView: View {
                     RouteView(route: route)
                 }
                 .toolbar(.hidden, for: .tabBar)
-        }
-        // A barra entra como recuo de segurança de cada aba: assim o fim de toda rolagem,
-        // inclusive das telas empilhadas, fica acima dela e nada é encoberto.
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HrTabBar(selected: $router.selectedTab)
         }
         .toolbar(.hidden, for: .tabBar)
         .toolbarBackground(.hidden, for: .tabBar)
