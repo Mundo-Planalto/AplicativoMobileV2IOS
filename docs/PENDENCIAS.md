@@ -28,6 +28,12 @@ fica em mock e é registrado aqui, com a decisão tomada no iOS. Atualizado em 2
 | Unity | `POST unity/interest` | Mock registra e abre `https://www.hardrock.com/unity` |
 | Financeiro e "Meu empreendimento" na demonstração | API existente | Valores fixos de telas.md; com login real usa `financial/resumo`, `financial/extrato` e `ventures` |
 
+## Divergências decididas pelo cliente (alinhar com o Android)
+
+| Item | telas.md | iOS (30/09/2026) |
+|---|---|---|
+| Marca no Splash e no Login | `HrWordmark` "HARD ROCK / HOTEL & VACATION CLUB" e texto "GRAMADO" | Símbolo e nome "MUNDO PLANALTO / PORTAL DO CLIENTE" (`MundoPlanaltoWordmark`), texto "GOIÂNIA • GO" e título "Bem-vindo ao seu portal". Motivo: antes do login o app é o portal da Mundo Planalto; o Hard Rock é um dos empreendimentos. Pedido pela TI da Mundo Planalto em 30/09 |
+
 ## Não documentado (decisão provisória)
 
 | Item | Decisão |

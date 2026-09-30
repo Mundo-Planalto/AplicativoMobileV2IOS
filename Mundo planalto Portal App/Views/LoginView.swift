@@ -27,11 +27,11 @@ struct LoginView: View {
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        HrWordmark()
-                            .padding(.top, 48)
-                            .padding(.bottom, 36)
+                        MundoPlanaltoWordmark()
+                            .padding(.top, 40)
+                            .padding(.bottom, 32)
 
-                        Text("Bem-vindo ao seu clube")
+                        Text("Bem-vindo ao seu portal")
                             .font(HrFont.screenTitle)
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
