@@ -4,7 +4,7 @@
 //
 //  TabView com 5 abas (Início, Benefícios, Ofertas, Empreendimentos, Perfil),
 //  cada uma com sua NavigationStack e rotas de AppRoute. A tab bar do sistema fica
-//  oculta e a HrTabBar é desenhada como safeAreaInset inferior.
+//  oculta e a HrTabBar é desenhada como safeAreaInset inferior de cada aba.
 //
 
 import SwiftUI
@@ -20,9 +20,6 @@ struct MainTabView: View {
             tabContent(.ofertas) { OfertasView() }
             tabContent(.empreendimentos) { EmpreendimentosView() }
             tabContent(.perfil) { PerfilView() }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HrTabBar(selected: $router.selectedTab)
         }
         .environmentObject(router)
         .task {
@@ -47,6 +44,11 @@ struct MainTabView: View {
                     RouteView(route: route)
                 }
                 .toolbar(.hidden, for: .tabBar)
+        }
+        // A barra entra como recuo de segurança de cada aba: assim o fim de toda rolagem,
+        // inclusive das telas empilhadas, fica acima dela e nada é encoberto.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HrTabBar(selected: $router.selectedTab)
         }
         .toolbar(.hidden, for: .tabBar)
         .toolbarBackground(.hidden, for: .tabBar)
