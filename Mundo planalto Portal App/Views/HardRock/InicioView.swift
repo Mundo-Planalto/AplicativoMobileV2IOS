@@ -11,18 +11,12 @@ import Combine
 @MainActor
 final class InicioViewModel: ObservableObject {
     @Published var resumo: FinanceiroResumo?
-    @Published var empreendimento: MeuEmpreendimentoResumo?
-    @Published var collection: CollectionStatus?
     @Published var isLoading = false
 
     func load(forceRefresh: Bool = false) async {
         isLoading = true
         async let r = try? RepositoryProvider.financeiro.resumo(forceRefresh: forceRefresh)
-        async let e = try? RepositoryProvider.financeiro.meuEmpreendimento()
-        async let c = try? RepositoryProvider.members.collection()
         resumo = await r
-        empreendimento = await e
-        collection = await c
         isLoading = false
     }
 }
@@ -48,8 +42,6 @@ struct InicioView: View {
                 heroCard
                 shortcuts
                 resumoFinanceiroCard
-                meuEmpreendimentoCard
-                collectionSection
                 ofertasCard
             }
             .padding(.horizontal, HrMetrics.screenMargin)
@@ -86,8 +78,8 @@ struct InicioView: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: HrMetrics.cardSpacing), GridItem(.flexible(), spacing: HrMetrics.cardSpacing)], spacing: HrMetrics.cardSpacing) {
             HrShortcut(icon: "airplane", titulo: "Viagens", subtitulo: "Experiências exclusivas") { router.push(.certificados) }
             HrShortcut(icon: "tag.fill", titulo: "Descontos", subtitulo: "Em parceiros selecionados") { router.switchTab(.beneficios) }
-            HrShortcut(icon: "globe", titulo: "Unity", subtitulo: "Vantagens para você") { router.push(.unityMilhas) }
-            HrShortcut(icon: "star.fill", titulo: "Milhas", subtitulo: "Acumule e aproveite") { router.push(.unityMilhas) }
+            HrShortcut(icon: "globe", titulo: "Unity", subtitulo: "Vantagens Hard Rock no mundo") { router.switchTab(.beneficios) }
+            HrShortcut(icon: "megaphone.fill", titulo: "Campanhas", subtitulo: "Condições especiais") { router.switchTab(.ofertas) }
         }
     }
 
@@ -138,84 +130,6 @@ struct InicioView: View {
                     .foregroundColor(.hrGoldLight)
                 }
                 .buttonStyle(HrPressStyle())
-            }
-        }
-    }
-
-    // MARK: Meu empreendimento
-
-    private var meuEmpreendimentoCard: some View {
-        HrCard(onTap: { router.switchTab(.empreendimentos) }) {
-            HStack(spacing: 12) {
-                HrPhoto(url: vm.empreendimento?.imageUrl, height: 64, cornerRadius: 12, placeholderIcon: "building.2.fill")
-                    .frame(width: 64)
-                VStack(alignment: .leading, spacing: 3) {
-                    HrTag(text: "Meu empreendimento")
-                    Text(vm.empreendimento?.nome ?? "Hard Rock Hotel Gramado")
-                        .font(HrFont.itemTitle)
-                        .foregroundColor(.white)
-                    if let unidade = vm.empreendimento?.unidade, !unidade.isEmpty {
-                        Text(unidade)
-                            .font(HrFont.captionSmall)
-                            .foregroundColor(.hrTextMuted)
-                    }
-                }
-                Spacer()
-                HrChevron()
-            }
-        }
-    }
-
-    // MARK: Collection
-
-    private var collectionSection: some View {
-        HrCard {
-            VStack(alignment: .leading, spacing: 12) {
-                HrSectionTitle(titulo: "Collection Hard Rock", subtitulo: "Complete sua coleção mantendo as parcelas em dia")
-                let items = vm.collection?.items ?? (1...6).map { CollectionItem(index: $0, status: $0 <= 2 ? .sent : .locked) }
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 6), spacing: 8) {
-                    ForEach(items) { item in
-                        VStack(spacing: 4) {
-                            ZStack(alignment: .bottomTrailing) {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(item.status == .locked ? Color.hrSurfaceElevated : Color.hrGold.opacity(0.15))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                            .stroke(item.status == .locked ? Color.hrGoldBorder.opacity(0.5) : Color.hrGold, lineWidth: 1)
-                                    )
-                                Image(systemName: "tshirt.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(item.status == .locked ? .hrTextMuted.opacity(0.4) : .hrGold)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                if item.status == .locked {
-                                    Image(systemName: "lock.fill")
-                                        .font(.system(size: 8, weight: .bold))
-                                        .foregroundColor(.hrTextMuted)
-                                        .padding(3)
-                                }
-                            }
-                            .aspectRatio(1, contentMode: .fit)
-                            Text(item.status.legenda)
-                                .font(.system(size: 8, weight: .medium))
-                                .foregroundColor(item.status == .locked ? .hrTextMuted.opacity(0.6) : .hrGoldLight)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                        }
-                    }
-                }
-                let unlocked = vm.collection?.desbloqueadas ?? 2
-                let total = max(items.count, 1)
-                Text("\(unlocked) de \(total) camisetas desbloqueadas")
-                    .font(HrFont.caption)
-                    .foregroundColor(.hrTextMuted)
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.hrSurfaceElevated)
-                        Capsule().fill(HrGradient.gold)
-                            .frame(width: geo.size.width * CGFloat(unlocked) / CGFloat(total))
-                    }
-                }
-                .frame(height: 3)
             }
         }
     }

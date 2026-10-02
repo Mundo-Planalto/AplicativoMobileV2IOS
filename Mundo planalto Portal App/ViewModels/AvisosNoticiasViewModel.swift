@@ -21,8 +21,8 @@ class AvisosNoticiasViewModel: ObservableObject {
         AppNotice(id: "demo-2", title: "Programa Unity disponível para membros",
                   description: "Cadastre-se no Hard Rock Unity e aproveite vantagens em hotéis, restaurantes e experiências no mundo todo.",
                   date: "15/09/2026", type: .news),
-        AppNotice(id: "demo-3", title: "Collection Hard Rock: sua 2ª camiseta foi enviada",
-                  description: "Mantenha as parcelas em dia para desbloquear as próximas peças da coleção.",
+        AppNotice(id: "demo-3", title: "Seu certificado foi liberado",
+                  description: "O certificado Mais Viagens — Experiência Gramado já pode ser usado. Veja o código em Viagens.",
                   date: "02/09/2026", type: .notice)
     ]
 

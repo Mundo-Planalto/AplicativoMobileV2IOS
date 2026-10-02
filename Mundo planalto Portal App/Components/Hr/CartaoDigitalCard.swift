@@ -51,13 +51,6 @@ struct CartaoDigitalCard: View {
                 HStack(alignment: .top) {
                     MundoPlanaltoLogo(compact: true)
                     Spacer()
-                    Text("GOOD MUSIC · GREATER JOURNEYS")
-                        .font(.system(size: 9, weight: .semibold))
-                        .tracking(1)
-                        .foregroundColor(.hrGold)
-                        .multilineTextAlignment(.trailing)
-                        .lineLimit(2)
-                        .frame(maxWidth: 130, alignment: .trailing)
                 }
 
                 Spacer()

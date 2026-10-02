@@ -12,7 +12,6 @@ import Combine
 final class OfertasViewModel: ObservableObject {
     @Published var offers: [Offer] = []
     @Published var filtro = "Todas"
-    @Published var receberPromocoes = true
     @Published var alerta: String?
     @Published var coupon: Coupon?
     let filtros = ["Todas", "Hospedagem", "Gastronomia", "Experiências"]
@@ -32,21 +31,10 @@ final class OfertasViewModel: ObservableObject {
 
     func load() async {
         offers = (try? await RepositoryProvider.ofertas.offers()) ?? []
-        if let prefs = try? await RepositoryProvider.members.notificationPreferences() {
-            receberPromocoes = prefs.milesOffers
-        }
-    }
-
-    func salvarPreferencia(_ on: Bool) async {
-        var prefs = (try? await RepositoryProvider.members.notificationPreferences()) ?? NotificationPreferences(milesOffers: true, announcements: true)
-        prefs.milesOffers = on
-        _ = try? await RepositoryProvider.members.updateNotificationPreferences(prefs)
     }
 
     func abrir(_ offer: Offer, router: AppRouter) async {
-        if offer.category == .milhas {
-            router.push(.unityMilhas)
-        } else if let partnerId = offer.partnerId {
+        if let partnerId = offer.partnerId {
             coupon = try? await RepositoryProvider.beneficios.coupon(partnerId: partnerId)
         } else if let url = offer.ctaUrl.flatMap(URL.init(string:)) {
             await UIApplication.shared.open(url)
@@ -92,12 +80,6 @@ struct OfertasView: View {
                 ForEach(vm.disponiveis) { offer in
                     ofertaCard(offer)
                 }
-
-                HrPromoToggleCard(isOn: $vm.receberPromocoes)
-                    .padding(.top, 8)
-                    .onChange(of: vm.receberPromocoes) { _, on in
-                        Task { await vm.salvarPreferencia(on) }
-                    }
             }
             .padding(.horizontal, HrMetrics.screenMargin)
             .padding(.bottom, HrMetrics.scrollBottomInset)

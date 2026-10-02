@@ -34,7 +34,6 @@ enum AppRoute: Hashable {
     case extrato
     case informeRendimentos
     case certificados
-    case unityMilhas
     case cartaoDigital
     case avisosNoticias
     case politicaPrivacidade

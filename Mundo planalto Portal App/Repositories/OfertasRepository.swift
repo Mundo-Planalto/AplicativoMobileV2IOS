@@ -27,10 +27,7 @@ final class OfertasRepositoryMock: OfertasRepository {
                   isFeatured: false, ctaLabel: "Ver oferta", ctaUrl: nil, partnerId: 2, validFrom: nil, validUntil: nil),
             Offer(id: 2, title: "Fim de semana especial", subtitle: "Condições exclusivas para membros", description: nil,
                   category: .hospedagem, imageUrl: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400",
-                  isFeatured: false, ctaLabel: "Ver oferta", ctaUrl: nil, partnerId: nil, validFrom: nil, validUntil: nil),
-            Offer(id: 3, title: "Milhas em dobro", subtitle: "Campanha promocional ativa", description: nil,
-                  category: .milhas, imageUrl: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400",
-                  isFeatured: false, ctaLabel: "Participar", ctaUrl: nil, partnerId: nil, validFrom: nil, validUntil: nil)
+                  isFeatured: false, ctaLabel: "Ver oferta", ctaUrl: nil, partnerId: nil, validFrom: nil, validUntil: nil)
         ]
     }
 }

@@ -11,14 +11,12 @@ import Combine
 @MainActor
 final class BeneficiosViewModel: ObservableObject {
     @Published var partners: [Partner] = []
-    @Published var miles: MilesAccount?
     @Published var coupon: Coupon?
     @Published var filtro = "Todos"
-    let filtros = ["Todos", "Viagens", "Gramado", "Milhas"]
+    let filtros = ["Todos", "Viagens", "Gramado"]
 
     func load() async {
         partners = (try? await RepositoryProvider.beneficios.partners()) ?? []
-        miles = try? await RepositoryProvider.members.miles()
     }
 
     func abrirCupom(partnerId: Int) async {
@@ -27,8 +25,7 @@ final class BeneficiosViewModel: ObservableObject {
 
     var mostraViagens: Bool { filtro == "Todos" || filtro == "Viagens" }
     var mostraGramado: Bool { filtro == "Todos" || filtro == "Gramado" }
-    var mostraMilhas: Bool { filtro == "Todos" || filtro == "Milhas" }
-    var mostraUnity: Bool { filtro == "Todos" || filtro == "Viagens" || filtro == "Milhas" }
+    var mostraUnity: Bool { filtro == "Todos" || filtro == "Viagens" }
 }
 
 struct BeneficiosView: View {
@@ -47,12 +44,6 @@ struct BeneficiosView: View {
                 }
 
                 HrChipRow(options: vm.filtros, selected: $vm.filtro)
-
-                HStack(spacing: 8) {
-                    HrStatPill(icon: "airplane", valor: "2", rotulo: "certificados")
-                    HrStatPill(icon: "tag.fill", valor: "\(max(vm.partners.count, 6))", rotulo: "ofertas")
-                    HrStatPill(icon: "star.fill", valor: HrFormat.integer(vm.miles?.balance ?? 12500), rotulo: "milhas")
-                }
 
                 if vm.mostraViagens {
                     HrPhotoCard(url: imagemGramado, height: 240) {
@@ -95,31 +86,8 @@ struct BeneficiosView: View {
                                     .foregroundColor(.hrTextMuted)
                             }
                             Spacer()
-                            Button { router.push(.unityMilhas) } label: {
+                            Button { if let u = URL(string: AppConfig.unityURL) { UIApplication.shared.open(u) } } label: {
                                 Text("Cadastrar")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.hrGoldLight)
-                            }
-                            .buttonStyle(HrPressStyle())
-                        }
-                    }
-                }
-
-                if vm.mostraMilhas {
-                    HrCard {
-                        HStack(spacing: 12) {
-                            HrIconBox(icon: "star.fill")
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Suas milhas")
-                                    .font(HrFont.sectionTitle)
-                                    .foregroundColor(.white)
-                                Text(HrFormat.integer(vm.miles?.balance ?? 12500))
-                                    .font(.system(size: 22, weight: .bold))
-                                    .foregroundColor(.hrGold)
-                            }
-                            Spacer()
-                            Button { router.push(.unityMilhas) } label: {
-                                Text("Ver histórico")
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundColor(.hrGoldLight)
                             }

@@ -145,7 +145,7 @@ struct CertificateOption: Identifiable, Equatable {
 // MARK: - Ofertas
 
 enum OfferCategory: String, Codable, CaseIterable {
-    case hospedagem, gastronomia, experiencias, milhas, outros
+    case hospedagem, gastronomia, experiencias, outros
 
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self).lowercased()
@@ -159,7 +159,6 @@ enum OfferCategory: String, Codable, CaseIterable {
         case .hospedagem: return "Hospedagem"
         case .gastronomia: return "Gastronomia"
         case .experiencias: return "Experiências"
-        case .milhas: return "Milhas"
         case .outros: return "Outras"
         }
     }
@@ -180,32 +179,6 @@ struct Offer: Codable, Identifiable, Equatable {
     let validUntil: String?
 }
 
-// MARK: - Milhas
-
-struct MilesEntry: Codable, Identifiable, Equatable {
-    let id: Int
-    let amount: Int
-    let description: String
-    /// ISO date-time ou dd/MM/yyyy (mock).
-    let createdAt: String
-}
-
-struct MilesAccount: Codable, Equatable {
-    let balance: Int
-    let entries: [MilesEntry]
-}
-
-struct MilesOffer: Codable, Identifiable, Equatable {
-    let id: Int
-    let title: String
-    let summary: String
-    let destination: String?
-    let program: String?
-    let url: String?
-    let capturedAt: String
-    let expiresAt: String?
-}
-
 // MARK: - Perfil de viagem e preferências
 
 struct TravelProfile: Codable, Equatable {
@@ -214,37 +187,12 @@ struct TravelProfile: Codable, Equatable {
     var preferredDestinations: [String]
 }
 
+/// Único opt-in do app (Perfil → Preferências), exigido por LGPD e App Store.
 struct NotificationPreferences: Codable, Equatable {
-    var milesOffers: Bool
+    /// "Receber campanhas e novidades"
+    var campaigns: Bool
+    /// "Avisos do empreendimento"
     var announcements: Bool
-}
-
-// MARK: - Collection
-
-enum CollectionItemStatus: String, Codable {
-    case locked, unlocked, sent
-
-    var legenda: String {
-        switch self {
-        case .locked: return "Bloqueada"
-        case .unlocked: return "Liberada"
-        case .sent: return "Enviada"
-        }
-    }
-}
-
-struct CollectionItem: Codable, Identifiable, Equatable {
-    var id: Int { index }
-    let index: Int
-    let status: CollectionItemStatus
-}
-
-struct CollectionStatus: Codable, Equatable {
-    let contractNumber: String?
-    let eligible: Bool
-    let items: [CollectionItem]
-
-    var desbloqueadas: Int { items.filter { $0.status != .locked }.count }
 }
 
 // MARK: - Financeiro (tela Financeiro / card da Início)

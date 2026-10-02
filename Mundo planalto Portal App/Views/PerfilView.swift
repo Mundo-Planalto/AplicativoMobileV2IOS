@@ -66,8 +66,8 @@ struct PerfilView: View {
                 secao(.preferencias, icon: "slider.horizontal.3", titulo: "Preferências", subtitulo: "Comunicações e experiências") {
                     Toggle(isOn: $receberPromocoes) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Receber novas promoções").font(HrFont.itemTitle).foregroundColor(.white)
-                            Text("Ofertas, milhas e benefícios").font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
+                            Text("Receber campanhas e novidades").font(HrFont.itemTitle).foregroundColor(.white)
+                            Text("Campanhas, benefícios e condições especiais").font(HrFont.captionSmall).foregroundColor(.hrTextMuted)
                         }
                     }
                     .tint(.hrGold)
@@ -114,7 +114,7 @@ struct PerfilView: View {
         .task {
             await viewModel.loadUserData()
             if let prefs = try? await RepositoryProvider.members.notificationPreferences() {
-                receberPromocoes = prefs.milesOffers
+                receberPromocoes = prefs.campaigns
                 receberAvisos = prefs.announcements
             }
         }
@@ -140,7 +140,7 @@ struct PerfilView: View {
     }
 
     private func salvarPreferencias() {
-        let prefs = NotificationPreferences(milesOffers: receberPromocoes, announcements: receberAvisos)
+        let prefs = NotificationPreferences(campaigns: receberPromocoes, announcements: receberAvisos)
         Task { _ = try? await RepositoryProvider.members.updateNotificationPreferences(prefs) }
     }
 

@@ -73,8 +73,6 @@ struct RouteView: View {
                 InformeRendimentosView()
             case .certificados:
                 CertificadosView()
-            case .unityMilhas:
-                UnityMilhasView()
             case .cartaoDigital:
                 CartaoDigitalView()
             case .avisosNoticias:

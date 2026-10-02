@@ -2,7 +2,7 @@
 //  MembersRepository.swift
 //  Hard Rock Hotel & Vacation Club
 //
-//  GET/PUT members/me/* (cartão, perfil de viagem, preferências, utilizações, milhas, collection).
+//  GET/PUT members/me/* (cartão, perfil de viagem, preferências, utilizações).
 //
 
 import Foundation
@@ -10,8 +10,6 @@ import Foundation
 protocol MembersRepository {
     func card() async throws -> MemberCard
     func redemptions() async throws -> [BenefitRedemption]
-    func miles() async throws -> MilesAccount
-    func collection() async throws -> CollectionStatus
     func travelProfile() async throws -> TravelProfile
     func notificationPreferences() async throws -> NotificationPreferences
     func updateNotificationPreferences(_ prefs: NotificationPreferences) async throws -> NotificationPreferences
@@ -22,7 +20,7 @@ protocol MembersRepository {
 final class MembersRepositoryMock: MembersRepository {
     static let shared = MembersRepositoryMock()
 
-    private let prefsKey = "hr_mock_notification_prefs"
+    private let prefsKey = "hr_mock_notification_prefs_v2"
 
     func card() async throws -> MemberCard {
         let demo = MemberInfo.demo
@@ -48,32 +46,6 @@ final class MembersRepositoryMock: MembersRepository {
         ]
     }
 
-    func miles() async throws -> MilesAccount {
-        MilesAccount(
-            balance: 12500,
-            entries: [
-                MilesEntry(id: 1, amount: 2000, description: "Campanha Milhas em dobro", createdAt: "2026-09-12"),
-                MilesEntry(id: 2, amount: 500, description: "Hospedagem Gramado", createdAt: "2026-08-28"),
-                MilesEntry(id: 3, amount: 10000, description: "Bônus de boas-vindas", createdAt: "2026-08-01")
-            ]
-        )
-    }
-
-    func collection() async throws -> CollectionStatus {
-        CollectionStatus(
-            contractNumber: nil,
-            eligible: true,
-            items: [
-                CollectionItem(index: 1, status: .sent),
-                CollectionItem(index: 2, status: .sent),
-                CollectionItem(index: 3, status: .locked),
-                CollectionItem(index: 4, status: .locked),
-                CollectionItem(index: 5, status: .locked),
-                CollectionItem(index: 6, status: .locked)
-            ]
-        )
-    }
-
     func travelProfile() async throws -> TravelProfile {
         TravelProfile(homeCity: "Goiânia", homeState: "GO", preferredDestinations: ["Gramado", "Orlando", "Cancún", "Lisboa"])
     }
@@ -83,7 +55,7 @@ final class MembersRepositoryMock: MembersRepository {
            let saved = try? JSONDecoder().decode(NotificationPreferences.self, from: data) {
             return saved
         }
-        return NotificationPreferences(milesOffers: true, announcements: true)
+        return NotificationPreferences(campaigns: true, announcements: true)
     }
 
     func updateNotificationPreferences(_ prefs: NotificationPreferences) async throws -> NotificationPreferences {
@@ -101,8 +73,6 @@ final class MembersRepositoryRemote: MembersRepository {
 
     func card() async throws -> MemberCard { try await api.get("members/me/card") }
     func redemptions() async throws -> [BenefitRedemption] { try await api.get("members/me/redemptions") }
-    func miles() async throws -> MilesAccount { try await api.get("members/me/miles") }
-    func collection() async throws -> CollectionStatus { try await api.get("members/me/collection") }
     func travelProfile() async throws -> TravelProfile { try await api.get("members/me/travel-profile") }
     func notificationPreferences() async throws -> NotificationPreferences { try await api.get("members/me/notification-preferences") }
     func updateNotificationPreferences(_ prefs: NotificationPreferences) async throws -> NotificationPreferences {

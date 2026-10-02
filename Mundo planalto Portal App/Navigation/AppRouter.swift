@@ -88,7 +88,6 @@ extension AppRoute {
         case "extrato": return .extrato
         case "informe": return .informeRendimentos
         case "certificados": return .certificados
-        case "unity": return .unityMilhas
         case "cartao": return .cartaoDigital
         case "avisos": return .avisosNoticias
         case "politica": return .politicaPrivacidade
