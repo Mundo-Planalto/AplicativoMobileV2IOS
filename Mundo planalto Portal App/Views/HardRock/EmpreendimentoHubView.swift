@@ -43,8 +43,8 @@ struct EmpreendimentoHubView: View {
 
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: HrMetrics.cardSpacing), GridItem(.flexible(), spacing: HrMetrics.cardSpacing)], spacing: HrMetrics.cardSpacing) {
                     HrShortcut(icon: "creditcard.fill", titulo: "Financeiro", subtitulo: "Parcelas, boletos e extrato") { router.push(.financeiroEmpreendimento(venture)) }
-                    HrShortcut(icon: "photo.on.rectangle", titulo: "Galeria de fotos", subtitulo: "Imagens do projeto") { router.push(.galeria(venture)) }
-                    HrShortcut(icon: "play.rectangle.fill", titulo: "Vídeos da obra", subtitulo: "Acompanhamento no YouTube") { router.push(.videosObra(venture)) }
+                    HrShortcut(icon: "photo.on.rectangle", titulo: "Galeria de fotos", subtitulo: "Imagens do projeto") { router.push(.galeria(vm.venture)) }
+                    HrShortcut(icon: "play.rectangle.fill", titulo: "Vídeos da obra", subtitulo: "Acompanhamento no YouTube") { router.push(.videosObra(vm.venture)) }
                     HrShortcut(icon: "doc.text.fill", titulo: "Documentos", subtitulo: "Contrato, informe e boletos") { router.push(.documentos(venture)) }
                 }
 
@@ -79,10 +79,14 @@ struct EmpreendimentoHubView: View {
                                     .foregroundColor(.hrTextMuted)
                                     .lineLimit(3)
                             }
-                            HrGoldButton(text: "Assistir no YouTube") { router.push(.videosObra(venture)) }
+                            HrGoldButton(text: "Assistir no YouTube") { router.push(.videosObra(vm.venture)) }
                                 .padding(.top, 2)
                         }
                     }
+                } else if let video = vm.videosDoBook.first {
+                    // Sem atualização cadastrada: destaca o vídeo do book do empreendimento no portal.
+                    HrSectionTitle(titulo: "Vídeo do empreendimento").padding(.top, 8)
+                    TimelineMarcoItem(update: video, tag: "Vídeo")
                 }
             }
             .padding(.horizontal, HrMetrics.screenMargin)

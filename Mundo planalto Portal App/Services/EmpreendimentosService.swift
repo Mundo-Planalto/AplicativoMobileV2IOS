@@ -282,10 +282,34 @@ class EmpreendimentosService {
     func getVentureUpdates(ventureId: Int) async throws -> [VentureUpdateDto] {
         let path = baseURL + "ventureupdates/venture/\(ventureId)"
         guard let url = URL(string: path) else { throw EmpreendimentosError.networkError }
-        let request = createAuthorizedRequest(url: url)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else { return [] }
-        let decoded = try? JSONDecoder().decode(ApiResponse<[VentureUpdateDto]>.self, from: data)
-        return decoded?.data ?? []
+        var request = createAuthorizedRequest(url: url)
+        var (data, response) = try await URLSession.shared.data(for: request)
+        guard var http = response as? HTTPURLResponse else { throw EmpreendimentosError.invalidResponse }
+        if http.statusCode == 401 {
+            let recovered = await AuthService.shared.recoverSessionIfNeeded()
+            guard recovered else { throw EmpreendimentosError.invalidCredentials }
+            request = createAuthorizedRequest(url: url)
+            let retry = try await URLSession.shared.data(for: request)
+            data = retry.0
+            guard let retryHttp = retry.1 as? HTTPURLResponse else { throw EmpreendimentosError.invalidResponse }
+            http = retryHttp
+        }
+        if http.statusCode == 401 { throw EmpreendimentosError.invalidCredentials }
+        // Empreendimento sem atualizações cadastradas no portal.
+        if http.statusCode == 404 || http.statusCode == 204 { return [] }
+        guard http.statusCode == 200 else { throw EmpreendimentosError.invalidResponse }
+
+        let list: [VentureUpdateDto]
+        if let decoded = try? JSONDecoder().decode(ApiResponse<[VentureUpdateDto]>.self, from: data) {
+            list = decoded.data ?? []
+        } else if let plain = try? JSONDecoder().decode([VentureUpdateDto].self, from: data) {
+            list = plain
+        } else {
+            throw EmpreendimentosError.invalidResponse
+        }
+        #if DEBUG
+        print("[Empreendimentos] ventureupdates/venture/\(ventureId): \(list.count) atualização(ões)")
+        #endif
+        return list
     }
 }

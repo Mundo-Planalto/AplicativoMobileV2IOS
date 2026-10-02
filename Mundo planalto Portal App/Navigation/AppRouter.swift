@@ -107,6 +107,15 @@ extension TabItem {
 }
 
 extension AppRoute {
+    /// Empreendimento das rotas de teste: o real em cache no login real, o de demonstração na sessão demo.
+    private static var debugVenture: Venture {
+        if !AppState.shared.isDemoSession,
+           let real = EmpreendimentosService.shared.getEmpreendimentosCached()?.empreendimentos.first {
+            return real
+        }
+        return VenturesRepositoryMock.demoVenture
+    }
+
     static func debugRoute(named name: String) -> AppRoute? {
         switch name {
         case "financeiro": return .financeiro
@@ -119,11 +128,11 @@ extension AppRoute {
         case "avisos": return .avisosNoticias
         case "politica": return .politicaPrivacidade
         case "sistema": return .sistema
-        case "obra": return .videosObra(VenturesRepositoryMock.demoVenture)
-        case "hub": return .empreendimento(VenturesRepositoryMock.demoVenture)
-        case "galeria": return .galeria(VenturesRepositoryMock.demoVenture)
-        case "documentos": return .documentos(VenturesRepositoryMock.demoVenture)
-        case "financeiro-hub": return .financeiroEmpreendimento(VenturesRepositoryMock.demoVenture)
+        case "obra": return .videosObra(debugVenture)
+        case "hub": return .empreendimento(debugVenture)
+        case "galeria": return .galeria(debugVenture)
+        case "documentos": return .documentos(debugVenture)
+        case "financeiro-hub": return .financeiroEmpreendimento(debugVenture)
         default: return nil
         }
     }

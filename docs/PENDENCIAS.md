@@ -40,7 +40,7 @@ funcionar, mas nada é enviado ao backend.
 |---|---|
 | Dados pessoais (CPF, e-mail, telefone, endereço) | Fictícios: `***.456.789-**`, `jose.castro@exemplo.com`, `(62) 98888-0000`, "Rua T-63, 1200 — Apto 1208, Setor Bueno — Goiânia/GO, CEP 74230-100". Alinhar com o Android |
 | Links do Hard Rock Hotel Gramado | `instagram.com/hardrockhotelgramado`, `youtube.com/@mundoplanalto` e `whatsapp.com/channel/` são de exemplo; trocar pelos oficiais |
-| Vídeo "Diário de Obras — Setembro/2026" | URL provisória do YouTube (`jNQXAC9IVRw`) até indicarem o vídeo oficial |
+| Vídeo "Diário de Obras — Setembro/2026" | Na demonstração usa o vídeo cadastrado no book do empreendimento no portal (`Bh4EpKvdCpY`); no login real vêm as atualizações e os vídeos do portal |
 | Galeria | 4 fotos do Unsplash |
 | Extrato | 48 parcelas de R$ 2.480,00 (28 pagas, 20 a vencer a partir de 15/10/2026); boleto abre o modal "Boleto não gerado" |
 | Informe de rendimentos | Mostra os anos 2025 e 2026 e avisa que o documento só é gerado com login real |

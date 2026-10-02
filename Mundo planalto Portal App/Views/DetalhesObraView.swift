@@ -25,32 +25,42 @@ struct DetalhesObraView: View {
 
                 if viewModel.isLoading {
                     HrCard { HStack { Spacer(); ProgressView().tint(.hrGold); Spacer() } }
-                } else if let error = viewModel.error {
-                    HrCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(error).font(HrFont.body).foregroundColor(.white)
-                            HrOutlineButton(text: "Tentar novamente") { Task { await viewModel.loadVentureDetails() } }
-                        }
-                    }
-                } else if viewModel.updates.isEmpty {
-                    HrCard {
-                        HStack(spacing: 12) {
-                            HrIconBox(icon: "video.slash")
-                            Text("Nenhuma atualização disponível no momento.")
-                                .font(HrFont.body)
-                                .foregroundColor(.hrTextMuted)
-                        }
-                    }
                 } else {
+                    if let error = viewModel.error {
+                        HrCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text(error).font(HrFont.body).foregroundColor(.white)
+                                HrOutlineButton(text: "Tentar novamente") { Task { await viewModel.loadVentureDetails(forceRefresh: true) } }
+                            }
+                        }
+                    } else if viewModel.semConteudo {
+                        HrCard {
+                            HStack(spacing: 12) {
+                                HrIconBox(icon: "video.slash")
+                                Text("Nenhuma atualização disponível no momento.")
+                                    .font(HrFont.body)
+                                    .foregroundColor(.hrTextMuted)
+                            }
+                        }
+                    }
                     ForEach(viewModel.updates) { update in
                         TimelineMarcoItem(update: update)
+                    }
+                    // Vídeos cadastrados no book do empreendimento no portal.
+                    if !viewModel.videosDoBook.isEmpty {
+                        if !viewModel.updates.isEmpty {
+                            HrSectionTitle(titulo: "Vídeos do empreendimento").padding(.top, 8)
+                        }
+                        ForEach(viewModel.videosDoBook) { video in
+                            TimelineMarcoItem(update: video, tag: "Vídeo")
+                        }
                     }
                 }
             }
             .padding(.horizontal, HrMetrics.screenMargin)
             .padding(.bottom, HrMetrics.scrollBottomInset)
         }
-        .refreshable { await viewModel.loadVentureDetails() }
+        .refreshable { await viewModel.loadVentureDetails(forceRefresh: true) }
         .hrScreen()
         .task { await viewModel.loadVentureDetails() }
     }
@@ -59,6 +69,7 @@ struct DetalhesObraView: View {
 /// Card de uma atualização: título, data, player do YouTube, imagem e descrição.
 struct TimelineMarcoItem: View {
     let update: VentureUpdate
+    var tag = "Atualização"
 
     private func isYouTubeLink(_ value: String) -> Bool {
         let lowered = value.lowercased()
@@ -91,14 +102,16 @@ struct TimelineMarcoItem: View {
     var body: some View {
         HrCard {
             VStack(alignment: .leading, spacing: 12) {
-                HrTag(text: "Atualização")
+                HrTag(text: tag)
                 Text(update.title)
                     .font(HrFont.sectionTitle)
                     .foregroundColor(.white)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(update.date)
-                    .font(HrFont.caption)
-                    .foregroundColor(.hrGoldLight)
+                if !update.date.isEmpty {
+                    Text(update.date)
+                        .font(HrFont.caption)
+                        .foregroundColor(.hrGoldLight)
+                }
 
                 if let ytURL = resolvedYouTubeURL {
                     YouTubePlayerView(url: ytURL)

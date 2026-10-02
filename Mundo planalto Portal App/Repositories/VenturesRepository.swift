@@ -43,7 +43,7 @@ final class VenturesRepositoryMock: VenturesRepository {
     func ventures(forceRefresh: Bool) async throws -> [Venture] { [Self.demoVenture] }
 
     func updates(venture: Venture) async throws -> [VentureUpdate] {
-        // Vídeo de demonstração: URL provisória até a diretoria indicar o vídeo oficial (docs/PENDENCIAS.md).
+        // Vídeo de demonstração: o mesmo vídeo cadastrado no book do Hard Rock Hotel Gramado no portal.
         [
             VentureUpdate(
                 id: "demo-1",
@@ -53,7 +53,7 @@ final class VenturesRepositoryMock: VenturesRepository {
                 images: [],
                 imageUrl: nil,
                 videoUrl: nil,
-                youtubeUrl: "https://www.youtube.com/watch?v=jNQXAC9IVRw",
+                youtubeUrl: "https://www.youtube.com/watch?v=Bh4EpKvdCpY",
                 isCompleted: false
             )
         ]
@@ -74,7 +74,11 @@ final class VenturesRepositoryRemote: VenturesRepository {
             let full = EmpreendimentosService.mediaURL(for: s)
             return full.isEmpty ? nil : full
         }
-        return dtos.map { dto in
+        // Mais recente primeiro (o hub mostra a primeira como "Última atualização").
+        let ordenadas = dtos.sorted {
+            (HrFormat.parseDate($0.postDate) ?? .distantPast) > (HrFormat.parseDate($1.postDate) ?? .distantPast)
+        }
+        return ordenadas.map { dto in
             let img = media(dto.imageUrl)
             return VentureUpdate(
                 id: "\(dto.id)",
