@@ -1,8 +1,9 @@
 //
 //  DetalhesObraView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
-//  Detalhes do empreendimento: vídeos da obra (YouTube em WKWebView), descrição e galeria.
+//  Vídeos da obra: atualizações do empreendimento com player do YouTube (WKWebView),
+//  título, data e descrição.
 //  Sem percentual/evolução da obra (decisão da diretoria).
 //
 
@@ -20,10 +21,7 @@ struct DetalhesObraView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: HrMetrics.cardSpacing) {
-                HrBackHeader(titulo: venture.name, subtitulo: "Atualizações da obra")
-
-                HrSectionTitle(titulo: "Vídeos da obra", subtitulo: "Acompanhamento no YouTube")
-                    .padding(.top, 4)
+                HrBackHeader(titulo: "Vídeos da obra", subtitulo: venture.name)
 
                 if viewModel.isLoading {
                     HrCard { HStack { Spacer(); ProgressView().tint(.hrGold); Spacer() } }

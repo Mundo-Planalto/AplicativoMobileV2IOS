@@ -1,6 +1,6 @@
 //
 //  EmpreendimentosView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Aba Empreendimentos: lista dos empreendimentos do cliente (GET ventures).
 //
@@ -41,7 +41,7 @@ struct EmpreendimentosView: View {
                 } else {
                     ForEach(viewModel.ventures) { venture in
                         EmpreendimentoCard(venture: venture) {
-                            router.push(.detalhesObra(venture))
+                            router.push(.empreendimento(venture))
                         }
                     }
                 }

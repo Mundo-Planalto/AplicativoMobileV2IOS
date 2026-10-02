@@ -10,8 +10,14 @@
 import Foundation
 
 protocol FinanceiroRepository {
-    func resumo(forceRefresh: Bool) async throws -> FinanceiroResumo
-    func meuEmpreendimento() async throws -> MeuEmpreendimentoResumo?
+    /// `venture` filtra o resumo por empreendimento (aberto pela página do empreendimento).
+    func resumo(forceRefresh: Bool, venture: Venture?) async throws -> FinanceiroResumo
+}
+
+extension FinanceiroRepository {
+    func resumo(forceRefresh: Bool) async throws -> FinanceiroResumo {
+        try await resumo(forceRefresh: forceRefresh, venture: nil)
+    }
 }
 
 // MARK: - Mock (docs/telas.md)
@@ -21,7 +27,7 @@ final class FinanceiroRepositoryMock: FinanceiroRepository {
 
     static let imagemGramado = "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800"
 
-    func resumo(forceRefresh: Bool) async throws -> FinanceiroResumo {
+    func resumo(forceRefresh: Bool, venture: Venture?) async throws -> FinanceiroResumo {
         FinanceiroResumo(
             empreendimentoNome: "Hard Rock Hotel Gramado",
             empreendimentoLocal: "Gramado • RS",
@@ -40,22 +46,26 @@ final class FinanceiroRepositoryMock: FinanceiroRepository {
             ]
         )
     }
-
-    func meuEmpreendimento() async throws -> MeuEmpreendimentoResumo? {
-        MeuEmpreendimentoResumo(nome: "Hard Rock Hotel Gramado", unidade: "Unidade 1208 • Torre A", imageUrl: Self.imagemGramado)
-    }
 }
 
 // MARK: - Remote (API do portal já existente)
 
 final class FinanceiroRepositoryRemote: FinanceiroRepository {
-    func resumo(forceRefresh: Bool) async throws -> FinanceiroResumo {
+    func resumo(forceRefresh: Bool, venture selected: Venture?) async throws -> FinanceiroResumo {
         async let summaryTask = ExtratoService.shared.getFinancialSummary(useCache: !forceRefresh, forceRefresh: forceRefresh)
         async let itemsTask = ExtratoService.shared.getExtrato(showPaid: true, showOverdue: true, showDue: true, useCache: !forceRefresh, forceRefresh: false)
-        let venture = try? await EmpreendimentosService.shared.getEmpreendimentos().empreendimentos.first
+        let firstVenture = try? await EmpreendimentosService.shared.getEmpreendimentos().empreendimentos.first
+        let venture = selected ?? firstVenture
 
         let summary = try await summaryTask
-        let items = (try? await itemsTask) ?? []
+        var items = (try? await itemsTask) ?? []
+        // GET ventures/{id}/financial ainda não existe: com empreendimento escolhido, filtra o
+        // extrato pelo nome (docs/PENDENCIAS.md). O valor do próximo vencimento segue o resumo geral.
+        if let selected {
+            let nome = selected.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let filtrados = items.filter { $0.ventureName.trimmingCharacters(in: .whitespacesAndNewlines).localizedCaseInsensitiveCompare(nome) == .orderedSame }
+            if !filtrados.isEmpty { items = filtrados }
+        }
 
         let pagas = items.filter { $0.status == .paid }.count
         let total = items.count
@@ -77,7 +87,7 @@ final class FinanceiroRepositoryRemote: FinanceiroRepository {
 
         return FinanceiroResumo(
             empreendimentoNome: venture?.name ?? (items.first?.ventureName ?? "Meu empreendimento"),
-            empreendimentoLocal: "",
+            empreendimentoLocal: venture?.localTexto ?? "",
             empreendimentoImagem: venture?.imageUrl.hasPrefix("http") == true ? venture?.imageUrl : nil,
             situacao: emDia ? "Em dia" : "Em atraso",
             situacaoEmDia: emDia,
@@ -88,10 +98,5 @@ final class FinanceiroRepositoryRemote: FinanceiroRepository {
             parcelasRestantes: total > 0 ? "\(total - pagas) de \(total)" : "-",
             proximasParcelas: Array(proximas)
         )
-    }
-
-    func meuEmpreendimento() async throws -> MeuEmpreendimentoResumo? {
-        guard let v = try await EmpreendimentosService.shared.getEmpreendimentos().empreendimentos.first else { return nil }
-        return MeuEmpreendimentoResumo(nome: v.name, unidade: "", imageUrl: v.imageUrl.hasPrefix("http") ? v.imageUrl : nil)
     }
 }

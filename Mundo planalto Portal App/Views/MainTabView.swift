@@ -82,8 +82,16 @@ struct RouteView: View {
                 PoliticaPrivacidadeView()
             case .sistema:
                 SistemaView()
-            case .detalhesObra(let venture):
+            case .financeiroEmpreendimento(let venture):
+                FinanceiroView(venture: venture)
+            case .empreendimento(let venture):
+                EmpreendimentoHubView(venture: venture)
+            case .galeria(let venture):
+                GaleriaView(venture: venture)
+            case .videosObra(let venture):
                 DetalhesObraView(venture: venture)
+            case .documentos(let venture):
+                DocumentosView(venture: venture)
             }
         }
         .navigationBarBackButtonHidden(true)

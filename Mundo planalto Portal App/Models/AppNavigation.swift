@@ -31,6 +31,12 @@ enum TabItem: String, CaseIterable, Identifiable {
 /// Telas empilhadas (push) sobre uma aba.
 enum AppRoute: Hashable {
     case financeiro
+    /// Financeiro aberto pela página do empreendimento (seletor fixo, filtrado por ele).
+    case financeiroEmpreendimento(Venture)
+    case empreendimento(Venture)
+    case galeria(Venture)
+    case videosObra(Venture)
+    case documentos(Venture)
     case extrato
     case informeRendimentos
     case viagens
@@ -38,5 +44,4 @@ enum AppRoute: Hashable {
     case avisosNoticias
     case politicaPrivacidade
     case sistema
-    case detalhesObra(Venture)
 }

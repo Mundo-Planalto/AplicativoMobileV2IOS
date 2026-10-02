@@ -1,8 +1,6 @@
 //
 //  EmpreendimentosViewModel.swift
-//  Mundo planalto Portal App
-//
-//  Created by matheus ferreira on 26/01/26.
+//  Mundo Planalto
 //
 
 import Foundation
@@ -19,51 +17,18 @@ class EmpreendimentosViewModel: ObservableObject {
 
     func loadVentures(forceRefresh: Bool = false) async {
         error = nil
-        if AppState.shared.isDemoSession {
-            ventures = [Self.demoVenture]
-            isLoading = false
-            return
-        }
-
-        // Se não for refresh forçado, tenta renderizar imediatamente usando cache.
-        if !forceRefresh,
-           let cached = EmpreendimentosService.shared.getEmpreendimentosCached(),
-           !cached.empreendimentos.isEmpty {
+        // Mostra o cache na hora (login real) e atualiza em seguida.
+        if !forceRefresh, ventures.isEmpty, !AppState.shared.isDemoSession,
+           let cached = EmpreendimentosService.shared.getEmpreendimentosCached(), !cached.empreendimentos.isEmpty {
             ventures = cached.empreendimentos
-            // Atualiza em background para manter frescor.
-            isLoading = true
-            do {
-                let response = try await EmpreendimentosService.shared.getEmpreendimentos(
-                    useCache: false,
-                    forceRefresh: true
-                )
-                ventures = response.empreendimentos
-            } catch {
-                // Mantém o cache já exibido; mostra erro só se não tiver dados.
-                if ventures.isEmpty {
-                    self.error = AppErrorMapper.userMessage(
-                        for: error,
-                        fallback: "Erro ao carregar empreendimentos"
-                    )
-                }
-            }
-            isLoading = false
-            return
         }
-
-        // Sem cache (ou refresh forçado): carrega normalmente.
         isLoading = true
         do {
-            let response = try await EmpreendimentosService.shared.getEmpreendimentos(
-                useCache: !forceRefresh,
-                forceRefresh: forceRefresh
-            )
-            ventures = response.empreendimentos
+            ventures = try await RepositoryProvider.ventures.ventures(forceRefresh: forceRefresh || !ventures.isEmpty)
         } catch {
-            self.error = AppErrorMapper.userMessage(
-                for: error,
-                fallback: "Erro ao carregar empreendimentos"
-            )
+            if ventures.isEmpty {
+                self.error = AppErrorMapper.userMessage(for: error, fallback: "Erro ao carregar empreendimentos")
+            }
         }
         isLoading = false
     }

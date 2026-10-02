@@ -1,6 +1,6 @@
 //
 //  FinanceiroView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Tela Financeiro (push a partir da Início) — docs/telas.md.
 //
@@ -14,11 +14,11 @@ final class FinanceiroViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
-    func load(forceRefresh: Bool = false) async {
+    func load(forceRefresh: Bool = false, venture: Venture? = nil) async {
         isLoading = true
         error = nil
         do {
-            resumo = try await RepositoryProvider.financeiro.resumo(forceRefresh: forceRefresh)
+            resumo = try await RepositoryProvider.financeiro.resumo(forceRefresh: forceRefresh, venture: venture)
         } catch {
             self.error = AppErrorMapper.userMessage(for: error, fallback: "Não foi possível carregar seus dados financeiros.")
         }
@@ -30,6 +30,8 @@ struct FinanceiroView: View {
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var router: AppRouter
     @StateObject private var vm = FinanceiroViewModel()
+    /// Preenchido quando aberto pela página do empreendimento: seletor fixo e dados filtrados.
+    var venture: Venture? = nil
 
     var body: some View {
         ScrollView {
@@ -58,7 +60,7 @@ struct FinanceiroView: View {
                     HrCard {
                         VStack(alignment: .leading, spacing: 10) {
                             Text(error).font(HrFont.body).foregroundColor(.white)
-                            HrOutlineButton(text: "Tentar novamente") { Task { await vm.load(forceRefresh: true) } }
+                            HrOutlineButton(text: "Tentar novamente") { Task { await vm.load(forceRefresh: true, venture: venture) } }
                         }
                     }
                 }
@@ -72,9 +74,9 @@ struct FinanceiroView: View {
             .padding(.horizontal, HrMetrics.screenMargin)
             .padding(.bottom, HrMetrics.scrollBottomInset)
         }
-        .refreshable { await vm.load(forceRefresh: true) }
+        .refreshable { await vm.load(forceRefresh: true, venture: venture) }
         .hrScreen()
-        .task { await vm.load() }
+        .task { await vm.load(venture: venture) }
     }
 
     private func seletorEmpreendimento(_ r: FinanceiroResumo) -> some View {
@@ -94,36 +96,43 @@ struct FinanceiroView: View {
                     }
                 }
                 Spacer()
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.hrGold)
+                if venture == nil {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.hrGold)
+                }
             }
         }
     }
 
+    /// Card de situação sem foto de fundo (revisão de 01/10): só box com borda dourada.
     private func situacaoCard(_ r: FinanceiroResumo) -> some View {
-        HrPhotoCard(url: r.empreendimentoImagem ?? FinanceiroRepositoryMock.imagemGramado, height: 300) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    HrTag(text: "Situação financeira")
-                    Spacer()
-                    HrStatusDot(text: r.situacao, color: r.situacaoEmDia ? .hrSuccess : .hrError)
-                }
-                Text("Próximo vencimento")
-                    .font(HrFont.caption)
-                    .foregroundColor(.white.opacity(0.8))
-                Text(r.proximoVencimento)
-                    .font(HrFont.itemTitle)
-                    .foregroundColor(.white)
-                Text(r.proximoValor)
-                    .font(HrFont.money)
-                    .foregroundColor(.hrGold)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                HrGoldButton(text: "Pagar parcela") { router.push(.extrato) }
-                    .padding(.top, 4)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                HrTag(text: "Situação financeira")
+                Spacer()
+                HrStatusDot(text: r.situacao, color: r.situacaoEmDia ? .hrSuccess : .hrError)
             }
+            Text("Próximo vencimento")
+                .font(HrFont.caption)
+                .foregroundColor(.hrTextMuted)
+                .padding(.top, 4)
+            Text(r.proximoVencimento)
+                .font(HrFont.itemTitle)
+                .foregroundColor(.white)
+            Text(r.proximoValor)
+                .font(HrFont.money)
+                .foregroundColor(.hrGold)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            HrGoldButton(text: "Pagar parcela") { router.push(.extrato) }
+                .padding(.top, 4)
         }
+        .padding(HrMetrics.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.hrSurface)
+        .clipShape(RoundedRectangle(cornerRadius: HrMetrics.cardRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: HrMetrics.cardRadius, style: .continuous).stroke(Color.hrGold, lineWidth: 1))
     }
 
     private func parcelaRow(_ p: ParcelaResumo) -> some View {

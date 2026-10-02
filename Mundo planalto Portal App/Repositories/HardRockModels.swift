@@ -169,14 +169,6 @@ struct FinanceiroResumo: Equatable {
     let proximasParcelas: [ParcelaResumo]
 }
 
-// MARK: - Empreendimento (card da Início)
-
-struct MeuEmpreendimentoResumo: Equatable {
-    let nome: String
-    let unidade: String
-    let imageUrl: String?
-}
-
 // MARK: - Datas / moeda
 
 enum HrFormat {

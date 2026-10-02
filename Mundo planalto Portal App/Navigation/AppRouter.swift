@@ -117,7 +117,11 @@ extension AppRoute {
         case "avisos": return .avisosNoticias
         case "politica": return .politicaPrivacidade
         case "sistema": return .sistema
-        case "obra": return .detalhesObra(EmpreendimentosViewModel.demoVenture)
+        case "obra": return .videosObra(VenturesRepositoryMock.demoVenture)
+        case "hub": return .empreendimento(VenturesRepositoryMock.demoVenture)
+        case "galeria": return .galeria(VenturesRepositoryMock.demoVenture)
+        case "documentos": return .documentos(VenturesRepositoryMock.demoVenture)
+        case "financeiro-hub": return .financeiroEmpreendimento(VenturesRepositoryMock.demoVenture)
         default: return nil
         }
     }
