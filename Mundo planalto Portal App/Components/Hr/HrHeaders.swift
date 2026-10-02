@@ -1,6 +1,6 @@
 //
 //  HrHeaders.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  HrHeader (abas) e HrBackHeader (telas empilhadas).
 //

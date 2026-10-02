@@ -1,6 +1,6 @@
 //
 //  NoticiaDetalhesView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 
 import SwiftUI

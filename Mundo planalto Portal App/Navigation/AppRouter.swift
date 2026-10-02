@@ -1,6 +1,6 @@
 //
 //  AppRouter.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Estado de navegação: aba selecionada e pilha (NavigationPath) de cada aba.
 //  Injetado como EnvironmentObject a partir da MainTabView.

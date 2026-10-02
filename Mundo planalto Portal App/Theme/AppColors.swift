@@ -1,6 +1,6 @@
 //
 //  AppColors.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Paleta legada usada pelas telas herdadas do portal, agora mapeada para o
 //  design system preto e dourado (Theme/HrTheme.swift). Não há mais tema claro:

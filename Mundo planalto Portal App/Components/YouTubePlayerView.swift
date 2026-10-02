@@ -1,6 +1,6 @@
 //
 //  YouTubePlayerView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Player do YouTube em WKWebView (embed), conforme docs/CLAUDE.md.
 //

@@ -1,6 +1,6 @@
 //
 //  CPFMask.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Máscaras de CPF (000.000.000-00) e CNPJ (00.000.000/0000-00).
 //

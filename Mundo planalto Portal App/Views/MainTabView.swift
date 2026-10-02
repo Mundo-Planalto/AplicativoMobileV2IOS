@@ -1,6 +1,6 @@
 //
 //  MainTabView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  TabView com 5 abas (Início, Benefícios, Campanhas, Empreendimentos, Perfil),
 //  cada uma com sua NavigationStack e rotas de AppRoute. A tab bar do sistema fica

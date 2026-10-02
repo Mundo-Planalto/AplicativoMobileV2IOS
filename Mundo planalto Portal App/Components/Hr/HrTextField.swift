@@ -1,6 +1,6 @@
 //
 //  HrTextField.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Campo de texto do Login: fundo hrSurface, borda hrGoldBorder (hrGold em foco),
 //  ícone à esquerda e olho para mostrar/ocultar senha.

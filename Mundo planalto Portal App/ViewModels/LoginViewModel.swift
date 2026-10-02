@@ -1,6 +1,6 @@
 //
 //  LoginViewModel.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Login real (POST auth/login) e entrada em modo demonstração (sem API).
 //  Apenas o token JWT é persistido (Keychain); a senha nunca é armazenada.

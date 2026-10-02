@@ -1,6 +1,6 @@
 //
 //  HrRows.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  HrIconBox, HrListRow, HrStatPill, HrShortcut.
 //

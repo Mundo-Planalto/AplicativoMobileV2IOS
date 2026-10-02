@@ -1,6 +1,6 @@
 //
 //  FinanceiroRepository.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Resumo financeiro e empreendimento principal para a Início e a tela Financeiro.
 //  Mock: valores de docs/telas.md. Remote: API existente do portal

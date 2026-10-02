@@ -1,6 +1,6 @@
 //
 //  SistemaView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Sistema/Configurações: notificações, política de privacidade e versão.
 //

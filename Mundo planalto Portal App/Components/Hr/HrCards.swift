@@ -1,6 +1,6 @@
 //
 //  HrCards.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  HrCard (container padrão) e HrPhoto (imagem remota sobre gradiente).
 //

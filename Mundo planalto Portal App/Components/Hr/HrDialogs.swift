@@ -1,6 +1,6 @@
 //
 //  HrDialogs.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Folhas (sheets) no visual preto e dourado: cupom do parceiro.
 //

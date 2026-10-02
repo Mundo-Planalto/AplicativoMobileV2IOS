@@ -1,6 +1,6 @@
 //
 //  HrPlaceholders.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Telas herdadas ainda não migradas (ver docs/PENDENCIAS.md).
 //

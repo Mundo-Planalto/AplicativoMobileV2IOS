@@ -1,6 +1,6 @@
 //
 //  HrButtons.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  HrGoldButton (principal) e HrOutlineButton (secundário).
 //

@@ -1,6 +1,6 @@
 //
 //  AvisosNoticiasViewModel.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 
 import Foundation

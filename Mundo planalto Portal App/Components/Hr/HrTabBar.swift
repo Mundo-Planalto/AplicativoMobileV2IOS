@@ -1,6 +1,6 @@
 //
 //  HrTabBar.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Tab bar: fundo hrBlack, cantos superiores 24, item selecionado com ícone dourado
 //  sobre pastilha 40x40 raio 12 em hrGold 18%; não selecionado hrTextMuted; rótulos 9pt.

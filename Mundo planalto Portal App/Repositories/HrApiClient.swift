@@ -1,6 +1,6 @@
 //
 //  HrApiClient.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Cliente HTTP mínimo para as implementações `Remote`: Bearer do Keychain,
 //  envelope ApiResponse<T>, 401 → checagem de sessão em AuthService (sessão fixa).

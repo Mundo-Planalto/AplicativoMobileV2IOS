@@ -76,7 +76,7 @@ class PreferencesManager {
         userDefaults.synchronize()
     }
 
-    /// O app Hard Rock tem tema único (escuro). A preferência antiga é ignorada.
+    /// O app tem tema único (escuro). A preferência antiga é ignorada.
     func getThemeMode() -> Bool {
         true
     }
