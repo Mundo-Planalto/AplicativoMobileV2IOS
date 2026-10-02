@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Botão principal: altura 46, raio 12, gradiente dourado, texto preto bold 14 + chevron.
+/// Botão principal: altura 46, raio 12, hrGold sólido (sem gradiente nem sombra), texto preto bold 14 + chevron.
 struct HrGoldButton: View {
     let text: String
     var trailingArrow: Bool = true
@@ -38,7 +38,7 @@ struct HrGoldButton: View {
             }
             .frame(maxWidth: .infinity)
             .frame(height: HrMetrics.primaryButtonHeight)
-            .background(HrGradient.gold)
+            .background(Color.hrGold)
             .clipShape(RoundedRectangle(cornerRadius: HrMetrics.buttonRadius, style: .continuous))
             .opacity(isEnabled ? 1 : 0.5)
         }

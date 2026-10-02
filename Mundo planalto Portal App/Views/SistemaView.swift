@@ -44,7 +44,7 @@ struct SistemaView: View {
 
                 HStack {
                     Spacer()
-                    Text("Hard Rock Vacation Club • Versão \(versao)")
+                    Text("Mundo Planalto • Versão \(versao)")
                         .font(HrFont.captionSmall)
                         .foregroundColor(.hrTextMuted)
                     Spacer()

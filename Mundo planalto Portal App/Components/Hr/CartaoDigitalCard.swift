@@ -39,19 +39,17 @@ struct CartaoDigitalCard: View {
                 endPoint: .bottomTrailing
             )
 
-            // Marca d'água music.note 140pt a 25% à direita.
+            // Marca d'água: símbolo da marca 140pt a 12% à direita.
             HStack {
                 Spacer()
-                Image(systemName: "music.note")
-                    .font(.system(size: 140, weight: .regular))
-                    .foregroundColor(.hrGold.opacity(0.25))
-                    .offset(x: 20, y: 10)
+                MundoPlanaltoSymbol(140, color: .hrGold.opacity(0.12))
+                    .offset(x: 24, y: 14)
             }
             .clipped()
 
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
-                    HrWordmark(compact: true, alignment: .leading)
+                    MundoPlanaltoLogo(compact: true)
                     Spacer()
                     Text("GOOD MUSIC · GREATER JOURNEYS")
                         .font(.system(size: 9, weight: .semibold))
@@ -95,7 +93,7 @@ struct CartaoDigitalCard: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.hrGold, lineWidth: 1)
         )
-        .shadow(color: .hrGoldDark.opacity(0.25), radius: 16, x: 0, y: 8)
+        .shadow(color: .black.opacity(0.5), radius: 12, x: 0, y: 6)
     }
 }
 

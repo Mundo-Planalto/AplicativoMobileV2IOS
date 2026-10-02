@@ -92,9 +92,11 @@ struct HrPhoto: View {
     }
 
     private var placeholder: some View {
-        Image(systemName: placeholderIcon)
-            .font(.system(size: 28))
-            .foregroundColor(.hrGoldLight.opacity(0.6))
+        GeometryReader { geo in
+            let side = min(geo.size.width, geo.size.height) * 0.45
+            MundoPlanaltoSymbol(max(side, 12), color: .hrGold.opacity(0.2))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 }
 

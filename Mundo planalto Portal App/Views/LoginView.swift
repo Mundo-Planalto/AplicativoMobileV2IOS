@@ -1,6 +1,6 @@
 //
 //  LoginView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Login: CPF/CNPJ e senha contra a API do portal, "Esqueci minha senha",
 //  "Primeiro acesso" e "Acessar demonstração" (usuário fictício, sem API).
@@ -27,11 +27,11 @@ struct LoginView: View {
 
                 ScrollView {
                     VStack(spacing: 0) {
-                        MundoPlanaltoWordmark()
-                            .padding(.top, 40)
-                            .padding(.bottom, 32)
+                        MundoPlanaltoLogo()
+                            .padding(.top, 48)
+                            .padding(.bottom, 36)
 
-                        Text("Bem-vindo ao seu portal")
+                        Text("Bem-vindo ao seu clube")
                             .font(HrFont.screenTitle)
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Estrela dourada + "Olá, {primeiro nome}" + sino à direita; título 30 bold; subtítulo muted.
+/// MundoPlanaltoSymbol(18) dourado + "Olá, {primeiro nome}" + sino à direita; título 30 bold; subtítulo muted.
 struct HrHeader: View {
     let nome: String?
     let titulo: String
@@ -17,9 +17,7 @@ struct HrHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.hrGold)
+                MundoPlanaltoSymbol(18)
                 Text(greeting)
                     .font(HrFont.body)
                     .foregroundColor(.hrTextMuted)

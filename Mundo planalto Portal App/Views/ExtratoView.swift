@@ -479,7 +479,7 @@ struct FiltrarParcelasModal: View {
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(HrGradient.gold)
+                .background(Color.hrGold)
                 .cornerRadius(10)
             }
         }

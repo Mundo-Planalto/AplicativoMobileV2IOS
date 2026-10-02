@@ -1,8 +1,8 @@
 //
 //  HrTheme.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
-//  Design system: cores, gradientes, tipografia e espaçamentos (docs/design-system.md).
+//  Design system: cores (paleta de docs/marca.md), gradientes, tipografia e espaçamentos.
 //  Tema único, sempre escuro (preto e dourado).
 //
 
@@ -19,13 +19,15 @@ extension Color {
     /// Cards em destaque, campos de texto, chips não selecionados.
     static let hrSurfaceElevated = Color(hex: "#1F1F1F")
     /// Ações principais, ícones ativos, bordas fortes.
-    static let hrGold = Color(hex: "#D4AF37")
+    static let hrGold = Color(hex: "#9E8033")
     /// Destaques, links, texto sobre dourado escuro.
-    static let hrGoldLight = Color(hex: "#F3D77A")
+    static let hrGoldLight = Color(hex: "#C9A84C")
     /// Fim do gradiente dourado, sombras.
-    static let hrGoldDark = Color(hex: "#9C7C1E")
+    static let hrGoldDark = Color(hex: "#6E5A22")
     /// Borda padrão dos cards.
-    static let hrGoldBorder = Color(hex: "#D4AF37").opacity(0.4)
+    static let hrGoldBorder = Color(hex: "#9E8033").opacity(0.4)
+    /// Só para a variante clara do ícone e materiais impressos; não usar em telas.
+    static let hrCream = Color(hex: "#F2F1EA")
     /// Texto secundário.
     static let hrTextMuted = Color(hex: "#A6A6A6")
     /// "Em dia", "Disponível", "Ativo".
@@ -41,7 +43,8 @@ extension Color {
 // MARK: - Gradientes
 
 enum HrGradient {
-    /// Horizontal hrGoldLight → hrGold → hrGoldDark (botões principais).
+    /// Horizontal hrGoldLight → hrGold → hrGoldDark. Só na linha do splash e no brilho do cartão;
+    /// botões não usam gradiente (docs/marca.md).
     static let gold = LinearGradient(
         colors: [.hrGoldLight, .hrGold, .hrGoldDark],
         startPoint: .leading,
