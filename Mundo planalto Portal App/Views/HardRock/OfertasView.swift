@@ -35,7 +35,7 @@ final class OfertasViewModel: ObservableObject {
 
     func abrir(_ offer: Offer, router: AppRouter) async {
         if let partnerId = offer.partnerId {
-            coupon = try? await RepositoryProvider.beneficios.coupon(partnerId: partnerId)
+            coupon = try? await RepositoryProvider.partners.coupon(partnerId: partnerId)
         } else if let url = offer.ctaUrl.flatMap(URL.init(string:)) {
             await UIApplication.shared.open(url)
         } else {

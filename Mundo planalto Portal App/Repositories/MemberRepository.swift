@@ -1,25 +1,23 @@
 //
-//  MembersRepository.swift
-//  Hard Rock Hotel & Vacation Club
+//  MemberRepository.swift
+//  Mundo Planalto
 //
-//  GET/PUT members/me/* (cartão, perfil de viagem, preferências, utilizações).
+//  GET members/me/card, members/me/redemptions e preferências de notificação.
 //
 
 import Foundation
 
-protocol MembersRepository {
+protocol MemberRepository {
     func card() async throws -> MemberCard
     func redemptions() async throws -> [BenefitRedemption]
-    func travelProfile() async throws -> TravelProfile
     func notificationPreferences() async throws -> NotificationPreferences
     func updateNotificationPreferences(_ prefs: NotificationPreferences) async throws -> NotificationPreferences
 }
 
 // MARK: - Mock (docs/telas.md)
 
-final class MembersRepositoryMock: MembersRepository {
-    static let shared = MembersRepositoryMock()
-
+final class MemberRepositoryMock: MemberRepository {
+    static let shared = MemberRepositoryMock()
     private let prefsKey = "hr_mock_notification_prefs_v2"
 
     func card() async throws -> MemberCard {
@@ -34,7 +32,8 @@ final class MembersRepositoryMock: MembersRepository {
             status: .active,
             cardToken: "HRVC-8150-DEMO",
             verifyUrl: demo.verifyUrl,
-            benefitUsageCount: 3
+            benefitUsageCount: 3,
+            clubName: demo.clube
         )
     }
 
@@ -44,10 +43,6 @@ final class MembersRepositoryMock: MembersRepository {
             BenefitRedemption(id: 2, partnerId: 2, partnerName: "Restaurante Belle du Val", discountText: "20%", usedAt: "2026-09-14T21:10:00Z", source: "coupon"),
             BenefitRedemption(id: 3, partnerId: 3, partnerName: "Snowland", discountText: "15%", usedAt: "2026-09-02T11:00:00Z", source: "qr")
         ]
-    }
-
-    func travelProfile() async throws -> TravelProfile {
-        TravelProfile(homeCity: "Goiânia", homeState: "GO", preferredDestinations: ["Gramado", "Orlando", "Cancún", "Lisboa"])
     }
 
     func notificationPreferences() async throws -> NotificationPreferences {
@@ -66,14 +61,13 @@ final class MembersRepositoryMock: MembersRepository {
     }
 }
 
-// MARK: - Remote (docs/openapi-hardrock.yaml)
+// MARK: - Remote
 
-final class MembersRepositoryRemote: MembersRepository {
+final class MemberRepositoryRemote: MemberRepository {
     private let api = HrApiClient.shared
 
     func card() async throws -> MemberCard { try await api.get("members/me/card") }
     func redemptions() async throws -> [BenefitRedemption] { try await api.get("members/me/redemptions") }
-    func travelProfile() async throws -> TravelProfile { try await api.get("members/me/travel-profile") }
     func notificationPreferences() async throws -> NotificationPreferences { try await api.get("members/me/notification-preferences") }
     func updateNotificationPreferences(_ prefs: NotificationPreferences) async throws -> NotificationPreferences {
         try await api.put("members/me/notification-preferences", body: prefs)

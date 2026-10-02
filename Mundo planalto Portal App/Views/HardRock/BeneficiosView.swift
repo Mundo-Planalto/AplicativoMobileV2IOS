@@ -16,11 +16,11 @@ final class BeneficiosViewModel: ObservableObject {
     let filtros = ["Todos", "Viagens", "Gramado"]
 
     func load() async {
-        partners = (try? await RepositoryProvider.beneficios.partners()) ?? []
+        partners = (try? await RepositoryProvider.partners.partners()) ?? []
     }
 
     func abrirCupom(partnerId: Int) async {
-        coupon = try? await RepositoryProvider.beneficios.coupon(partnerId: partnerId)
+        coupon = try? await RepositoryProvider.partners.coupon(partnerId: partnerId)
     }
 
     var mostraViagens: Bool { filtro == "Todos" || filtro == "Viagens" }

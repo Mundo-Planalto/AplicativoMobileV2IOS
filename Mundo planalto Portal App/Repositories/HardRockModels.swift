@@ -1,6 +1,6 @@
 //
 //  HardRockModels.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Modelos da API nova (docs/openapi-hardrock.yaml) e dos dados de demonstração.
 //  Nomes de campo iguais ao contrato para o decode do `Remote` ser direto.
@@ -37,6 +37,8 @@ struct MemberCard: Codable, Equatable {
     let cardToken: String
     let verifyUrl: String
     let benefitUsageCount: Int
+    /// Nome do clube exibido no cartão (vem do backend; mock: "Mundo Planalto").
+    let clubName: String?
 
     /// "2026" a partir de memberSince.
     var anoDesde: String { String(memberSince.prefix(4)) }
@@ -79,6 +81,12 @@ struct Partner: Codable, Identifiable, Equatable {
     let usageLimitPerCustomer: Int?
     let validUntil: String?
     let isActive: Bool
+    /// Até 2 parceiros em destaque com imagem (o Marketing troca no cadastro).
+    let isFeatured: Bool?
+    /// Empreendimentos a que o parceiro se aplica; a lista já vem filtrada pelo backend.
+    let ventureIds: [Int]?
+    /// Parceiro recém-cadastrado: o destaque mostra "PARCEIRO NOVO".
+    let isNew: Bool?
 }
 
 struct Coupon: Codable, Equatable {
@@ -184,7 +192,24 @@ struct Offer: Codable, Identifiable, Equatable {
 struct TravelProfile: Codable, Equatable {
     var homeCity: String
     var homeState: String
+    /// Até 4 destinos.
     var preferredDestinations: [String]
+    var nextTripWhen: NextTripWhen?
+    var nextTripDestination: String?
+    /// "pep" (respostas da compra) ou "app" (editado pelo cliente).
+    var source: String?
+
+    /// "Goiânia • GO"
+    var moradaTexto: String {
+        [homeCity, homeState].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.joined(separator: " • ")
+    }
+
+    /// "Em até 6 meses • Gramado"
+    var proximaViagemTexto: String {
+        let quando = (nextTripWhen ?? .unknown).texto
+        let destino = (nextTripDestination ?? "").trimmingCharacters(in: .whitespaces)
+        return destino.isEmpty ? quando : "\(quando) • \(destino)"
+    }
 }
 
 /// Único opt-in do app (Perfil → Preferências), exigido por LGPD e App Store.
@@ -275,6 +300,15 @@ enum HrFormat {
         f.locale = ptBR
         f.dateFormat = "dd/MM/yyyy"
         return f.string(from: date)
+    }
+
+    /// "Até 31 de outubro" a partir de yyyy-MM-dd.
+    static func untilDayMonth(_ raw: String?) -> String? {
+        guard let date = parseDate(raw) else { return nil }
+        let f = DateFormatter()
+        f.locale = ptBR
+        f.dateFormat = "d 'de' MMMM"
+        return "Até " + f.string(from: date)
     }
 
     static func parseDate(_ raw: String?) -> Date? {

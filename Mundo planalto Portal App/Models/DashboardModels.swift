@@ -35,8 +35,17 @@ struct Venture: Identifiable, Codable, Hashable {
     let photoBook: [PhotoBookItem]?
     /// Unidade do cliente (ex.: "Unidade 1208 • Torre A"). A API `ventures` ainda não devolve.
     let unit: String?
+    let city: String?
+    let state: String?
+    /// Redes sociais do empreendimento (revisão de 01/10). Linha oculta quando vazio.
+    let instagramUrl: String?
+    let instagramHandle: String?
+    let youtubeUrl: String?
+    let whatsappChannelUrl: String?
 
-    init(id: String, name: String, imageUrl: String, progress: Double, lastUpdate: String, photoBook: [PhotoBookItem]? = nil, unit: String? = nil) {
+    init(id: String, name: String, imageUrl: String, progress: Double, lastUpdate: String, photoBook: [PhotoBookItem]? = nil, unit: String? = nil,
+         city: String? = nil, state: String? = nil, instagramUrl: String? = nil, instagramHandle: String? = nil,
+         youtubeUrl: String? = nil, whatsappChannelUrl: String? = nil) {
         self.id = id
         self.name = name
         self.imageUrl = imageUrl
@@ -44,6 +53,17 @@ struct Venture: Identifiable, Codable, Hashable {
         self.lastUpdate = lastUpdate
         self.photoBook = photoBook
         self.unit = unit
+        self.city = city
+        self.state = state
+        self.instagramUrl = instagramUrl
+        self.instagramHandle = instagramHandle
+        self.youtubeUrl = youtubeUrl
+        self.whatsappChannelUrl = whatsappChannelUrl
+    }
+
+    /// "Gramado • RS"
+    var localTexto: String {
+        [city ?? "", state ?? ""].filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.joined(separator: " • ")
     }
 
     func hash(into hasher: inout Hasher) {

@@ -40,6 +40,8 @@ struct MemberInfo: Equatable {
     let desde: String
     /// Sem API real ainda: `verifyUrl` de GET members/me/card.
     let verifyUrl: String
+    /// Nome do clube no cartão (`clubName` do backend).
+    var clube: String = "Mundo Planalto"
 
     /// Usuário fictício "Acessar demonstração" (idêntico ao Android).
     static let demo = MemberInfo(

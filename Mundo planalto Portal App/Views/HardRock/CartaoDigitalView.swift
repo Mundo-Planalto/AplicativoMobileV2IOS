@@ -16,8 +16,8 @@ final class CartaoDigitalViewModel: ObservableObject {
     @Published var redemptions: [BenefitRedemption] = []
 
     func load() async {
-        card = try? await RepositoryProvider.members.card()
-        redemptions = (try? await RepositoryProvider.members.redemptions()) ?? []
+        card = try? await RepositoryProvider.member.card()
+        redemptions = (try? await RepositoryProvider.member.redemptions()) ?? []
     }
 }
 

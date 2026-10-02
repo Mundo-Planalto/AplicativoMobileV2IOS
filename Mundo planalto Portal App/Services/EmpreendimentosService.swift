@@ -32,6 +32,11 @@ struct CostCenterDto: Codable {
     let companyName: String?
     let isActive: Bool?
     let photoBook: [PhotoBookItemDto]?
+    let city: String?
+    let state: String?
+    let instagramUrl: String?
+    let youtubeUrl: String?
+    let whatsappChannelUrl: String?
 }
 
 struct EmpreendimentoDetail: Codable {
@@ -224,7 +229,12 @@ class EmpreendimentosService {
                 imageUrl: Self.fullMediaURL(dto.imageUrl).isEmpty ? "venture\(dto.id)" : Self.fullMediaURL(dto.imageUrl),
                 progress: 0,
                 lastUpdate: "",
-                photoBook: photoBook.isEmpty ? nil : photoBook
+                photoBook: photoBook.isEmpty ? nil : photoBook,
+                city: dto.city,
+                state: dto.state,
+                instagramUrl: dto.instagramUrl,
+                youtubeUrl: dto.youtubeUrl,
+                whatsappChannelUrl: dto.whatsappChannelUrl
             )
         }
         return ventures

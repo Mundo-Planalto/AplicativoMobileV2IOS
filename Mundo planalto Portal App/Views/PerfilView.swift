@@ -113,7 +113,7 @@ struct PerfilView: View {
         .hrScreen()
         .task {
             await viewModel.loadUserData()
-            if let prefs = try? await RepositoryProvider.members.notificationPreferences() {
+            if let prefs = try? await RepositoryProvider.member.notificationPreferences() {
                 receberPromocoes = prefs.campaigns
                 receberAvisos = prefs.announcements
             }
@@ -141,7 +141,7 @@ struct PerfilView: View {
 
     private func salvarPreferencias() {
         let prefs = NotificationPreferences(campaigns: receberPromocoes, announcements: receberAvisos)
-        Task { _ = try? await RepositoryProvider.members.updateNotificationPreferences(prefs) }
+        Task { _ = try? await RepositoryProvider.member.updateNotificationPreferences(prefs) }
     }
 
     private func infoLinha(_ rotulo: String, _ valor: String) -> some View {

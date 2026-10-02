@@ -15,16 +15,7 @@ class EmpreendimentosViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var error: String?
 
-    /// Empreendimento de demonstração (docs/telas.md).
-    static let demoVenture = Venture(
-        id: "demo-1",
-        name: "Hard Rock Hotel Gramado",
-        imageUrl: FinanceiroRepositoryMock.imagemGramado,
-        progress: 0,
-        lastUpdate: "",
-        photoBook: nil,
-        unit: "Unidade 1208 • Torre A"
-    )
+    static var demoVenture: Venture { VenturesRepositoryMock.demoVenture }
 
     func loadVentures(forceRefresh: Bool = false) async {
         error = nil
