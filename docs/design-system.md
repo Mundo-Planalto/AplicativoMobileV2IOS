@@ -1,6 +1,6 @@
-# Design system Hard Rock Hotel & Vacation Club (iOS)
+# Design system Mundo Planalto (app do clube)
 
-Visual preto e dourado, sempre em tema escuro (não há tema claro). Implementação de referência no Android: `ui/hardrock/HardRockDesign.kt` e `ui/theme/Color.kt` do repositório `Mundo-Planalto/AplicativoMobileV2`.
+**Atualizado em 02/10/2026:** a marca de lançamento é Mundo Planalto; o símbolo, a paleta de dourados e os componentes de marca estão em `docs/marca.md`, que vale sobre este arquivo. Visual preto e dourado, sempre em tema escuro (não há tema claro). Implementação de referência no Android: `ui/hardrock/HardRockDesign.kt` e `ui/theme/Color.kt` do repositório `Mundo-Planalto/AplicativoMobileV2`.
 
 ## Cores (`Color` extension `Hr`)
 
@@ -9,10 +9,10 @@ Visual preto e dourado, sempre em tema escuro (não há tema claro). Implementa�
 | `hrBlack` | `#0A0A0A` | Fundo de todas as telas e da tab bar |
 | `hrSurface` | `#161616` | Cards |
 | `hrSurfaceElevated` | `#1F1F1F` | Cards em destaque, campos de texto, chips não selecionados |
-| `hrGold` | `#D4AF37` | Ações principais, ícones ativos, bordas fortes |
-| `hrGoldLight` | `#F3D77A` | Destaques, links, texto sobre dourado escuro |
-| `hrGoldDark` | `#9C7C1E` | Fim do gradiente dourado, sombras |
-| `hrGoldBorder` | `#D4AF37` a 40% | Borda padrão dos cards |
+| `hrGold` | `#9E8033` | Símbolo da marca, ações principais, ícones ativos, bordas fortes (brandbook) |
+| `hrGoldLight` | `#C9A84C` | Destaques, links, texto dourado sobre fundo escuro |
+| `hrGoldDark` | `#6E5A22` | Fim de gradientes sutis, linhas |
+| `hrGoldBorder` | `#9E8033` a 40% | Borda padrão dos cards |
 | `hrTextMuted` | `#A6A6A6` | Texto secundário |
 | `hrSuccess` | `#7CCB6A` | "Em dia", "Disponível", "Ativo" |
 | `hrWarning` | `#E0A72E` | "Solicitado", "A vencer" |
@@ -20,7 +20,7 @@ Visual preto e dourado, sempre em tema escuro (não há tema claro). Implementa�
 | Texto principal | `#FFFFFF` | |
 
 Gradientes:
-- `hrGoldGradient`: horizontal `hrGoldLight → hrGold → hrGoldDark` (botões principais).
+- `hrGoldGradient`: horizontal `hrGoldLight → hrGold → hrGoldDark`. **Só** na linha do splash e no brilho do cartão; botões não usam gradiente.
 - `hrCardGradient`: vertical `hrSurfaceElevated → hrSurface` (card em destaque).
 - Fotos: por trás de toda `AsyncImage`, um `LinearGradient(hrSurfaceElevated, hrGoldDark, hrBlack)`; por cima da metade inferior, gradiente `clear → black 85%` para o texto ficar legível.
 
@@ -36,12 +36,12 @@ Gradientes:
 | Subtítulo / legenda | 11–12 regular, `hrTextMuted` |
 | Tag | 9 bold, uppercase, letter spacing 1 |
 | Valor monetário em destaque | 34 bold, dourado |
-| Wordmark "HARD ROCK" | 34 black, letter spacing 3, `hrGold`; "HOTEL & VACATION CLUB" 12 semibold, spacing 2, `hrGoldLight`; versão compacta 22/9 |
+| `MundoPlanaltoLogo` | Símbolo + "MUNDO PLANALTO" 34 black, spacing 3, `hrGold`; "VACATION CLUB" 12 semibold, spacing 2, `hrGoldLight`; compacto: símbolo 24pt + 14 bold. Ver `docs/marca.md` |
 
 ## Formas e espaçamento
 
 - Cards: raio 16, borda 1pt `hrGoldBorder` (ou `hrGold` quando em destaque), padding interno 16.
-- Botão principal: altura 46, raio 12, `hrGoldGradient`, texto preto bold 14 + chevron.
+- Botão principal: altura 46, raio 12, `hrGold` sólido (sem gradiente nem sombra), texto preto bold 14 + chevron.
 - Botão secundário: altura 42, raio 12, borda 1pt `hrGold`, texto `hrGoldLight` semibold 13.
 - Chips: raio 20, padding 14x7; selecionado = fundo `hrGold` e texto preto; não selecionado = fundo `hrSurfaceElevated`, borda `hrGoldBorder`, texto `hrGoldLight`.
 - Caixa de ícone (`HrIconBox`): 38x38, raio 10, fundo `hrGold` 12%, borda `hrGoldBorder`, ícone `hrGoldLight` a 50% do tamanho.
@@ -52,7 +52,7 @@ Gradientes:
 
 | Componente | Conteúdo |
 |---|---|
-| `HrHeader(nome, titulo, subtitulo, onNotificacoes)` | Estrela dourada + "Olá, {primeiro nome}" + sino à direita; título 30 bold; subtítulo muted |
+| `HrHeader(nome, titulo, subtitulo, onNotificacoes)` | `MundoPlanaltoSymbol(18)` dourado + "Olá, {primeiro nome}" + sino à direita; título 30 bold; subtítulo muted |
 | `HrBackHeader(titulo, subtitulo, onBack)` | Seta `chevron.left` dourada + título 22 bold + subtítulo |
 | `HrCard(highlighted:, onTap:)` | Container padrão |
 | `HrGoldButton(text, trailingArrow: true)` | Botão principal |
@@ -64,7 +64,8 @@ Gradientes:
 | `HrStatPill(icon, valor, rotulo)` | Estatística pequena (valor dourado 14 bold, rótulo 10 muted) |
 | `HrShortcut(icon, titulo, subtitulo)` | Atalho de grade 2 colunas |
 | `HrStatusDot(text, color)` | Ponto 8pt + texto 12 semibold na mesma cor |
-| `HrWordmark(compact:)` | Marca em texto |
-| `CartaoDigitalCard(nome, nivel, numeroMembro, desde)` | Cartão 1.6:1, ver `docs/telas.md` |
+| `MundoPlanaltoSymbol(size, color)` | Símbolo vetorial da marca (`docs/brand/simbolo-mundo-planalto.svg`) |
+| `MundoPlanaltoLogo(compact:)` | Símbolo + wordmark; substitui `HrWordmark` |
+| `CartaoDigitalCard(nome, nivel, numeroMembro, desde, clube)` | Cartão 1.6:1, ver `docs/telas.md` |
 
 Ícones: usar SF Symbols equivalentes aos Material Icons do Android (ex.: `Checkroom` → `tshirt.fill`, `Flight` → `airplane`, `LocalOffer` → `tag.fill`, `CardGiftcard` → `gift.fill`, `Apartment` → `building.2.fill`, `QrCode2` → `qrcode`, `Public` → `globe`, `MusicNote` → `music.note`, `Star` → `star.fill`, `Lock` → `lock.fill`, `CalendarMonth` → `calendar`, `Receipt` → `doc.text.fill`).

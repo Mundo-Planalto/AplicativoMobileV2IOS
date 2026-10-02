@@ -24,3 +24,6 @@ Config.plist
 # Swift Package Manager
 .build/
 .swiftpm/
+
+# Claude Code: configurações pessoais
+.claude/settings.local.json
