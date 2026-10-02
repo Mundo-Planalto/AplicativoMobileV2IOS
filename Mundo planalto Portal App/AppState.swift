@@ -11,6 +11,8 @@ import Combine
 
 class AppState: ObservableObject {
     @Published var isLoggedIn = false
+    /// Preenchido quando a sessão foi encerrada por token inválido; o Login mostra e limpa.
+    @Published var sessionExpiredMessage: String?
     @Published var unreadNoticeCount = 0
     @Published var unreadUpcomingBoletoCount = 0
     @Published var unreadOverdueBoletoCount = 0
@@ -38,6 +40,7 @@ class AppState: ObservableObject {
 
     func login() {
         // Token e CPF já foram salvos pelo LoginViewModel após login com sucesso na API
+        sessionExpiredMessage = nil
         isLoggedIn = true
         Task {
             await refreshUserNameIfNeeded()
@@ -68,6 +71,7 @@ class AppState: ObservableObject {
         preferencesManager.saveUserId("demo")
         preferencesManager.saveUserName(demo.nome)
         preferencesManager.saveUserCpfCnpj("")
+        sessionExpiredMessage = nil
         isLoggedIn = true
     }
 
@@ -108,10 +112,12 @@ class AppState: ObservableObject {
         clearLocalSession()
     }
 
-    /// 401 da API: token inválido/expirado → volta ao Login (docs/api-existente.md).
-    func handleUnauthorized() {
+    /// Token confirmado como inválido pela API (401 persistente): encerra a sessão e avisa no Login.
+    /// É o único caminho, além de "Sair", que leva de volta ao Login.
+    func handleSessionExpired() {
         guard isLoggedIn, !isDemoSession else { return }
         clearLocalSession()
+        sessionExpiredMessage = AppConfig.sessionExpiredMessage
     }
 
     private func clearLocalSession() {

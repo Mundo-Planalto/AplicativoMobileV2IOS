@@ -170,17 +170,41 @@ class AuthService {
         }
     }
 
-    /// Chamado pelos serviços ao receber 401/403. O app não guarda senha, então não há
-    /// relogin automático: a sessão local é encerrada e o usuário volta ao Login.
-    /// Retorna sempre `false` (nenhum token novo foi obtido).
+    enum TokenStatus { case valid, invalid, unknown }
+
+    /// Confere o token em GET auth/me. `unknown` = sem rede ou erro do servidor (não conclui nada).
+    func tokenStatus() async -> TokenStatus {
+        guard let url = URL(string: baseURL + "auth/me"),
+              let token = PreferencesManager.shared.getAuthToken(), !token.isEmpty else { return .invalid }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 15
+        guard let (_, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse else { return .unknown }
+        switch http.statusCode {
+        case 200...299: return .valid
+        case 401, 403: return .invalid
+        default: return .unknown
+        }
+    }
+
+    /// Chamado pelos serviços ao receber 401/403 em qualquer endpoint.
+    /// Sessão fixa (revisão de 01/10): o app nunca desloga sozinho. Só volta ao Login quando
+    /// a API confirma, de forma consistente, que o token é inválido (duas checagens em auth/me).
+    /// Falha de rede ou 401 isolado de um endpoint não encerram a sessão.
+    /// Retorna sempre `false`: nenhum token novo é obtido (o app não guarda senha).
     func recoverSessionIfNeeded() async -> Bool {
         if let task = await recoveryCoordinator.runningTask() {
             return await task.value
         }
-        let task = Task<Bool, Never> {
+        let task = Task<Bool, Never> { [weak self] in
+            guard let self else { return false }
             // Limpa credenciais que versões antigas do app possam ter deixado no Keychain.
             PreferencesManager.shared.clearLoginCredentials()
-            await MainActor.run { AppState.shared.handleUnauthorized() }
+            guard await self.tokenStatus() == .invalid else { return false }
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            guard await self.tokenStatus() == .invalid else { return false }
+            await MainActor.run { AppState.shared.handleSessionExpired() }
             return false
         }
         await recoveryCoordinator.setTask(task)

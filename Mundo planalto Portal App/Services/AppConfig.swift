@@ -1,6 +1,6 @@
 //
 //  AppConfig.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Chaves de comportamento do app: modo mock da API nova e usuário de demonstração.
 //
@@ -11,6 +11,16 @@ enum AppConfig {
     /// A API nova (docs/openapi-hardrock.yaml) ainda está em implementação.
     /// Enquanto `true`, os repositórios usam a implementação `Mock`.
     static let useMockData = true
+
+    /// "Acessar demonstração" no Login: só em builds internos (debug); oculto no release de loja.
+    #if DEBUG
+    static let showDemoLogin = true
+    #else
+    static let showDemoLogin = false
+    #endif
+
+    /// Mensagem exibida no Login quando a API confirma que o token não vale mais.
+    static let sessionExpiredMessage = "Sua sessão expirou, entre novamente"
 
     /// Token gravado no Keychain quando o usuário entra por "Acessar demonstração".
     static let demoToken = "DEMO-HRVC"

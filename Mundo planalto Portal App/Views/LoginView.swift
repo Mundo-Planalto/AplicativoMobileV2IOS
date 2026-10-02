@@ -63,6 +63,9 @@ struct LoginView: View {
                             errorCard(message)
                                 .padding(.top, 12)
                                 .transition(.opacity.combined(with: .move(edge: .top)))
+                        } else if let expired = appState.sessionExpiredMessage {
+                            errorCard(expired)
+                                .padding(.top, 12)
                         }
 
                         HrGoldButton(
@@ -93,15 +96,17 @@ struct LoginView: View {
                                     .foregroundColor(.hrGoldLight)
                             }
 
-                            Button {
-                                viewModel.loginDemo()
-                            } label: {
-                                Text("Acessar demonstração")
-                                    .font(.system(size: 12, weight: .regular))
-                                    .foregroundColor(.hrTextMuted)
-                                    .underline()
+                            if AppConfig.showDemoLogin {
+                                Button {
+                                    viewModel.loginDemo()
+                                } label: {
+                                    Text("Acessar demonstração")
+                                        .font(.system(size: 12, weight: .regular))
+                                        .foregroundColor(.hrTextMuted)
+                                        .underline()
+                                }
+                                .disabled(isLoading)
                             }
-                            .disabled(isLoading)
                         }
                         .padding(.top, 24)
                         .padding(.bottom, 32)

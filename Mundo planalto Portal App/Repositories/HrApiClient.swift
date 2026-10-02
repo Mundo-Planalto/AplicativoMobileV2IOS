@@ -3,7 +3,7 @@
 //  Hard Rock Hotel & Vacation Club
 //
 //  Cliente HTTP mínimo para as implementações `Remote`: Bearer do Keychain,
-//  envelope ApiResponse<T>, 401 → AppState.handleUnauthorized.
+//  envelope ApiResponse<T>, 401 → checagem de sessão em AuthService (sessão fixa).
 //
 
 import Foundation
