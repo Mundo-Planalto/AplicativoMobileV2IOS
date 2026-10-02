@@ -25,7 +25,7 @@ funcionar, mas nada é enviado ao backend.
 |---|---|---|
 | Certificados e solicitação de ativação (*) | `GET members/me/certificates`, `POST certificates/{id}/request` | 2 certificados fixos; o protocolo `CERT-2026-000123` é fictício e o estado "Aguardando Pós-vendas" some ao reabrir o app |
 | Parceiros, destaques e cupons | `GET partners`, `POST partners/{id}/coupon` | 6 parceiros de Gramado; destaques Belle du Val e Snowland |
-| Campanhas e registro de interesse (*) | `GET campaigns`, `POST campaigns/{id}/interest` | 4 campanhas; o clique só vai para o log em debug. O WhatsApp da campanha de indicação usa o número de exemplo `5562999999999` |
+| Campanhas e registro de interesse (*) | `GET campaigns`, `POST campaigns/{id}/interest` | 4 campanhas; o clique só vai para o log em debug. A campanha de indicação abre `https://hrh.vacation.mundoplanalto.com.br/` no navegador interno (definido em 02/10) |
 | Cartão do membro, tier, número, "desde", clube, QR `verifyUrl` | `GET members/me/card` | Com login real mostra o nome do cliente e os demais campos do mock (8150 / Founder / 2026 / Mundo Planalto) |
 | Utilizações recentes | `GET members/me/redemptions` | 3 linhas fixas |
 | Perfil de viagem (*) | `GET/PUT members/me/travel-profile` | Salvo em memória; volta ao padrão ao reabrir o app |

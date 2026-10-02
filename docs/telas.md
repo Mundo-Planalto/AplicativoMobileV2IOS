@@ -101,7 +101,7 @@ Ao tocar o botão: envia `POST campaigns/{id}/interest` (mock: só registra em l
 Mock (nesta ordem):
 1. Destaque (foto `photo-1519681393784-d120267933ba`): ANTECIPAÇÃO / "Antecipe parcelas e ganhe desconto" / "Condições válidas por tempo limitado" / "Até 31 de outubro" / "Quero antecipar" (`postsales`).
 2. UPGRADE / "Faça upgrade do seu plano" / "Mais semanas e mais benefícios" / "Quero saber mais" (`online`).
-3. INDICAÇÃO / "Indique um amigo e ganhe um brinde" / "Seu amigo compra, você ganha" / "Indicar agora" (`whatsapp`, número `5562999999999`, mensagem "Olá! Quero indicar um amigo para o Mundo Planalto.").
+3. INDICAÇÃO / "Indique um amigo e ganhe um brinde" / "Seu amigo compra, você ganha" / "Indicar agora" (`link`, abre `https://hrh.vacation.mundoplanalto.com.br/` no navegador interno).
 4. VIAGEM (foto `photo-1507525428034-b723cf961d3e`) / "Gramado em julho com preço especial" / "Use seu certificado nesta oferta do Mais Viagens" / "Usar certificado" (`certificate`).
 
 Removidos: "Milhas em dobro", toggle "Receber novas promoções", categorias fixas Hospedagem/Gastronomia/Experiências.
