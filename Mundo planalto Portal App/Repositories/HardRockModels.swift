@@ -99,57 +99,6 @@ struct Coupon: Codable, Equatable {
     let instructions: String
 }
 
-// MARK: - Certificados
-
-enum CertificateType: String, Codable, CaseIterable {
-    case nacional, internacional
-
-    var tag: String { rawValue.uppercased() }
-}
-
-enum CertificateStatus: String, Codable {
-    case requested, inProgress = "in_progress", issued, cancelled
-
-    var texto: String {
-        switch self {
-        case .requested: return "Solicitado"
-        case .inProgress: return "Em andamento"
-        case .issued: return "Emitido"
-        case .cancelled: return "Cancelado"
-        }
-    }
-}
-
-struct CertificateRequest: Codable, Identifiable, Equatable {
-    let id: Int
-    let type: CertificateType
-    let status: CertificateStatus
-    let protocolNumber: String
-    let certificateCode: String?
-    let requestedAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id, type, status, certificateCode, requestedAt
-        case protocolNumber = "protocol"
-    }
-}
-
-struct CertificateRequestCreate: Codable {
-    let type: CertificateType
-    let preferredDestination: String?
-    let preferredPeriod: String?
-    let notes: String?
-}
-
-/// Opção de certificado exibida na tela (texto fixo em docs/telas.md).
-struct CertificateOption: Identifiable, Equatable {
-    var id: CertificateType { type }
-    let type: CertificateType
-    let titulo: String
-    let descricao: String
-    let imageUrl: String
-}
-
 // MARK: - Ofertas
 
 enum OfferCategory: String, Codable, CaseIterable {

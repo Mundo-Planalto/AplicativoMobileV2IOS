@@ -53,7 +53,7 @@ struct BeneficiosView: View {
                                 .font(HrFont.heroTitle)
                                 .foregroundColor(.white)
                             HrStatusDot(text: "Disponível")
-                            HrGoldButton(text: "Solicitar código") { router.push(.certificados) }
+                            HrGoldButton(text: "Solicitar código") { router.push(.viagens) }
                         }
                     }
                 }
@@ -86,7 +86,7 @@ struct BeneficiosView: View {
                                     .foregroundColor(.hrTextMuted)
                             }
                             Spacer()
-                            Button { if let u = URL(string: AppConfig.unityURL) { UIApplication.shared.open(u) } } label: {
+                            Button { router.open(AppConfig.unityURL) } label: {
                                 Text("Cadastrar")
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundColor(.hrGoldLight)

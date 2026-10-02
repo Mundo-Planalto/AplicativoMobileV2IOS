@@ -24,7 +24,6 @@ enum RepositoryProvider {
     static var ventures: VenturesRepository { isDemo ? VenturesRepositoryMock.shared : VenturesRepositoryRemote() }
     static var financeiro: FinanceiroRepository { isDemo ? FinanceiroRepositoryMock.shared : FinanceiroRepositoryRemote() }
 
-    // Legado, removido conforme as telas migram (itens 5 e 7 da revisão).
+    // Legado, removido quando Ofertas virar Campanhas (item 7 da revisão).
     static var ofertas: OfertasRepository { mockNewApi ? OfertasRepositoryMock.shared : OfertasRepositoryRemote() }
-    static var certificados: CertificadosRepository { mockNewApi ? CertificadosRepositoryMock.shared : CertificadosRepositoryRemote() }
 }

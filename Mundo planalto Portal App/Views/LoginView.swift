@@ -12,6 +12,7 @@ struct LoginView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = LoginViewModel()
     @State private var navigateToRegister = false
+    @State private var browser: HrBrowserDestination?
 
     private var isLoading: Bool {
         if case .loading = viewModel.state { return true }
@@ -78,8 +79,12 @@ struct LoginView: View {
                         .padding(.top, 20)
 
                         VStack(spacing: 14) {
-                            if let url = URL(string: AppConfig.forgotPasswordURL) {
-                                Link("Esqueci minha senha", destination: url)
+                            Button {
+                                if let url = URL(string: AppConfig.forgotPasswordURL) {
+                                    browser = HrBrowserDestination(url: url)
+                                }
+                            } label: {
+                                Text("Esqueci minha senha")
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundColor(.hrGoldLight)
                             }
@@ -117,6 +122,7 @@ struct LoginView: View {
                 .scrollDismissesKeyboard(.interactively)
             }
             .navigationBarHidden(true)
+            .hrBrowser($browser)
             .navigationDestination(isPresented: $navigateToRegister) {
                 PrimeiroAcessoView()
             }

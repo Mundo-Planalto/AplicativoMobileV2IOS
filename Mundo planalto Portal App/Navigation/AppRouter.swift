@@ -12,6 +12,8 @@ import Combine
 @MainActor
 final class AppRouter: ObservableObject {
     @Published var selectedTab: TabItem = .inicio
+    /// Navegador interno aberto sobre as abas (docs/telas.md, "Navegador interno").
+    @Published var browser: HrBrowserDestination?
     @Published var paths: [TabItem: NavigationPath] = Dictionary(
         uniqueKeysWithValues: TabItem.allCases.map { ($0, NavigationPath()) }
     )
@@ -50,6 +52,27 @@ final class AppRouter: ObservableObject {
         paths[target] = p
     }
 
+    /// Abre uma URL externa dentro do app. WhatsApp, Instagram e YouTube tentam antes o app
+    /// nativo (universal link); se não estiver instalado, caem no navegador interno.
+    func open(_ url: URL?) {
+        guard let url else { return }
+        guard HrLinks.isWebURL(url) else {
+            UIApplication.shared.open(url)
+            return
+        }
+        if HrLinks.prefersNativeApp(url) {
+            UIApplication.shared.open(url, options: [.universalLinksOnly: true]) { [weak self] opened in
+                if !opened {
+                    Task { @MainActor in self?.browser = HrBrowserDestination(url: url) }
+                }
+            }
+        } else {
+            browser = HrBrowserDestination(url: url)
+        }
+    }
+
+    func open(_ string: String?) { open(HrLinks.url(from: string)) }
+
     /// Troca de aba e volta à raiz dela.
     func switchTab(_ tab: TabItem, popToRoot: Bool = false) {
         selectedTab = tab
@@ -87,7 +110,7 @@ extension AppRoute {
         case "financeiro": return .financeiro
         case "extrato": return .extrato
         case "informe": return .informeRendimentos
-        case "certificados": return .certificados
+        case "viagens": return .viagens
         case "cartao": return .cartaoDigital
         case "avisos": return .avisosNoticias
         case "politica": return .politicaPrivacidade

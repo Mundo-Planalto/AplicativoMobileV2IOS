@@ -29,6 +29,7 @@ struct MainTabView: View {
         .background(Color.hrBlack.ignoresSafeArea())
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .environmentObject(router)
+        .hrBrowser($router.browser)
         .task {
             await appState.refreshAllUnreadBadges()
         }
@@ -71,8 +72,8 @@ struct RouteView: View {
                 ExtratoView()
             case .informeRendimentos:
                 InformeRendimentosView()
-            case .certificados:
-                CertificadosView()
+            case .viagens:
+                ViagensView()
             case .cartaoDigital:
                 CartaoDigitalView()
             case .avisosNoticias:

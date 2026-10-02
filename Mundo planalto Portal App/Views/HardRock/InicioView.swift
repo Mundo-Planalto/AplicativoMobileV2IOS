@@ -1,6 +1,6 @@
 //
 //  InicioView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Aba Início (docs/telas.md, seção "Início").
 //
@@ -11,12 +11,17 @@ import Combine
 @MainActor
 final class InicioViewModel: ObservableObject {
     @Published var resumo: FinanceiroResumo?
+    @Published var certificados: [Certificate] = []
+    @Published var carregouCertificados = false
     @Published var isLoading = false
 
     func load(forceRefresh: Bool = false) async {
         isLoading = true
         async let r = try? RepositoryProvider.financeiro.resumo(forceRefresh: forceRefresh)
+        async let c = try? RepositoryProvider.certificates.certificates()
         resumo = await r
+        certificados = await c ?? []
+        carregouCertificados = true
         isLoading = false
     }
 }
@@ -54,6 +59,9 @@ struct InicioView: View {
 
     // MARK: Hero
 
+    private var disponiveis: Int { vm.certificados.filter(\.contaComoDisponivel).count }
+    private var semCertificado: Bool { vm.carregouCertificados && vm.certificados.isEmpty }
+
     private var heroCard: some View {
         HrPhotoCard(url: heroImage, height: 300) {
             VStack(alignment: .leading, spacing: 10) {
@@ -61,12 +69,16 @@ struct InicioView: View {
                 Text("Gramado te espera")
                     .font(HrFont.heroTitle)
                     .foregroundColor(.white)
-                Text("Natureza, cultura e momentos inesquecíveis em um dos destinos mais encantadores do Brasil.")
+                Text(semCertificado
+                     ? "Conheça as experiências do seu clube"
+                     : "Natureza, cultura e momentos inesquecíveis em um dos destinos mais encantadores do Brasil.")
                     .font(HrFont.body)
                     .foregroundColor(.white.opacity(0.9))
                     .fixedSize(horizontal: false, vertical: true)
-                HrStatusDot(text: "Disponível")
-                HrGoldButton(text: "Solicitar código") { router.push(.certificados) }
+                if !semCertificado && vm.carregouCertificados {
+                    HrStatusDot(text: disponiveis == 1 ? "1 certificado disponível" : "\(disponiveis) certificados disponíveis")
+                }
+                HrGoldButton(text: semCertificado ? "Ver viagens" : "Ver meus certificados") { router.push(.viagens) }
                     .padding(.top, 4)
             }
         }
@@ -76,7 +88,7 @@ struct InicioView: View {
 
     private var shortcuts: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: HrMetrics.cardSpacing), GridItem(.flexible(), spacing: HrMetrics.cardSpacing)], spacing: HrMetrics.cardSpacing) {
-            HrShortcut(icon: "airplane", titulo: "Viagens", subtitulo: "Experiências exclusivas") { router.push(.certificados) }
+            HrShortcut(icon: "airplane", titulo: "Viagens", subtitulo: "Seus certificados e reservas") { router.push(.viagens) }
             HrShortcut(icon: "tag.fill", titulo: "Descontos", subtitulo: "Em parceiros selecionados") { router.switchTab(.beneficios) }
             HrShortcut(icon: "globe", titulo: "Unity", subtitulo: "Vantagens Hard Rock no mundo") { router.switchTab(.beneficios) }
             HrShortcut(icon: "megaphone.fill", titulo: "Campanhas", subtitulo: "Condições especiais") { router.switchTab(.ofertas) }
@@ -134,17 +146,17 @@ struct InicioView: View {
         }
     }
 
-    // MARK: Ofertas
+    // MARK: Campanhas
 
     private var ofertasCard: some View {
         HrCard(highlighted: true, onTap: { router.switchTab(.ofertas) }) {
             HStack(spacing: 12) {
-                HrIconBox(icon: "tag.fill")
+                HrIconBox(icon: "megaphone.fill")
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Ofertas para você")
+                    Text("Campanhas para você")
                         .font(HrFont.sectionTitle)
                         .foregroundColor(.white)
-                    Text("20% de desconto — Restaurante parceiro em Gramado")
+                    Text("Antecipe parcelas e ganhe desconto — Condições válidas até 31 de outubro")
                         .font(HrFont.caption)
                         .foregroundColor(.hrTextMuted)
                         .fixedSize(horizontal: false, vertical: true)

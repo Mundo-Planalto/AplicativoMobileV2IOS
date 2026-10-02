@@ -33,7 +33,7 @@ enum AppRoute: Hashable {
     case financeiro
     case extrato
     case informeRendimentos
-    case certificados
+    case viagens
     case cartaoDigital
     case avisosNoticias
     case politicaPrivacidade
