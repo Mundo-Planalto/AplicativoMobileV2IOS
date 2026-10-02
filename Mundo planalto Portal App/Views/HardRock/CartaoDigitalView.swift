@@ -1,6 +1,6 @@
 //
 //  CartaoDigitalView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Cartão do membro com QR Code (CoreImage) — docs/telas.md.
 //
@@ -35,7 +35,8 @@ struct CartaoDigitalView: View {
                     nome: vm.card?.name ?? member.nome,
                     nivel: vm.card?.level.rawValue ?? member.nivel,
                     numeroMembro: vm.card?.memberNumber ?? member.numeroMembro,
-                    desde: vm.card?.anoDesde ?? member.desde
+                    desde: vm.card?.anoDesde ?? member.desde,
+                    clube: vm.card?.clubName ?? member.clube
                 )
 
                 HrCard {

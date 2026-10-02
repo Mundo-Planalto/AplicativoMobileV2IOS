@@ -76,6 +76,10 @@ struct RouteView: View {
                 ViagensView()
             case .cartaoDigital:
                 CartaoDigitalView()
+            case .perfilViagem:
+                PerfilViagemView()
+            case .alteracaoDados(let field):
+                AlteracaoDadosView(campoInicial: field)
             case .avisosNoticias:
                 AvisosNoticiasView()
             case .politicaPrivacidade:

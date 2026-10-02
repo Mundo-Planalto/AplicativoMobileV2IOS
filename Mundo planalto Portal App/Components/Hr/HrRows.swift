@@ -172,7 +172,7 @@ struct HrShortcut: View {
                     Text(subtitulo)
                         .font(HrFont.captionSmall)
                         .foregroundColor(.hrTextMuted)
-                        .lineLimit(2)
+                        .lineLimit(2, reservesSpace: true)
                         .multilineTextAlignment(.leading)
                 }
             }

@@ -20,7 +20,12 @@ enum RepositoryProvider {
     static var campaigns: CampaignsRepository { mockNewApi ? CampaignsRepositoryMock.shared : CampaignsRepositoryRemote() }
     static var member: MemberRepository { mockNewApi ? MemberRepositoryMock.shared : MemberRepositoryRemote() }
     static var travelProfile: TravelProfileRepository { mockNewApi ? TravelProfileRepositoryMock.shared : TravelProfileRepositoryRemote() }
-    static var changeRequests: ChangeRequestsRepository { mockNewApi ? ChangeRequestsRepositoryMock.shared : ChangeRequestsRepositoryRemote() }
+    /// Demonstração: Mock. Login real: enquanto a API nova não existe, endereço usa o endpoint
+    /// atual do portal (telefone e e-mail ficam indisponíveis); depois, o contrato novo.
+    static var changeRequests: ChangeRequestsRepository {
+        if isDemo { return ChangeRequestsRepositoryMock.shared }
+        return AppConfig.useMockData ? ChangeRequestsRepositoryPortal() : ChangeRequestsRepositoryRemote()
+    }
     static var ventures: VenturesRepository { isDemo ? VenturesRepositoryMock.shared : VenturesRepositoryRemote() }
     static var financeiro: FinanceiroRepository { isDemo ? FinanceiroRepositoryMock.shared : FinanceiroRepositoryRemote() }
 }

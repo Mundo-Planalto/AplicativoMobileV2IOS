@@ -21,8 +21,13 @@ struct HrTag: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
+                // Fundo escuro por baixo para a etiqueta continuar legível sobre fotos.
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(filled ? color : color.opacity(0.12))
+                    .fill(filled ? color : Color.black.opacity(0.55))
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(filled ? Color.clear : color.opacity(0.12))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)

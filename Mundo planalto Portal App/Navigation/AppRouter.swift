@@ -114,6 +114,8 @@ extension AppRoute {
         case "informe": return .informeRendimentos
         case "viagens": return .viagens
         case "cartao": return .cartaoDigital
+        case "perfil-viagem": return .perfilViagem
+        case "alteracao": return .alteracaoDados(.phone)
         case "avisos": return .avisosNoticias
         case "politica": return .politicaPrivacidade
         case "sistema": return .sistema

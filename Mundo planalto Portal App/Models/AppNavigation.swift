@@ -41,6 +41,8 @@ enum AppRoute: Hashable {
     case informeRendimentos
     case viagens
     case cartaoDigital
+    case perfilViagem
+    case alteracaoDados(ChangeRequestField)
     case avisosNoticias
     case politicaPrivacidade
     case sistema

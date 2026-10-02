@@ -1,6 +1,6 @@
 //
 //  CartaoDigitalCard.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Cartão do membro 1.6:1 (docs/telas.md, seção "Cartão digital").
 //
@@ -12,6 +12,8 @@ struct CartaoDigitalCard: View {
     let nivel: String
     let numeroMembro: String
     let desde: String
+    /// `clubName` do backend (mock: "Mundo Planalto"). Não escrever Hard Rock nem The Orb aqui.
+    var clube: String = "Mundo Planalto"
     var onTap: (() -> Void)? = nil
 
     var body: some View {
@@ -50,7 +52,13 @@ struct CartaoDigitalCard: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top) {
                     MundoPlanaltoLogo(compact: true)
-                    Spacer()
+                    Spacer(minLength: 8)
+                    Text(clube.uppercased())
+                        .font(.system(size: 9, weight: .semibold))
+                        .tracking(1)
+                        .foregroundColor(.hrGold)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
 
                 Spacer()
