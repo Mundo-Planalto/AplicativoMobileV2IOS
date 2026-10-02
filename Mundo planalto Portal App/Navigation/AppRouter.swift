@@ -14,6 +14,8 @@ final class AppRouter: ObservableObject {
     @Published var selectedTab: TabItem = .inicio
     /// Navegador interno aberto sobre as abas (docs/telas.md, "Navegador interno").
     @Published var browser: HrBrowserDestination?
+    /// Pedido de rolagem dentro da aba Benefícios (ex.: atalho Unity da Início rola até o card).
+    @Published var beneficiosScrollTarget: String?
     @Published var paths: [TabItem: NavigationPath] = Dictionary(
         uniqueKeysWithValues: TabItem.allCases.map { ($0, NavigationPath()) }
     )

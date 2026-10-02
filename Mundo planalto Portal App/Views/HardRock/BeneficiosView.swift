@@ -1,8 +1,10 @@
 //
 //  BeneficiosView.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
-//  Aba Benefícios (docs/telas.md).
+//  Aba Benefícios (docs/telas.md, revisão de 01/10): até 2 parceiros em destaque com foto,
+//  card Unity com identidade do programa (abre no navegador interno), lista de parceiros
+//  e atalho para os certificados. A lista já vem filtrada por empreendimento do backend.
 //
 
 import SwiftUI
@@ -13,7 +15,27 @@ final class BeneficiosViewModel: ObservableObject {
     @Published var partners: [Partner] = []
     @Published var coupon: Coupon?
     @Published var filtro = "Todos"
-    let filtros = ["Todos", "Viagens", "Gramado"]
+
+    /// "Todos", "Viagens" e uma opção por cidade dos parceiros (mock: Gramado).
+    var filtros: [String] {
+        var seen = Set<String>()
+        let cidades = partners.map(\.city).filter { !$0.isEmpty && seen.insert($0).inserted }
+        return ["Todos", "Viagens"] + cidades
+    }
+
+    /// No máximo 2 destaques com imagem.
+    var destaques: [Partner] {
+        Array(partners.filter { $0.isFeatured == true && $0.imageUrl != nil }.prefix(2)).filter(passaNoFiltro)
+    }
+
+    var lista: [Partner] { partners.filter(passaNoFiltro) }
+
+    var mostraViagens: Bool { filtro == "Todos" || filtro == "Viagens" }
+    var mostraParceiros: Bool { filtro != "Viagens" }
+
+    private func passaNoFiltro(_ p: Partner) -> Bool {
+        filtro == "Todos" || p.city == filtro
+    }
 
     func load() async {
         partners = (try? await RepositoryProvider.partners.partners()) ?? []
@@ -22,10 +44,6 @@ final class BeneficiosViewModel: ObservableObject {
     func abrirCupom(partnerId: Int) async {
         coupon = try? await RepositoryProvider.partners.coupon(partnerId: partnerId)
     }
-
-    var mostraViagens: Bool { filtro == "Todos" || filtro == "Viagens" }
-    var mostraGramado: Bool { filtro == "Todos" || filtro == "Gramado" }
-    var mostraUnity: Bool { filtro == "Todos" || filtro == "Viagens" }
 }
 
 struct BeneficiosView: View {
@@ -33,91 +51,145 @@ struct BeneficiosView: View {
     @EnvironmentObject private var router: AppRouter
     @StateObject private var vm = BeneficiosViewModel()
 
-    private let imagemGramado = "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800"
-    private let imagemRestaurante = "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800"
-
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: HrMetrics.cardSpacing) {
-                HrHeader(nome: appState.currentMember.nome, titulo: "Benefícios", subtitulo: "Vantagens exclusivas para você") {
-                    router.push(.avisosNoticias)
-                }
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: HrMetrics.cardSpacing) {
+                    HrHeader(nome: appState.currentMember.nome, titulo: "Benefícios", subtitulo: "Vantagens exclusivas para você") {
+                        router.push(.avisosNoticias)
+                    }
 
-                HrChipRow(options: vm.filtros, selected: $vm.filtro)
+                    HrChipRow(options: vm.filtros, selected: $vm.filtro)
 
-                if vm.mostraViagens {
-                    HrPhotoCard(url: imagemGramado, height: 240) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HrTag(text: "Certificado")
-                            Text("Experiência Gramado")
-                                .font(HrFont.heroTitle)
-                                .foregroundColor(.white)
-                            HrStatusDot(text: "Disponível")
-                            HrGoldButton(text: "Solicitar código") { router.push(.viagens) }
+                    if vm.mostraParceiros {
+                        ForEach(vm.destaques) { partner in
+                            destaqueCard(partner)
                         }
                     }
-                }
 
-                if vm.mostraGramado {
-                    HrPhotoCard(url: imagemRestaurante, height: 240) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            HrTag(text: "Parceiro")
-                            Text("20% no jantar")
-                                .font(HrFont.heroTitle)
-                                .foregroundColor(.white)
-                            Text("Restaurante Belle du Val • Gramado")
-                                .font(HrFont.caption)
-                                .foregroundColor(.white.opacity(0.85))
-                            HrGoldButton(text: "Ver voucher") { Task { await vm.abrirCupom(partnerId: 2) } }
-                        }
+                    if vm.mostraViagens {
+                        unityCard.id("unity")
                     }
-                }
 
-                if vm.mostraUnity {
-                    HrCard(highlighted: true) {
-                        HStack(spacing: 12) {
-                            HrIconBox(icon: "globe")
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Hard Rock Unity")
-                                    .font(HrFont.sectionTitle)
-                                    .foregroundColor(.white)
-                                Text("Conecte sua conta e desbloqueie benefícios")
-                                    .font(HrFont.caption)
-                                    .foregroundColor(.hrTextMuted)
+                    if vm.mostraParceiros, !vm.lista.isEmpty {
+                        HrSectionTitle(titulo: "Parceiros", subtitulo: "Mínimo de 10% de desconto • validação por cupom")
+                            .padding(.top, 8)
+                        ForEach(vm.lista) { partner in
+                            HrListRow(icon: iconePara(partner.category), titulo: partner.name, subtitulo: partner.discountText) {
+                                Task { await vm.abrirCupom(partnerId: partner.id) }
                             }
-                            Spacer()
-                            Button { router.open(AppConfig.unityURL) } label: {
-                                Text("Cadastrar")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.hrGoldLight)
-                            }
-                            .buttonStyle(HrPressStyle())
                         }
                     }
-                }
 
-                if vm.mostraGramado {
-                    HrSectionTitle(
-                        titulo: "Parceiros em Gramado",
-                        subtitulo: "Mínimo de 10% de desconto • validação por cupom",
-                        acao: "Ver ofertas"
-                    ) { router.switchTab(.ofertas) }
-                    .padding(.top, 8)
-
-                    ForEach(vm.partners) { partner in
-                        HrListRow(icon: iconePara(partner.category), titulo: partner.name, subtitulo: partner.discountText) {
-                            Task { await vm.abrirCupom(partnerId: partner.id) }
-                        }
+                    if vm.mostraViagens {
+                        certificadosCard.padding(.top, 8)
                     }
                 }
+                .padding(.horizontal, HrMetrics.screenMargin)
+                .padding(.bottom, HrMetrics.scrollBottomInset)
             }
-            .padding(.horizontal, HrMetrics.screenMargin)
-            .padding(.bottom, HrMetrics.scrollBottomInset)
+            .onChange(of: router.beneficiosScrollTarget) { _, target in
+                rolar(para: target, proxy: proxy)
+            }
+            .onAppear { rolar(para: router.beneficiosScrollTarget, proxy: proxy) }
         }
         .hrScreen()
         .task { await vm.load() }
         .sheet(item: $vm.coupon) { coupon in
             HrCouponSheet(coupon: coupon)
+        }
+    }
+
+    private func rolar(para target: String?, proxy: ScrollViewProxy) {
+        guard let target else { return }
+        vm.filtro = "Todos"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            withAnimation { proxy.scrollTo(target, anchor: .top) }
+            router.beneficiosScrollTarget = nil
+        }
+    }
+
+    // MARK: Destaques
+
+    private func destaqueCard(_ partner: Partner) -> some View {
+        HrPhotoCard(url: partner.imageUrl, height: 240) {
+            VStack(alignment: .leading, spacing: 8) {
+                HrTag(text: partner.isNew == true ? "Parceiro novo" : "Parceiro")
+                Text(partner.discountText)
+                    .font(HrFont.heroTitle)
+                    .foregroundColor(.white)
+                Text("\(partner.name) • \(partner.city)")
+                    .font(HrFont.caption)
+                    .foregroundColor(.white.opacity(0.85))
+                HrGoldButton(text: "Ver voucher") { Task { await vm.abrirCupom(partnerId: partner.id) } }
+            }
+        }
+    }
+
+    // MARK: Unity (identidade do programa; sem inventar logo até o asset chegar)
+
+    private var unityCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("HARD ROCK UNITY")
+                .font(.system(size: 18, weight: .bold))
+                .tracking(1)
+                .foregroundColor(.white)
+            Text("Vantagens no Hard Rock no mundo")
+                .font(HrFont.itemTitle)
+                .foregroundColor(.white)
+            Text("Cadastre-se no programa e aproveite experiências, ofertas e reconhecimento em destinos participantes.")
+                .font(HrFont.caption)
+                .foregroundColor(.hrTextMuted)
+                .fixedSize(horizontal: false, vertical: true)
+            HrGoldButton(text: "Cadastrar no Unity") { router.open(AppConfig.unityURL) }
+                .padding(.top, 2)
+            HStack(spacing: 8) {
+                miniAtalho("bed.double.fill", "Hotéis")
+                miniAtalho("fork.knife", "Restaurantes")
+                miniAtalho("ticket.fill", "Experiências")
+            }
+        }
+        .padding(HrMetrics.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: "#1A1A1A"))
+        .clipShape(RoundedRectangle(cornerRadius: HrMetrics.cardRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: HrMetrics.cardRadius, style: .continuous).stroke(Color.hrGoldBorder, lineWidth: 1))
+    }
+
+    private func miniAtalho(_ icon: String, _ titulo: String) -> some View {
+        Button { router.open(AppConfig.unityURL) } label: {
+            HStack(spacing: 5) {
+                Image(systemName: icon).font(.system(size: 11, weight: .semibold))
+                Text(titulo).font(.system(size: 11, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.7)
+            }
+            .foregroundColor(.hrGoldLight)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.black.opacity(0.35)))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.hrGoldBorder, lineWidth: 1))
+        }
+        .buttonStyle(HrPressStyle())
+    }
+
+    // MARK: Certificados
+
+    private var certificadosCard: some View {
+        HrCard {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 12) {
+                    HrIconBox(icon: "airplane")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Certificados de viagem")
+                            .font(HrFont.sectionTitle)
+                            .foregroundColor(.white)
+                        Text("Veja seus certificados e solicite a ativação")
+                            .font(HrFont.caption)
+                            .foregroundColor(.hrTextMuted)
+                    }
+                }
+                HrOutlineButton(text: "Ver meus certificados") { router.push(.viagens) }
+            }
         }
     }
 

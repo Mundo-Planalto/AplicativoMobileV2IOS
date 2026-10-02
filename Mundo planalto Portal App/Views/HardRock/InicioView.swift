@@ -90,7 +90,10 @@ struct InicioView: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: HrMetrics.cardSpacing), GridItem(.flexible(), spacing: HrMetrics.cardSpacing)], spacing: HrMetrics.cardSpacing) {
             HrShortcut(icon: "airplane", titulo: "Viagens", subtitulo: "Seus certificados e reservas") { router.push(.viagens) }
             HrShortcut(icon: "tag.fill", titulo: "Descontos", subtitulo: "Em parceiros selecionados") { router.switchTab(.beneficios) }
-            HrShortcut(icon: "globe", titulo: "Unity", subtitulo: "Vantagens Hard Rock no mundo") { router.switchTab(.beneficios) }
+            HrShortcut(icon: "globe", titulo: "Unity", subtitulo: "Vantagens Hard Rock no mundo") {
+                router.beneficiosScrollTarget = "unity"
+                router.switchTab(.beneficios)
+            }
             HrShortcut(icon: "megaphone.fill", titulo: "Campanhas", subtitulo: "Condições especiais") { router.switchTab(.ofertas) }
         }
     }
