@@ -1,9 +1,14 @@
 openapi: 3.0.3
 info:
-  title: Portal Mundo Planalto - API do app Hard Rock Hotel & Vacation Club
-  version: 1.0.0-draft
+  title: Portal Mundo Planalto - API do app Mundo Planalto (clube de férias)
+  version: 1.1.0-draft
   description: |
     Contratos dos recursos NOVOS consumidos pelo app mobile (Android/iOS).
+    Revisão de 01/10/2026 (docs/revisao-ceo-01-10.md, seção 3): certificados cadastrados por cliente com
+    protocolo e SLA, campanhas (substituem ofertas) com clique rastreável, perfil de viagem com próxima
+    viagem, solicitação de alteração de dados, redes sociais do empreendimento e sessão longa.
+    Saíram do contrato: milhas e collection (fora da V1).
+    Benefícios, certificados, campanhas e cartão são filtrados no backend pelos empreendimentos do cliente.
     Convenções herdadas do backend MundoPlanaltoPortal (.NET 10 / EF Core / PostgreSQL):
     - Prefixo `/api`, sem versionamento (padrão atual do portal).
     - Autenticação Bearer JWT emitido por `POST /api/auth/login` (claims NameIdentifier, Name, Document).
@@ -29,11 +34,13 @@ tags:
   - name: Benefícios
     description: Parceiros, cupons e registro de uso
   - name: Certificados
-    description: Certificado de viagem (nacional/internacional) com ocorrência no CRM
-  - name: Ofertas
-  - name: Milhas
-  - name: Collection
-    description: Gamificação do kit de 6 camisetas
+    description: Certificados cadastrados pela Central de Contratos por venda, com protocolo e SLA do Pós-vendas
+  - name: Campanhas
+    description: Campanhas com CTA rastreável (substituem ofertas)
+  - name: Dados cadastrais
+    description: Solicitações de alteração de endereço, telefone e e-mail aprovadas pela Central
+  - name: Sessão
+    description: Renovação do token para a sessão fixa do app
   - name: Empreendimentos
   - name: Dispositivos
     description: Registro de token FCM/APNs por usuário
@@ -248,163 +255,6 @@ paths:
                         type: array
                         items: { $ref: "#/components/schemas/BenefitRedemption" }
 
-  # ---------------------------------------------------------- Certificados
-  /certificates/requests:
-    get:
-      tags: [Certificados]
-      summary: Solicitações de certificado do cliente
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - properties:
-                      data:
-                        type: array
-                        items: { $ref: "#/components/schemas/CertificateRequest" }
-    post:
-      tags: [Certificados]
-      summary: Solicita um código de certificado (gera ocorrência no CRM para o Pós-vendas)
-      description: Backend cria um incidente no Dynamics via `DynamicsService` e guarda `crmIncidentId`.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [type]
-              properties:
-                type: { $ref: "#/components/schemas/CertificateType" }
-                preferredDestination: { type: string, nullable: true, example: "Gramado" }
-                preferredPeriod: { type: string, nullable: true, example: "2027-01" }
-                notes: { type: string, nullable: true }
-      responses:
-        "201":
-          description: Criada
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - properties:
-                      data: { $ref: "#/components/schemas/CertificateRequest" }
-        "409": { description: Já existe solicitação em andamento do mesmo tipo }
-
-  /certificates/requests/{id}:
-    get:
-      tags: [Certificados]
-      summary: Status de uma solicitação
-      parameters:
-        - $ref: "#/components/parameters/Id"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - properties:
-                      data: { $ref: "#/components/schemas/CertificateRequest" }
-
-  # --------------------------------------------------------------- Ofertas
-  /offers:
-    get:
-      tags: [Ofertas]
-      summary: Ofertas e campanhas ativas
-      parameters:
-        - in: query
-          name: category
-          schema: { $ref: "#/components/schemas/OfferCategory" }
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - properties:
-                      data:
-                        type: array
-                        items: { $ref: "#/components/schemas/Offer" }
-
-  /offers/{id}:
-    get:
-      tags: [Ofertas]
-      summary: Detalhe da oferta
-      parameters:
-        - $ref: "#/components/parameters/Id"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - properties:
-                      data: { $ref: "#/components/schemas/Offer" }
-
-  # ---------------------------------------------------------------- Milhas
-  /members/me/miles:
-    get:
-      tags: [Milhas]
-      summary: Saldo e histórico de milhas do cliente
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - properties:
-                      data: { $ref: "#/components/schemas/MilesAccount" }
-
-  /miles/offers:
-    get:
-      tags: [Milhas]
-      summary: Ofertas de milhas capturadas pelo robô (grupos de WhatsApp)
-      description: |
-        Alimentado pelo robô (servidor separado) via `POST /admin/miles/offers`.
-        Quando `TravelProfile` existir, o backend filtra por destino preferido; senão devolve todas.
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - properties:
-                      data:
-                        type: array
-                        items: { $ref: "#/components/schemas/MilesOffer" }
-
-  # ------------------------------------------------------------ Collection
-  /members/me/collection:
-    get:
-      tags: [Collection]
-      summary: Status das 6 camisetas do kit Collection
-      description: |
-        Regra (a confirmar por escrito): contrato de 6 semanas; camiseta 1 desbloqueia com a entrada (5%),
-        as demais a cada parcela paga em dia, na ordem. Status `sent` quando o Pós-vendas registra o envio.
-        Fonte das parcelas: `FinancialItemsCache` (IsPaid/PaidDate) por contrato.
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/ApiResponse"
-                  - properties:
-                      data: { $ref: "#/components/schemas/CollectionStatus" }
-
   # -------------------------------------------------------- Empreendimentos
   /ventures/{id}/videos:
     get:
@@ -509,36 +359,6 @@ paths:
       responses:
         "200": { description: Desativado }
 
-  /admin/offers:
-    post:
-      tags: [Admin]
-      summary: Cadastra oferta/campanha
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/OfferUpsert" }
-      responses:
-        "201": { description: Criada }
-  /admin/offers/{id}:
-    put:
-      tags: [Admin]
-      summary: Atualiza oferta
-      parameters: [ { $ref: "#/components/parameters/Id" } ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/OfferUpsert" }
-      responses:
-        "200": { description: Atualizada }
-    delete:
-      tags: [Admin]
-      summary: Desativa oferta
-      parameters: [ { $ref: "#/components/parameters/Id" } ]
-      responses:
-        "200": { description: Desativada }
-
   /admin/members/{customerUserId}/level:
     put:
       tags: [Admin]
@@ -561,11 +381,158 @@ paths:
       responses:
         "200": { description: Atualizado }
 
-  /admin/certificates/requests/{id}/status:
+  # ---------------------------------------------------------------- Certificados (revisão 01/10)
+  /members/me/certificates:
+    get:
+      tags: [Certificados]
+      summary: Certificados do cliente, como cadastrados pela Central de Contratos
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Certificate" }
+
+  /certificates/{id}/request:
+    post:
+      tags: [Certificados]
+      summary: Solicita a ativação; gera protocolo CERT-yyyy-nnnnnn e ocorrência no CRM para o Pós-vendas
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Solicitação registrada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/CertificateRequestResult" }
+        "409": { description: Certificado não está disponível para solicitação }
+
+  /admin/certificates/{id}:
+    patch:
+      tags: [Certificados]
+      summary: Liberação pelo Pós-vendas (status, code, useUrl); dispara push "Seu certificado foi liberado"
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CertificateAdminUpdate" }
+      responses:
+        "200": { description: Atualizado }
+
+  # ---------------------------------------------------------------- Campanhas (substituem ofertas)
+  /campaigns:
+    get:
+      tags: [Campanhas]
+      summary: Campanhas ativas, filtradas pelos empreendimentos do cliente
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Campaign" }
+
+  /campaigns/{id}/interest:
+    post:
+      tags: [Campanhas]
+      summary: Registra o clique no CTA (o backend conta cliques e conversão por campanha)
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200": { description: Interesse registrado; para ctaType online/postsales abre ocorrência para o time }
+
+  /admin/campaigns:
+    post:
+      tags: [Campanhas]
+      summary: Cadastra campanha (Marketing)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CampaignUpsert" }
+      responses:
+        "201": { description: Criada }
+
+  /admin/campaigns/{id}:
     put:
-      tags: [Admin]
-      summary: Pós-vendas atualiza o status e informa o código emitido
-      parameters: [ { $ref: "#/components/parameters/Id" } ]
+      tags: [Campanhas]
+      summary: Atualiza campanha
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CampaignUpsert" }
+      responses:
+        "200": { description: Atualizada }
+    delete:
+      tags: [Campanhas]
+      summary: Desativa campanha (soft delete por IsActive)
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200": { description: Desativada }
+
+  # ---------------------------------------------------------------- Dados cadastrais
+  /customers/change-requests:
+    get:
+      tags: [Dados cadastrais]
+      summary: Solicitações de alteração do cliente (generaliza address/change-requests)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/ChangeRequest" }
+    post:
+      tags: [Dados cadastrais]
+      summary: Solicita alteração de endereço, telefone ou e-mail; a Central de Contratos aprova
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChangeRequestCreate" }
+      responses:
+        "201":
+          description: Solicitação criada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/ChangeRequest" }
+
+  /admin/change-requests/{id}:
+    patch:
+      tags: [Dados cadastrais]
+      summary: Aprova ou recusa a solicitação; dispara push "Sua solicitação de alteração foi aprovada"
+      parameters:
+        - $ref: "#/components/parameters/Id"
       requestBody:
         required: true
         content:
@@ -574,70 +541,60 @@ paths:
               type: object
               required: [status]
               properties:
-                status: { $ref: "#/components/schemas/CertificateStatus" }
-                certificateCode: { type: string, nullable: true }
+                status: { type: string, enum: [approved, rejected] }
                 adminNotes: { type: string, nullable: true }
       responses:
-        "200": { description: Atualizado }
+        "200": { description: Atualizada }
 
-  /admin/collection/{customerUserId}/items/{index}/shipped:
-    post:
-      tags: [Admin]
-      summary: Pós-vendas registra o envio de uma camiseta
+  /admin/members/{customerUserId}/travel-profile/history:
+    get:
+      tags: [Membro]
+      summary: Histórico de edições do perfil de viagem, consultado pelo Pós-vendas
       parameters:
         - in: path
           name: customerUserId
           required: true
           schema: { type: integer }
-        - in: path
-          name: index
-          required: true
-          schema: { type: integer, minimum: 1, maximum: 6 }
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                trackingCode: { type: string, nullable: true }
       responses:
-        "200": { description: Registrado }
+        "200": { description: Lista de versões do perfil (TravelProfileHistory) }
 
-  /admin/miles/offers:
-    post:
-      tags: [Admin]
-      summary: Robô de milhas publica uma oferta capturada (autenticado por API key do robô)
-      security:
-        - robotApiKey: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: "#/components/schemas/MilesOfferUpsert" }
-      responses:
-        "201": { description: Publicada; backend dispara push para quem tem `milesOffers = true` }
-
-  /admin/miles/{customerUserId}/entries:
-    post:
-      tags: [Admin]
-      summary: Lança crédito/débito de milhas para um cliente
+  # ---------------------------------------------------------------- Empreendimento e sessão
+  /ventures/{id}/financial:
+    get:
+      tags: [Empreendimentos]
+      summary: Resumo financeiro filtrado pelo empreendimento (aberto pela página do empreendimento)
+      description: |
+        `GET ventures` (API existente) passa a devolver também `city`, `state`, `instagramUrl`,
+        `youtubeUrl` e `whatsappChannelUrl` por empreendimento (schema VentureSocialLinks).
       parameters:
-        - in: path
-          name: customerUserId
-          required: true
-          schema: { type: integer }
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [amount, description]
-              properties:
-                amount: { type: integer, description: "Positivo credita, negativo debita" }
-                description: { type: string }
+        - $ref: "#/components/parameters/Id"
       responses:
-        "201": { description: Lançado }
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data: { $ref: "#/components/schemas/VentureFinancialSummary" }
+
+  /auth/refresh:
+    post:
+      tags: [Sessão]
+      summary: Renova o JWT do cliente (alternativa a um JWT de validade longa, ex. 180 dias)
+      description: Necessário para a sessão fixa; o app só volta ao Login em "Sair" ou 401 persistente.
+      responses:
+        "200":
+          description: Novo token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  token: { type: string }
+        "401": { description: Token inválido; o app encerra a sessão }
 
 components:
   securitySchemes:
@@ -691,6 +648,7 @@ components:
         cardToken: { type: string, example: "HRVC-8f3a2c1e9b" }
         verifyUrl: { type: string, format: uri, example: "https://portal.mundoplanalto.com.br/card/HRVC-8f3a2c1e9b" }
         benefitUsageCount: { type: integer }
+        clubName: { type: string, example: \"Mundo Planalto\", description: \"Nome do clube exibido no cartão\" }
 
     CardVerification:
       type: object
@@ -730,6 +688,8 @@ components:
         validUntil: { type: string, format: date, nullable: true }
         isActive: { type: boolean }
 
+        isFeatured: { type: boolean, default: false, description: "Destaque com imagem; no máximo 2 por empreendimento" }
+        ventureIds: { type: array, items: { type: integer }, description: "Empreendimentos a que o parceiro se aplica" }
     PartnerUpsert:
       type: object
       required: [name, category, city, state, discountPercent, discountText, validationType, partnerCode, partnerPin]
@@ -752,6 +712,8 @@ components:
         validUntil: { type: string, format: date, nullable: true }
         isActive: { type: boolean, default: true }
 
+        isFeatured: { type: boolean, default: false, description: "Destaque com imagem; no máximo 2 por empreendimento" }
+        ventureIds: { type: array, items: { type: integer }, description: "Empreendimentos a que o parceiro se aplica" }
     Coupon:
       type: object
       properties:
@@ -773,106 +735,6 @@ components:
         usedAt: { type: string, format: date-time }
         source: { type: string, enum: [qr, coupon, card] }
 
-    CertificateType:
-      type: string
-      enum: [national, international]
-
-    CertificateStatus:
-      type: string
-      enum: [requested, in_progress, issued, cancelled]
-
-    CertificateRequest:
-      type: object
-      properties:
-        id: { type: integer }
-        type: { $ref: "#/components/schemas/CertificateType" }
-        status: { $ref: "#/components/schemas/CertificateStatus" }
-        protocol: { type: string, example: "CERT-2026-000123" }
-        crmIncidentId: { type: string, nullable: true }
-        preferredDestination: { type: string, nullable: true }
-        preferredPeriod: { type: string, nullable: true }
-        certificateCode: { type: string, nullable: true, description: "Preenchido pelo Pós-vendas quando status = issued" }
-        requestedAt: { type: string, format: date-time }
-        updatedAt: { type: string, format: date-time, nullable: true }
-
-    OfferCategory:
-      type: string
-      enum: [hospedagem, gastronomia, experiencias, milhas]
-
-    Offer:
-      type: object
-      properties:
-        id: { type: integer }
-        title: { type: string, example: "20% de desconto" }
-        subtitle: { type: string, example: "Restaurantes parceiros em Gramado" }
-        description: { type: string, nullable: true }
-        category: { $ref: "#/components/schemas/OfferCategory" }
-        imageUrl: { type: string, format: uri, nullable: true }
-        isFeatured: { type: boolean }
-        ctaLabel: { type: string, example: "Ver oferta" }
-        ctaUrl: { type: string, format: uri, nullable: true }
-        partnerId: { type: integer, nullable: true }
-        validFrom: { type: string, format: date, nullable: true }
-        validUntil: { type: string, format: date, nullable: true }
-
-    OfferUpsert:
-      type: object
-      required: [title, subtitle, category]
-      properties:
-        title: { type: string }
-        subtitle: { type: string }
-        description: { type: string, nullable: true }
-        category: { $ref: "#/components/schemas/OfferCategory" }
-        imageUrl: { type: string, nullable: true }
-        isFeatured: { type: boolean, default: false }
-        ctaLabel: { type: string, nullable: true }
-        ctaUrl: { type: string, nullable: true }
-        partnerId: { type: integer, nullable: true }
-        validFrom: { type: string, format: date, nullable: true }
-        validUntil: { type: string, format: date, nullable: true }
-        isActive: { type: boolean, default: true }
-
-    MilesAccount:
-      type: object
-      properties:
-        balance: { type: integer, example: 12500 }
-        entries:
-          type: array
-          items:
-            type: object
-            properties:
-              id: { type: integer }
-              amount: { type: integer, example: 2000 }
-              description: { type: string, example: "Campanha Milhas em dobro" }
-              createdAt: { type: string, format: date-time }
-
-    MilesOffer:
-      type: object
-      properties:
-        id: { type: integer }
-        title: { type: string, example: "Passagens GRU-MCO a partir de 45 mil milhas" }
-        summary: { type: string }
-        destination: { type: string, nullable: true, example: "Orlando" }
-        program: { type: string, nullable: true, example: "Smiles" }
-        sourceGroup: { type: string, nullable: true }
-        url: { type: string, format: uri, nullable: true }
-        capturedAt: { type: string, format: date-time }
-        expiresAt: { type: string, format: date-time, nullable: true }
-
-    MilesOfferUpsert:
-      type: object
-      required: [title, summary, capturedAt]
-      properties:
-        title: { type: string }
-        summary: { type: string }
-        destination: { type: string, nullable: true }
-        program: { type: string, nullable: true }
-        sourceGroup: { type: string, nullable: true }
-        url: { type: string, nullable: true }
-        capturedAt: { type: string, format: date-time }
-        expiresAt: { type: string, format: date-time, nullable: true }
-        externalId: { type: string, description: "Hash da mensagem original, para idempotência" }
-
     TravelProfile:
       type: object
       required: [homeCity, homeState, preferredDestinations]
@@ -885,35 +747,17 @@ components:
           maxItems: 4
           items: { type: string }
           example: ["Gramado", "Orlando", "Cancún", "Lisboa"]
+        nextTripWhen: { type: string, enum: [within_6_months, within_1_year, more_than_1_year, unknown], nullable: true }
+        nextTripDestination: { type: string, nullable: true, example: "Gramado" }
+        source: { type: string, enum: [pep, app], readOnly: true, description: "pep = respostas da compra; app = editado pelo cliente" }
         updatedAt: { type: string, format: date-time, readOnly: true }
 
     NotificationPreferences:
       type: object
       properties:
-        milesOffers: { type: boolean, default: true, description: "Receber promoções de milhas" }
+        campaigns: { type: boolean, default: true, description: "Receber campanhas e novidades (único opt-in do app)" }
         announcements: { type: boolean, default: true }
         updatedAt: { type: string, format: date-time, readOnly: true }
-
-    CollectionStatus:
-      type: object
-      properties:
-        contractNumber: { type: string, nullable: true }
-        eligible: { type: boolean, description: "Contrato de 6 semanas" }
-        totalItems: { type: integer, example: 6 }
-        unlockedCount: { type: integer, example: 2 }
-        paidInstallments: { type: integer }
-        items:
-          type: array
-          items:
-            type: object
-            properties:
-              index: { type: integer, minimum: 1, maximum: 6 }
-              name: { type: string, example: "Camiseta Collection #1" }
-              imageUrl: { type: string, format: uri, nullable: true }
-              status: { type: string, enum: [locked, unlocked, sent] }
-              unlockedAt: { type: string, format: date-time, nullable: true }
-              shippedAt: { type: string, format: date-time, nullable: true }
-              trackingCode: { type: string, nullable: true }
 
     VentureVideo:
       type: object
@@ -932,3 +776,100 @@ components:
         platform: { type: string, enum: [android, ios] }
         appVersion: { type: string, nullable: true, example: "2.0.0" }
         deviceModel: { type: string, nullable: true }
+
+    CertificateKind:
+      type: string
+      enum: [rci, maisviagens, gift]
+    CertificateState:
+      type: string
+      enum: [available, requested, released, used, expired]
+    Certificate:
+      type: object
+      description: Substitui o modelo de 2 tipos fixos. Cadastrado pela Central de Contratos, vinculado ao contrato.
+      properties:
+        id: { type: integer }
+        name: { type: string, example: "Certificado RCI — 7 noites", description: "Exibido no app exatamente como cadastrado" }
+        type: { $ref: "#/components/schemas/CertificateKind" }
+        quantity: { type: integer, example: 1 }
+        status: { $ref: "#/components/schemas/CertificateState" }
+        expiresAt: { type: string, format: date, nullable: true, example: "2027-12-31" }
+        protocol: { type: string, nullable: true, example: "CERT-2026-000123" }
+        code: { type: string, nullable: true, example: "MV-8150-2026", description: "Preenchido na liberação" }
+        useUrl: { type: string, format: uri, nullable: true, example: "https://maisviagens.com.br/" }
+        requestedAt: { type: string, format: date-time, nullable: true }
+        releasedAt: { type: string, format: date-time, nullable: true }
+        usedAt: { type: string, format: date-time, nullable: true }
+    CertificateRequestResult:
+      type: object
+      properties:
+        protocol: { type: string, example: "CERT-2026-000123" }
+        slaHours: { type: integer, example: 48, description: "SLA parametrizado; estourou, e-mail para o responsável" }
+    CertificateAdminUpdate:
+      type: object
+      properties:
+        status: { $ref: "#/components/schemas/CertificateState" }
+        code: { type: string, nullable: true }
+        useUrl: { type: string, format: uri, nullable: true }
+    CampaignCtaType:
+      type: string
+      enum: [online, postsales, whatsapp, link, certificate]
+    Campaign:
+      type: object
+      properties:
+        id: { type: integer }
+        category: { type: string, example: "Antecipação", description: "Livre: Upgrade, Antecipação, Quitação, Indicação, Brinde, Viagem, Promoção..." }
+        title: { type: string, example: "Antecipe parcelas e ganhe desconto" }
+        subtitle: { type: string, example: "Condições válidas por tempo limitado" }
+        imageUrl: { type: string, format: uri, nullable: true }
+        validUntil: { type: string, format: date, nullable: true, example: "2026-10-31" }
+        ctaLabel: { type: string, example: "Quero antecipar" }
+        ctaType: { $ref: "#/components/schemas/CampaignCtaType" }
+        ctaUrl: { type: string, format: uri, nullable: true }
+        whatsappNumber: { type: string, nullable: true, example: "5562999999999" }
+        whatsappMessage: { type: string, nullable: true }
+        ventureIds: { type: array, items: { type: integer } }
+        isFeatured: { type: boolean, default: false, description: "Card grande com foto no app" }
+    CampaignUpsert:
+      allOf:
+        - $ref: "#/components/schemas/Campaign"
+        - type: object
+          properties:
+            isActive: { type: boolean, default: true }
+    ChangeRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        field: { type: string, enum: [address, phone, email] }
+        newValue: { type: string }
+        status: { type: string, enum: [pending, approved, rejected] }
+        createdAt: { type: string, format: date-time }
+    ChangeRequestCreate:
+      type: object
+      required: [field, newValue]
+      properties:
+        field: { type: string, enum: [address, phone, email] }
+        newValue: { type: string, description: "Endereço completo em texto quando field = address" }
+    VentureSocialLinks:
+      type: object
+      description: Campos acrescentados a cada item de GET ventures (API existente).
+      properties:
+        city: { type: string, nullable: true, example: "Gramado" }
+        state: { type: string, nullable: true, example: "RS" }
+        instagramUrl: { type: string, format: uri, nullable: true }
+        youtubeUrl: { type: string, format: uri, nullable: true }
+        whatsappChannelUrl: { type: string, format: uri, nullable: true }
+    VentureFinancialSummary:
+      type: object
+      properties:
+        ventureId: { type: integer }
+        totalOverdue: { type: number }
+        totalDue: { type: number }
+        contractBalance: { type: number }
+        paidInstallments: { type: integer }
+        totalInstallments: { type: integer }
+        nextDue:
+          type: object
+          nullable: true
+          properties:
+            dueDate: { type: string, format: date }
+            amount: { type: number }

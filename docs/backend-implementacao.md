@@ -1,4 +1,6 @@
-# Backend: implementação dos recursos do app Hard Rock
+# Backend: implementação dos recursos do app Mundo Planalto (clube de férias)
+
+> **Atualizado em 02/10/2026** com a revisão do CEO de 01/10 (`docs/revisao-ceo-01-10.md`, seção 3): certificados por cliente com protocolo e SLA, campanhas no lugar de ofertas, perfil de viagem com próxima viagem e histórico, alteração de dados, redes sociais do empreendimento e sessão longa. **Milhas e Collection saíram da V1.**
 
 Guia para implementar, no repositório `Mundo-Planalto/MundoPlanaltoPortal` (.NET 10, EF Core, PostgreSQL), os endpoints definidos em [`openapi-hardrock.yaml`](openapi-hardrock.yaml). Segue o padrão do projeto levantado em 28/09/2026: controller por recurso em `Api/Controllers`, DTOs em `Api/DTOs`, entidades em `Models/Core`, envelope `ApiResponse<T>`, políticas `ClientOnly`/`AdminOnly`, soft delete por `IsActive`.
 
@@ -17,30 +19,33 @@ Guia para implementar, no repositório `Mundo-Planalto/MundoPlanaltoPortal` (.NE
 
 | Entidade | Tabela | Campos principais | Migration |
 |---|---|---|---|
-| `MemberProfile` | `MemberProfiles` | `CustomerUserId` (FK única), `Level` (Founder/Legacy/Discovery), `MemberNumber` (string, único), `MemberSince`, `CardToken` (string único, opaco, 16+ chars aleatórios), `CardTokenRotatedAt` | `AddMemberProfiles` |
-| `TravelProfile` | `TravelProfiles` | `CustomerUserId` (FK única), `HomeCity`, `HomeState`, `PreferredDestinationsJson` (até 4), `UpdatedAt` | `AddTravelProfiles` |
-| `NotificationPreference` | `NotificationPreferences` | `CustomerUserId` (FK única), `MilesOffers` (bool), `Announcements` (bool), `UpdatedAt` | `AddNotificationPreferences` |
-| `Partner` | `Partners` | `Name`, `Category`, `City`, `State`, `DiscountPercent`, `DiscountText`, `Terms`, `ValidationType`, `CouponCode`, `PartnerCode` (único), `PartnerPinHash`, `LogoUrl`, `ImageUrl`, `Address`, `UsageLimitPerCustomer?`, `ValidUntil?`, `IsActive`, `CreatedAt` | `AddPartners` |
+| `MemberProfile` | `MemberProfiles` | `CustomerUserId` (FK única), `Level` (Founder/Legacy/Discovery; a Central de Contratos define), `MemberNumber` (string, único), `MemberSince`, `CardToken` (único, opaco, 16+ chars aleatórios), `CardTokenRotatedAt`, `ClubName` (padrão "Mundo Planalto") | `AddMemberProfiles` |
+| `TravelProfile` | `TravelProfiles` | `CustomerUserId` (FK única), `HomeCity`, `HomeState`, `PreferredDestinationsJson` (até 4), `NextTripWhen` (within_6_months/within_1_year/more_than_1_year/unknown), `NextTripDestination`, `Source` (pep/app), `UpdatedAt` | `AddTravelProfiles` |
+| `TravelProfileHistory` | `TravelProfileHistory` | `CustomerUserId`, snapshot JSON do perfil, `Source`, `ChangedAt` | `AddTravelProfileHistory` |
+| `NotificationPreference` | `NotificationPreferences` | `CustomerUserId` (FK única), `Campaigns` (bool, opt-in único do app), `Announcements` (bool), `UpdatedAt` | `AddNotificationPreferences` |
+| `Partner` | `Partners` | `Name`, `Category`, `City`, `State`, `DiscountPercent`, `DiscountText`, `Terms`, `ValidationType`, `CouponCode`, `PartnerCode` (único), `PartnerPinHash`, `LogoUrl`, `ImageUrl`, `Address`, `UsageLimitPerCustomer?`, `ValidUntil?`, `IsFeatured` (máx. 2 por empreendimento), `IsActive`, `CreatedAt` + tabela de junção `PartnerVentures` | `AddPartners` |
 | `BenefitRedemption` | `BenefitRedemptions` | `CustomerUserId`, `PartnerId`, `Source` (qr/coupon/card), `UsedAt`, `Note`, `IpAddress` | `AddBenefitRedemptions` |
-| `CertificateRequest` | `CertificateRequests` | `CustomerUserId`, `Type`, `Status`, `Protocol` (único, `CERT-yyyy-nnnnnn`), `CrmIncidentId`, `PreferredDestination`, `PreferredPeriod`, `Notes`, `CertificateCode`, `AdminNotes`, `RequestedAt`, `UpdatedAt`, `HandledByAdminId?` | `AddCertificateRequests` |
-| `Offer` | `Offers` | `Title`, `Subtitle`, `Description`, `Category`, `ImageUrl`, `IsFeatured`, `CtaLabel`, `CtaUrl`, `PartnerId?`, `ValidFrom?`, `ValidUntil?`, `IsActive`, `CreatedByAdminId` | `AddOffers` |
-| `MilesEntry` | `MilesEntries` | `CustomerUserId`, `Amount` (int, +/-), `Description`, `CreatedAt`, `CreatedByAdminId?` | `AddMilesEntries` |
-| `MilesOffer` | `MilesOffers` | `ExternalId` (único), `Title`, `Summary`, `Destination`, `Program`, `SourceGroup`, `Url`, `CapturedAt`, `ExpiresAt?`, `IsActive` | `AddMilesOffers` |
-| `CollectionItem` | `CollectionItems` | `CustomerUserId`, `Index` (1..6), `Status` (locked/unlocked/sent), `UnlockedAt?`, `ShippedAt?`, `TrackingCode?` | `AddCollectionItems` |
+| `Certificate` | `Certificates` | `CustomerUserId`, `ContractId`/`CostCenterId`, `Name` (como a Central cadastrou), `Type` (rci/maisviagens/gift), `Quantity`, `Status` (available/requested/released/used/expired), `ExpiresAt`, `Protocol?` (único, `CERT-yyyy-nnnnnn`), `CrmIncidentId?`, `Code?`, `UseUrl?`, `RequestedAt?`, `ReleasedAt?`, `UsedAt?`, `HandledByAdminId?` | `AddCertificates` |
+| `Campaign` | `Campaigns` | `Category` (livre), `Title`, `Subtitle`, `ImageUrl`, `ValidUntil?`, `CtaLabel`, `CtaType` (online/postsales/whatsapp/link/certificate), `CtaUrl?`, `WhatsappNumber?`, `WhatsappMessage?`, `IsFeatured`, `IsActive`, `CreatedByAdminId` + junção `CampaignVentures` | `AddCampaigns` |
+| `CampaignInterest` | `CampaignInterests` | `CampaignId`, `CustomerUserId`, `ClickedAt`, `CrmIncidentId?`, `ConvertedAt?` | `AddCampaignInterests` |
+| `ChangeRequest` | `ChangeRequests` | `CustomerUserId`, `Field` (address/phone/email), `NewValue`, `Status` (pending/approved/rejected), `AdminNotes`, `CreatedAt`, `ProcessedAt?`, `ProcessedByAdminId?` | `AddChangeRequests` |
 | `DeviceToken` | `DeviceTokens` | `CustomerUserId`, `Token` (único), `Platform`, `AppVersion`, `DeviceModel`, `CreatedAt`, `LastSeenAt` | `AddDeviceTokens` |
-| `UnityInterest` | `UnityInterests` | `CustomerUserId`, `CrmActivityId?`, `CreatedAt` | `AddUnityInterests` |
+| `CostCenter` (existente) | — | acrescentar `City`, `State`, `InstagramUrl`, `YoutubeUrl`, `WhatsappChannelUrl` | `AddVentureSocialLinks` |
 
-Registrar todos como `DbSet<>` em `Data/ApplicationDbContext.cs`. Índices únicos: `MemberProfiles.CardToken`, `MemberProfiles.MemberNumber`, `Partners.PartnerCode`, `DeviceTokens.Token`, `MilesOffers.ExternalId`, `CertificateRequests.Protocol`.
+Registrar todos como `DbSet<>` em `Data/ApplicationDbContext.cs`. Índices únicos: `MemberProfiles.CardToken`, `MemberProfiles.MemberNumber`, `Partners.PartnerCode`, `DeviceTokens.Token`, `Certificates.Protocol`.
+
+Saíram da V1 (não criar): `MilesEntry`, `MilesOffer`, `CollectionItem`, `Offer`, `CertificateRequest` (substituído por `Certificate`).
 
 ## 2. Serviços (`Services/`)
 
 | Serviço | Responsabilidade |
 |---|---|
-| `MemberCardService` | Cria `MemberProfile` sob demanda no primeiro acesso (`MemberNumber` sequencial a partir de 8000, `CardToken` aleatório via `RandomNumberGenerator`); calcula `Status`: `inactive` se `FinancialDataCache.TotalOverdue > 0` para o documento ou se `CustomerCostCenter.ContractSituation` indicar cancelado; conta `BenefitRedemptions`. |
-| `BenefitService` | Lista parceiros ativos; valida PIN (`PartnerPinHash`, usar o mesmo hasher de senha do projeto); aplica `UsageLimitPerCustomer`; registra `BenefitRedemption`; gera cupom (`CouponCode` do parceiro). |
-| `CertificateService` | Gera `Protocol`; chama `DynamicsService` para abrir incidente com título `"Certificado de viagem {tipo} - {nome} - {protocolo}"` e guarda `CrmIncidentId`; um pedido `requested/in_progress` por tipo por cliente. |
-| `CollectionService` | Regra do kit: elegível se o contrato (em `CustomerCostCenter`) for de 6 semanas (campo/flag a definir com o Comercial); item 1 desbloqueia com a entrada (5%) paga, itens 2..6 com cada parcela seguinte paga em dia (`FinancialItemsCache` ordenado por `DueDate`, `IsPaid = true`). Recalcula ao consultar; `sent` só via admin. |
-| `MilesService` | Saldo = soma de `MilesEntries`; lista `MilesOffers` ativas, filtrando por `TravelProfile.PreferredDestinations` quando houver. |
+| `MemberCardService` | Cria `MemberProfile` sob demanda no primeiro acesso (`MemberNumber` sequencial a partir de 8000, `CardToken` aleatório via `RandomNumberGenerator`); calcula `Status`: `inactive` se `FinancialDataCache.TotalOverdue > 0` para o documento ou se `CustomerCostCenter.ContractSituation` indicar cancelado; conta `BenefitRedemptions`; devolve `ClubName`. |
+| `BenefitService` | Lista parceiros ativos **filtrados pelos empreendimentos do cliente** (`PartnerVentures`), com no máximo 2 `IsFeatured`; valida PIN (`PartnerPinHash`, mesmo hasher de senha do projeto); aplica `UsageLimitPerCustomer`; registra `BenefitRedemption`; gera cupom (`CouponCode` do parceiro). |
+| `CertificateService` | Lista os certificados do cliente; em `request` gera `Protocol`, chama `DynamicsService` para abrir ocorrência `"Certificado {nome} - {cliente} - {protocolo}"`, guarda `CrmIncidentId` e devolve `slaHours` (parametrizado, padrão 48). Job diário: SLA estourado → e-mail ao responsável do Pós-vendas; `ExpiresAt` vencido → `expired`. Na liberação (`released`) dispara push "Seu certificado foi liberado" e cria aviso. |
+| `CampaignService` | Lista campanhas ativas filtradas por empreendimento (`CampaignVentures`); `interest` grava `CampaignInterest` e, para `ctaType` online/postsales, abre ocorrência no CRM; expõe contagem de cliques e conversão por campanha no admin. |
+| `TravelProfileService` | Cria o perfil a partir das respostas do PEP (`Source = pep`); cada `PUT` grava `TravelProfileHistory` e marca `Source = app`. |
+| `ChangeRequestService` | Cria solicitação de alteração (address/phone/email); aprovação pela Central aplica o dado no Sienge/CRM e dispara push "Sua solicitação de alteração foi aprovada". Generaliza o fluxo de `address/change-request` existente. |
 | `DeviceTokenService` | Upsert por token; usado por `FirebaseService` para envio direcionado (`SendMulticastAsync` com tokens do usuário) além do envio por tópico existente. |
 
 Registrar em `Program.cs`: `builder.Services.AddScoped<...>()` para cada um (padrão do projeto, classes concretas).
@@ -49,16 +54,16 @@ Registrar em `Program.cs`: `builder.Services.AddScoped<...>()` para cada um (pad
 
 | Controller | Rota base | Política | Endpoints |
 |---|---|---|---|
-| `MembersController` | `api/members` | `ClientOnly` | `GET me/card`, `GET/PUT me/travel-profile`, `GET/PUT me/notification-preferences`, `GET me/redemptions`, `GET me/miles`, `GET me/collection` |
+| `MembersController` | `api/members` | `ClientOnly` | `GET me/card`, `GET me/certificates`, `GET/PUT me/travel-profile`, `GET/PUT me/notification-preferences`, `GET me/redemptions` |
 | `CardController` | `api/card` | `[AllowAnonymous]` | `GET verify/{token}`, `POST verify/{token}/redemptions` |
 | `PartnersController` | `api/partners` | `ClientOnly` | `GET`, `GET {id}`, `POST {id}/coupon` |
-| `CertificatesController` | `api/certificates` | `ClientOnly` | `GET requests`, `POST requests`, `GET requests/{id}` |
-| `OffersController` | `api/offers` | `ClientOnly` | `GET`, `GET {id}` |
-| `MilesController` | `api/miles` | `ClientOnly` | `GET offers` |
+| `CertificatesController` | `api/certificates` | `ClientOnly` | `POST {id}/request` |
+| `CampaignsController` | `api/campaigns` | `ClientOnly` | `GET`, `POST {id}/interest` |
+| `CustomersController` (existente) | `api/customers` | `ClientOnly` | adicionar `GET change-requests`, `POST change-requests` |
+| `AuthController` (existente) | `api/auth` | `[Authorize]` | adicionar `POST refresh` **ou** emitir JWT de cliente com validade longa (ex.: 180 dias) para a sessão fixa |
 | `DevicesController` | `api/devices` | `[Authorize]` | `POST`, `DELETE {token}` |
-| `UnityController` | `api/unity` | `ClientOnly` | `POST interest` |
-| `VenturesController` (existente) | `api/ventures` | `ClientOnly` | adicionar `GET {id}/videos` a partir de `VenturePhoto` com `MediaType == "video"` |
-| `AdminHardRockController` | `api/admin` | `AdminOnly` (+ `X-Robot-Key` em `miles/offers`) | `partners` CRUD, `offers` CRUD, `members/{id}/level`, `certificates/requests/{id}/status`, `collection/{id}/items/{index}/shipped`, `miles/offers`, `miles/{id}/entries` |
+| `VenturesController` (existente) | `api/ventures` | `ClientOnly` | `GET` passa a devolver `city`, `state`, `instagramUrl`, `youtubeUrl`, `whatsappChannelUrl`; adicionar `GET {id}/videos` (a partir de `VenturePhoto` com `MediaType == "video"`) e `GET {id}/financial` (resumo filtrado) |
+| `AdminClubController` | `api/admin` | `AdminOnly` | `partners` CRUD, `campaigns` CRUD, `members/{id}/level`, `PATCH certificates/{id}` (status, code, useUrl), `PATCH change-requests/{id}`, `GET members/{id}/travel-profile/history`, cadastro de certificados por contrato (Central de Contratos) |
 
 `CardController` e a página pública ficam fora do `DynamicAuth` de cookie: manter sob `/api` e usar `[AllowAnonymous]` como `FaqsController`.
 
@@ -68,18 +73,20 @@ Rota `/card/{token}`. Razor Page simples, sem login, que chama `MemberCardServic
 
 ## 5. Notificações
 
-- `POST /api/admin/miles/offers` (robô) grava `MilesOffer` e chama `FirebaseService.SendToUsersAsync(userIds, title, body, data)` para os clientes com `NotificationPreference.MilesOffers = true` (e, se houver `TravelProfile`, com destino compatível). Precisa de `DeviceTokens`.
+- Liberação de certificado (`PATCH /api/admin/certificates/{id}` com `status = released`): `FirebaseService.SendToUsersAsync` para o cliente com "Seu certificado foi liberado" + aviso em `announcements` do usuário. Precisa de `DeviceTokens`.
+- Aprovação de alteração de dados: push "Sua solicitação de alteração foi aprovada".
+- Campanhas novas: push para os clientes com `NotificationPreference.Campaigns = true` dos empreendimentos da campanha.
 - Manter o envio por tópico `announcements` para avisos gerais.
 
 ## 6. Ordem de entrega (alinhada ao cronograma do app)
 
 | Até | Entregar em homolog |
 |---|---|
-| 16/10 | Ambiente `portal_homolog` correto; `MemberProfiles` + `GET members/me/card`; `DeviceTokens` + `POST /devices`; `GET ventures/{id}/videos`; URL pública de "esqueci a senha" |
-| 23/10 | `CardController` + página `/card/{token}` + `limit_req`; `Partners`, `BenefitRedemptions`, `PartnersController`, admin de parceiros |
-| 30/10 | `CertificateRequests` + Dynamics; `Offers` + admin; `UnityController` |
-| 06/11 | `TravelProfiles`, `NotificationPreferences`, `MilesEntries`, `MilesOffers` + endpoint do robô + push direcionado |
-| 13/11 | `CollectionItems` + `CollectionService` (após regra por escrito) |
+| 16/10 | Ambiente `portal_homolog` correto; JWT longo ou `POST auth/refresh` (sessão fixa); `MemberProfiles` + `GET members/me/card` (com `clubName`); `DeviceTokens` + `POST /devices`; `GET ventures` com cidade/UF e redes sociais; `GET ventures/{id}/videos`; URL pública de "esqueci a senha" |
+| 23/10 | `Certificates` + `GET members/me/certificates` + `POST certificates/{id}/request` com Dynamics e SLA + `PATCH admin/certificates/{id}` + cadastro pela Central; `CardController` + página `/card/{token}` + `limit_req` |
+| 30/10 | `Partners` (com `IsFeatured` e `PartnerVentures`), `BenefitRedemptions`, `PartnersController`, admin de parceiros; `Campaigns` + `CampaignInterests` + admin de campanhas |
+| 06/11 | `TravelProfiles` + `TravelProfileHistory` (carga inicial do PEP); `NotificationPreferences`; `ChangeRequests` + aprovação pela Central; `GET ventures/{id}/financial`; push direcionado |
+| 13/11 | Ajustes de homologação com o app (Build 2 de 01/11) e relatórios de cliques/conversão de campanhas |
 
 ## 7. Checklist por endpoint (padrão do projeto)
 
