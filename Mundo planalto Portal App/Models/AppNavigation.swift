@@ -1,6 +1,6 @@
 //
 //  AppNavigation.swift
-//  Hard Rock Hotel & Vacation Club
+//  Mundo Planalto
 //
 //  Abas e rotas empilhadas (docs/telas.md, seção "Navegação").
 //
@@ -11,7 +11,7 @@ import Foundation
 enum TabItem: String, CaseIterable, Identifiable {
     case inicio = "Início"
     case beneficios = "Benefícios"
-    case ofertas = "Ofertas"
+    case campanhas = "Campanhas"
     case empreendimentos = "Empreendimentos"
     case perfil = "Perfil"
 
@@ -21,7 +21,7 @@ enum TabItem: String, CaseIterable, Identifiable {
         switch self {
         case .inicio: return "house.fill"
         case .beneficios: return "gift.fill"
-        case .ofertas: return "tag.fill"
+        case .campanhas: return "megaphone.fill"
         case .empreendimentos: return "building.2.fill"
         case .perfil: return "person.fill"
         }

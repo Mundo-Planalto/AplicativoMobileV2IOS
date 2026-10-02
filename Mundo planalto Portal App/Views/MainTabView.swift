@@ -2,7 +2,7 @@
 //  MainTabView.swift
 //  Hard Rock Hotel & Vacation Club
 //
-//  TabView com 5 abas (Início, Benefícios, Ofertas, Empreendimentos, Perfil),
+//  TabView com 5 abas (Início, Benefícios, Campanhas, Empreendimentos, Perfil),
 //  cada uma com sua NavigationStack e rotas de AppRoute. A tab bar do sistema fica
 //  oculta e a HrTabBar fica abaixo do TabView, com espaço próprio.
 //
@@ -20,7 +20,7 @@ struct MainTabView: View {
             TabView(selection: $router.selectedTab) {
                 tabContent(.inicio) { InicioView() }
                 tabContent(.beneficios) { BeneficiosView() }
-                tabContent(.ofertas) { OfertasView() }
+                tabContent(.campanhas) { CampanhasView() }
                 tabContent(.empreendimentos) { EmpreendimentosView() }
                 tabContent(.perfil) { PerfilView() }
             }

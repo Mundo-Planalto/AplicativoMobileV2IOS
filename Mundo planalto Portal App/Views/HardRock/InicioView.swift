@@ -94,7 +94,7 @@ struct InicioView: View {
                 router.beneficiosScrollTarget = "unity"
                 router.switchTab(.beneficios)
             }
-            HrShortcut(icon: "megaphone.fill", titulo: "Campanhas", subtitulo: "Condições especiais") { router.switchTab(.ofertas) }
+            HrShortcut(icon: "megaphone.fill", titulo: "Campanhas", subtitulo: "Condições especiais") { router.switchTab(.campanhas) }
         }
     }
 
@@ -152,7 +152,7 @@ struct InicioView: View {
     // MARK: Campanhas
 
     private var ofertasCard: some View {
-        HrCard(highlighted: true, onTap: { router.switchTab(.ofertas) }) {
+        HrCard(highlighted: true, onTap: { router.switchTab(.campanhas) }) {
             HStack(spacing: 12) {
                 HrIconBox(icon: "megaphone.fill")
                 VStack(alignment: .leading, spacing: 3) {

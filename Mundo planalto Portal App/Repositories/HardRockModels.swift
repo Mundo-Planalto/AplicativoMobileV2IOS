@@ -99,43 +99,6 @@ struct Coupon: Codable, Equatable {
     let instructions: String
 }
 
-// MARK: - Ofertas
-
-enum OfferCategory: String, Codable, CaseIterable {
-    case hospedagem, gastronomia, experiencias, outros
-
-    init(from decoder: Decoder) throws {
-        let raw = try decoder.singleValueContainer().decode(String.self).lowercased()
-        self = OfferCategory(rawValue: raw) ?? .outros
-    }
-
-    var tag: String { rawValue.uppercased() }
-
-    var chip: String {
-        switch self {
-        case .hospedagem: return "Hospedagem"
-        case .gastronomia: return "Gastronomia"
-        case .experiencias: return "Experiências"
-        case .outros: return "Outras"
-        }
-    }
-}
-
-struct Offer: Codable, Identifiable, Equatable {
-    let id: Int
-    let title: String
-    let subtitle: String
-    let description: String?
-    let category: OfferCategory
-    let imageUrl: String?
-    let isFeatured: Bool
-    let ctaLabel: String
-    let ctaUrl: String?
-    let partnerId: Int?
-    let validFrom: String?
-    let validUntil: String?
-}
-
 // MARK: - Perfil de viagem e preferências
 
 struct TravelProfile: Codable, Equatable {

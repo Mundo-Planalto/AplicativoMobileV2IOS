@@ -99,7 +99,7 @@ extension TabItem {
         switch self {
         case .inicio: return "inicio"
         case .beneficios: return "beneficios"
-        case .ofertas: return "ofertas"
+        case .campanhas: return "campanhas"
         case .empreendimentos: return "empreendimentos"
         case .perfil: return "perfil"
         }
