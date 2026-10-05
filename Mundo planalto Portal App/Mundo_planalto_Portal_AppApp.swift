@@ -24,11 +24,15 @@ struct Mundo_planalto_Portal_AppApp: App {
 
 // AppDelegate no mesmo arquivo para garantir que o target o compile (evita "Cannot find 'AppDelegate' in scope").
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
+    /// Com `UIApplicationDelegateAdaptor`, `UIApplication.shared.delegate` é um objeto interno do SwiftUI
+    /// e o cast para `AppDelegate` falha; a UI usa esta referência.
+    private(set) static var shared: AppDelegate?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions
                      launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         // Apenas Firebase e delegates no launch. Permissão de notificação é pedida depois (separada do login do usuário) para evitar timeout.
         HrAppearance.apply()
+        AppDelegate.shared = self
         #if DEBUG
         // Atalhos de teste: `-hrResetSession` encerra a sessão salva; `-hrDemo` entra em demonstração.
         let args = ProcessInfo.processInfo.arguments
