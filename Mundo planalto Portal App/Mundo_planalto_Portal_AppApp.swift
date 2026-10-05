@@ -100,13 +100,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         #if DEBUG
         print("[FCM] Token: \(token)")
         #endif
-        // Todas as instalações se inscrevem no tópico "announcements".
-        Messaging.messaging().subscribe(toTopic: "announcements") { error in
-            #if DEBUG
-            if let e = error { print("[FCM] Erro ao inscrever em announcements: \(e.localizedDescription)") }
-            else { print("[FCM] Inscrito no tópico announcements") }
-            #endif
-        }
+        // Tópicos: "announcements" para todos e "user_{id}" para quem está logado.
+        PushService.syncTopics()
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
@@ -127,7 +122,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         print("[Push] Usuário tocou na notificação: \(response.notification.request.content.userInfo)")
         #endif
         NotificationCenter.default.post(name: .noticeUnreadCountShouldRefresh, object: nil)
-        NotificationCenter.default.post(name: NSNotification.Name("SwitchToNews"), object: nil)
+        PushService.handleTap(userInfo: response.notification.request.content.userInfo)
         completionHandler()
     }
 }

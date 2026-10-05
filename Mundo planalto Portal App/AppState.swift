@@ -46,6 +46,7 @@ class AppState: ObservableObject {
         // Token e CPF já foram salvos pelo LoginViewModel após login com sucesso na API
         sessionExpiredMessage = nil
         isLoggedIn = true
+        PushService.syncTopics()
         Task {
             await refreshUserNameIfNeeded()
             await refreshAllUnreadBadges()
@@ -132,6 +133,7 @@ class AppState: ObservableObject {
     }
 
     private func clearLocalSession() {
+        PushService.unsubscribeUser(id: preferencesManager.getUserId())
         preferencesManager.clearAllData()
         unreadNoticeCount = 0
         unreadUpcomingBoletoCount = 0

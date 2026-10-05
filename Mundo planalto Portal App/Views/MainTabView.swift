@@ -37,12 +37,29 @@ struct MainTabView: View {
         .onReceive(NotificationCenter.default.publisher(for: .noticeUnreadCountShouldRefresh)) { _ in
             Task { await appState.refreshAllUnreadBadges() }
         }
-        // Compatibilidade com o push e com a Início antiga.
+        // Toque em notificação: com o app aberto chega pelo aviso; com o app fechado fica pendente
+        // até esta tela existir.
+        .onAppear { abrirDestinoDoPush() }
+        .onReceive(NotificationCenter.default.publisher(for: .hrPushDestination)) { _ in
+            abrirDestinoDoPush()
+        }
+        // Compatibilidade com a Início antiga.
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToNews"))) { _ in
             router.push(.avisosNoticias, on: .inicio)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("SwitchToVentures"))) { _ in
             router.switchTab(.empreendimentos)
+        }
+    }
+
+    private func abrirDestinoDoPush() {
+        guard let destino = PushService.consumePending() else { return }
+        switch destino {
+        case .avisos: router.push(.avisosNoticias, on: .inicio)
+        case .empreendimentos: router.switchTab(.empreendimentos, popToRoot: true)
+        case .viagens: router.push(.viagens, on: .inicio)
+        case .campanhas: router.switchTab(.campanhas, popToRoot: true)
+        case .financeiro: router.push(.financeiro, on: .inicio)
         }
     }
 
