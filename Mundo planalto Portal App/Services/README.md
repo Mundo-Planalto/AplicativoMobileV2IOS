@@ -2,7 +2,7 @@
 
 ## Base URL
 ```
-http://10.35.0.55:5187/api/
+Definida em API_BASE_URL nos xcconfigs (Development/Production) e lida por ApiConfig
 ```
 
 ## Authentication
@@ -138,48 +138,6 @@ func getQuickSuggestions() async throws -> [String]
 
 ---
 
-### 8. **SystemService** - Sistema e Utilitários
-**Arquivo:** `SystemService.swift`
-
-#### Endpoints:
-- `GET /system/info` - Informações do sistema
-- `GET /system/check-update` - Verificar atualizações
-- `GET /system/contact` - Informações de contato
-- `GET /system/terms-privacy` - Termos e privacidade
-- `POST /system/feedback` - Enviar feedback
-
-#### Métodos:
-```swift
-func getSystemInfo() async throws -> SystemInfo
-func checkForUpdates(currentVersion: String) async throws -> VersionCheckResponse
-func getContactInfo() async throws -> ContactInfo
-func getTermsAndPrivacy() async throws -> TermsAndPrivacy
-func sendFeedback(feedback: FeedbackRequest) async throws -> SystemResponse
-func reportBug(subject: String, description: String) async throws -> SystemResponse
-func sendSuggestion(subject: String, description: String) async throws -> SystemResponse
-```
-
----
-
-### 9. **PDFService** - Documentos PDF
-**Arquivo:** `PDFService.swift`
-
-#### Endpoints:
-- `GET /pdfs` - Lista de documentos PDF
-- `GET /pdfs/{id}/download` - URL de download
-- `GET /pdfs/categories` - Categorias de PDFs
-- `GET /pdfs/{id}/share` - URL compartilhável
-
-#### Métodos:
-```swift
-func getPDFDocuments(category: String?, page: Int, limit: Int) async throws -> PDFListResponse
-func getPDFDownloadUrl(documentId: String) async throws -> PDFDownloadResponse
-func downloadPDF(from urlString: String) async throws -> Data
-func getPDFCategories() async throws -> [String]
-func createShareablePDFUrl(documentId: String, expiresInHours: Int) async throws -> String
-```
-
----
 
 ## 🔄 Tratamento de Erros
 

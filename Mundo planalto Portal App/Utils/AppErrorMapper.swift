@@ -36,8 +36,6 @@ enum AppErrorMapper {
              ExtratoError.networkError,
              IncomeTaxError.networkError,
              ProfileError.networkError,
-             SystemError.networkError,
-             PDFError.networkError,
              SupportError.networkError:
             return true
         default:

@@ -11,7 +11,7 @@ revisão do CEO de 01/10 (`docs/revisao-ceo-01-10.md`).
 | Homologação `https://api.portal.mundoplanalto.com.br/api/` | Não responde (TLS fecha após o handshake; backend na porta 5083 não está no ar) | `Development.xcconfig` aponta para produção por autorização de 29/09; a URL de homologação está comentada no arquivo para a troca |
 | `Config.plist` com `API_BASE_URL` (api-existente.md) | Substituído | A URL vem de `API_BASE_URL` nos xcconfigs (Debug → Development, Release → Production), exposta no Info.plist e lida em `ApiConfig` |
 | `GoogleService-Info.plist` | Fora do git (`.gitignore`) | Cada máquina precisa do arquivo em `Mundo planalto Portal App/`; entregar fora do repositório |
-| `PDFService` e `SystemService` | URL fixa `http://10.35.0.55:5187/api/` e endpoints (`pdfs`, `system/*`) fora de api-existente.md | Não usados pelas telas atuais; candidatos a remoção |
+| `PDFService` e `SystemService` | Removidos em 05/10 (tinham a URL interna `10.35.0.55` e nenhuma tela usava) | A exceção de rede para esse IP também saiu do Info.plist |
 | Simulador "iPhone 15" (CLAUDE.md) | Não instalado nesta máquina | Builds validados no simulador iPhone 17 (iOS 26.2) |
 | Sessão fixa | JWT do cliente dura 7 dias e não há `POST auth/refresh` | O app só encerra a sessão quando `GET auth/me` confirma 401 duas vezes e mostra "Sua sessão expirou, entre novamente". Enquanto o backend não emitir token longo, o cliente volta ao Login a cada 7 dias |
 

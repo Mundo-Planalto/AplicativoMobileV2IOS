@@ -28,11 +28,6 @@
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>10.35.0.55</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-			</dict>
 			<key>portal.mundoplanalto.com.br</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
