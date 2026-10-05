@@ -31,6 +31,8 @@ struct HrDemoBanner: View {
 struct HrEmBreveButton: View {
     var body: some View {
         HrOutlineButton(text: "Disponível em breve", icon: "clock", isEnabled: false) {}
+            // Fundo escuro para o rótulo continuar legível sobre fotos claras.
+            .background(RoundedRectangle(cornerRadius: HrMetrics.buttonRadius, style: .continuous).fill(Color.black.opacity(0.6)))
     }
 }
 
