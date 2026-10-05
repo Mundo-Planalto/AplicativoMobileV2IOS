@@ -689,6 +689,7 @@ components:
         isActive: { type: boolean }
 
         isFeatured: { type: boolean, default: false, description: "Destaque com imagem; no máximo 2 por empreendimento" }
+        isNew: { type: boolean, default: false, description: "Etiqueta PARCEIRO NOVO no destaque (em vez de PARCEIRO)" }
         ventureIds: { type: array, items: { type: integer }, description: "Empreendimentos a que o parceiro se aplica" }
     PartnerUpsert:
       type: object
@@ -713,6 +714,7 @@ components:
         isActive: { type: boolean, default: true }
 
         isFeatured: { type: boolean, default: false, description: "Destaque com imagem; no máximo 2 por empreendimento" }
+        isNew: { type: boolean, default: false, description: "Etiqueta PARCEIRO NOVO no destaque (em vez de PARCEIRO)" }
         ventureIds: { type: array, items: { type: integer }, description: "Empreendimentos a que o parceiro se aplica" }
     Coupon:
       type: object

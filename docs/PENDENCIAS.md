@@ -1,8 +1,17 @@
 # Pendências (iOS Mundo Planalto)
 
 O que não está documentado em `docs/telas.md`, `docs/api-existente.md` ou `docs/openapi-hardrock.yaml`
-fica em mock e é registrado aqui, com a decisão tomada no iOS. Atualizado em 02/10/2026, depois da
+fica em mock e é registrado aqui, com a decisão tomada no iOS. Atualizado em 05/10/2026, depois da
 revisão do CEO de 01/10 (`docs/revisao-ceo-01-10.md`).
+
+## Documentos desta rodada (05/10)
+
+| Documento | Conteúdo |
+|---|---|
+| `docs/contrato-api-pendente.md` | Tudo que está em mock, por endpoint, com o JSON esperado (para o backend) |
+| `docs/teste-aparelho-real.md` | Instalação em iPhone real e roteiro de teste de push |
+| `docs/app-store-bloqueadores.md` | O que falta para a submissão de 18/11, bloqueante e desejável |
+| `docs/ipad-telas-pequenas.md` | Verificação em 375 pt e iPad, com recomendação |
 
 ## Ambiente e configuração
 
@@ -54,16 +63,16 @@ demonstração tem a faixa fixa "DEMONSTRAÇÃO • dados de exemplo" em todas a
 | Item | Decisão |
 |---|---|
 | `MundoPlanaltoLogo` não compacto em telefone | Símbolo à esquerda e wordmark 34 black não cabem em 393pt; o texto reduz de escala para caber em uma linha |
-| Etiqueta "PARCEIRO NOVO" nos destaques | Vem de `isNew` no mock; o contrato só tem `isFeatured`. Definir o campo no backend |
+| Etiqueta "PARCEIRO NOVO" nos destaques | Vem de `isNew`; campo incluído no `openapi-hardrock.yaml` e no contrato pendente em 05/10 |
 | Chips de Benefícios | "Todos", "Viagens" e uma opção por cidade dos parceiros. Viagens mostra Unity e Certificados |
 | Logo do Hard Rock Unity | Texto "HARD ROCK UNITY" sobre `#1A1A1A` até o asset oficial chegar |
 | Documentos → Contrato | Linha informativa "O contrato ficará disponível aqui em breve"; falta endpoint |
 | Política de privacidade e Termos de uso | Placeholder; faltam URL ou conteúdo oficiais |
 | Layout de iPad | Telas desenhadas e conferidas em iPhone; no iPad o conteúdo estica na largura |
-| Push por tópico `user_{id}` | Ainda não inscrito no iOS (só `announcements`); `POST /devices` aguarda o backend |
+| Push por tópico `user_{id}` | Inscrito depois do login desde 05/10 (sai ao deslogar); `POST /devices` aguarda o backend |
 | Toggle "Notificações push" em Configurações | Só grava a preferência local; não desinscreve dos tópicos FCM |
 | Variantes de Home (`AppConfig.homeVariant`) | Não implementadas; só a variante A, como manda a revisão, até Rodrigo pedir |
-| Ícone do app claro (`app-icon-1024-claro.png`) | Gerado em `docs/brand/`; o app usa o escuro. Rodrigo decide qual vai para as lojas |
+| Ícone do app | Decidido em 05/10: o escuro vai para as lojas (é o que o app já usa) |
 
 ## Fora da V1 (seção 6 da revisão; não implementar)
 
