@@ -84,6 +84,9 @@ struct PerfilView: View {
                         Text("Avisos do empreendimento").font(HrFont.itemTitle).foregroundColor(.white)
                     }
                     .tint(.hrGold)
+                    if RepositoryProvider.acoesSimuladas {
+                        HrAvisoPendente(texto: "Por enquanto estas preferências ficam salvas só neste aparelho; ainda não são enviadas ao servidor.")
+                    }
                 }
 
                 secao(.seguranca, icon: "shield.fill", titulo: "Segurança", subtitulo: "Senha e acesso") {

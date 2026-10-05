@@ -111,17 +111,25 @@ struct PerfilViagemView: View {
                     }
                 }
 
-                Text("Preenchido com as respostas da sua compra. Suas alterações ficam registradas para o Pós-vendas.")
-                    .font(HrFont.caption)
-                    .foregroundColor(.hrTextMuted)
-                    .fixedSize(horizontal: false, vertical: true)
+                if RepositoryProvider.acoesSimuladas {
+                    HrAvisoPendente(texto: "Respostas de exemplo. O perfil de viagem ainda não é salvo no servidor: o que você mudar aqui não é enviado.")
+                } else {
+                    Text("Preenchido com as respostas da sua compra. Suas alterações ficam registradas para o Pós-vendas.")
+                        .font(HrFont.caption)
+                        .foregroundColor(.hrTextMuted)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 if let erro = vm.erro {
                     Text(erro).font(HrFont.caption).foregroundColor(.hrError)
                 }
 
-                HrGoldButton(text: "Salvar", trailingArrow: false, isLoading: vm.isSaving) {
-                    Task { await vm.salvar() }
+                if RepositoryProvider.acoesSimuladas {
+                    HrEmBreveButton()
+                } else {
+                    HrGoldButton(text: "Salvar", trailingArrow: false, isLoading: vm.isSaving) {
+                        Task { await vm.salvar() }
+                    }
                 }
             }
             .padding(.horizontal, HrMetrics.screenMargin)

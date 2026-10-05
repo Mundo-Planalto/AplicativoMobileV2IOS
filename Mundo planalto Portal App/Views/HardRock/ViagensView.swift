@@ -57,6 +57,7 @@ struct ViagensView: View {
 
                 HrSectionTitle(titulo: "Meus certificados", subtitulo: "Cadastrados pela Central de Contratos na sua compra")
                     .padding(.top, 4)
+                HrConteudoExemploAviso()
 
                 if vm.isLoading {
                     HrCard { HStack { Spacer(); ProgressView().tint(.hrGold); Spacer() } }
@@ -180,8 +181,13 @@ struct ViagensView: View {
 
                 switch cert.status {
                 case .available:
-                    HrGoldButton(text: "Solicitar ativação", isLoading: vm.solicitandoId == cert.id) { vm.confirmando = cert }
-                        .padding(.top, 4)
+                    if RepositoryProvider.acoesSimuladas {
+                        HrEmBreveButton().padding(.top, 4)
+                        HrAvisoPendente(texto: "A solicitação de ativação pelo app ainda não está ligada ao servidor.")
+                    } else {
+                        HrGoldButton(text: "Solicitar ativação", isLoading: vm.solicitandoId == cert.id) { vm.confirmando = cert }
+                            .padding(.top, 4)
+                    }
                 case .requested:
                     HrOutlineButton(text: "Aguardando Pós-vendas", isEnabled: false) {}
                         .padding(.top, 4)
@@ -206,8 +212,13 @@ struct ViagensView: View {
                         .buttonStyle(HrPressStyle())
                         .accessibilityHint("Toque para copiar o código")
                     }
-                    HrGoldButton(text: "Usar") { router.open(cert.useUrl) }
-                        .padding(.top, 4)
+                    if RepositoryProvider.acoesSimuladas {
+                        HrEmBreveButton().padding(.top, 4)
+                        HrAvisoPendente(texto: "Código de exemplo: ele não vale na plataforma Mais Viagens.")
+                    } else {
+                        HrGoldButton(text: "Usar") { router.open(cert.useUrl) }
+                            .padding(.top, 4)
+                    }
                     Text("Você vai reservar na plataforma Mais Viagens com seu login de lá.")
                         .font(HrFont.captionSmall)
                         .foregroundColor(.hrTextMuted)

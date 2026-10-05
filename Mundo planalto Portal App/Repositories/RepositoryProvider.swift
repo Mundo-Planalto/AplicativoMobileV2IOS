@@ -15,6 +15,10 @@ enum RepositoryProvider {
     private static var isDemo: Bool { AppState.shared.isDemoSession }
     private static var mockNewApi: Bool { AppConfig.useMockData || isDemo }
 
+    /// Ações da API nova que ainda não chegam ao servidor (ativar certificado, interesse em
+    /// campanha, salvar perfil de viagem, cupom): ficam travadas com "Disponível em breve".
+    static var acoesSimuladas: Bool { mockNewApi }
+
     static var certificates: CertificatesRepository { mockNewApi ? CertificatesRepositoryMock.shared : CertificatesRepositoryRemote() }
     static var partners: PartnersRepository { mockNewApi ? PartnersRepositoryMock.shared : PartnersRepositoryRemote() }
     static var campaigns: CampaignsRepository { mockNewApi ? CampaignsRepositoryMock.shared : CampaignsRepositoryRemote() }

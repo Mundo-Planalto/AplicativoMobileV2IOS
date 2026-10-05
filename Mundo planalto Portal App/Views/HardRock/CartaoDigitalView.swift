@@ -30,6 +30,9 @@ struct CartaoDigitalView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: HrMetrics.cardSpacing) {
                 HrBackHeader(titulo: "Cartão do membro", subtitulo: "Apresente nos parceiros para validar seus benefícios")
+                if RepositoryProvider.acoesSimuladas, !appState.isDemoSession {
+                    HrAvisoPendente(texto: "Número, categoria, QR Code e utilizações são de exemplo: o cartão ainda não vem do servidor e não é validado nos parceiros.")
+                }
 
                 CartaoDigitalCard(
                     nome: vm.card?.name ?? member.nome,

@@ -16,7 +16,7 @@ protocol TravelProfileRepository {
 final class TravelProfileRepositoryMock: TravelProfileRepository {
     static let shared = TravelProfileRepositoryMock()
 
-    private var stored = TravelProfile(
+    private let stored = TravelProfile(
         homeCity: "Goiânia", homeState: "GO",
         preferredDestinations: ["Gramado", "Orlando", "Cancún", "Lisboa"],
         nextTripWhen: .within6Months, nextTripDestination: "Gramado", source: "pep"
@@ -25,10 +25,8 @@ final class TravelProfileRepositoryMock: TravelProfileRepository {
     func profile() async throws -> TravelProfile { stored }
 
     func save(_ profile: TravelProfile) async throws -> TravelProfile {
-        var updated = profile
-        updated.source = "app"
-        stored = updated
-        return updated
+        // Nada é gravado sem o backend: o mock não finge que salvou.
+        throw HrApiError.http(501, HrPendente.nadaEnviado)
     }
 }
 

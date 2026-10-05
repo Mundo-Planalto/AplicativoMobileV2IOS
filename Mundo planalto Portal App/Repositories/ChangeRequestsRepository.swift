@@ -33,9 +33,13 @@ struct AddressForm: Equatable {
 enum ChangeRequestError: LocalizedError {
     case notAvailable(ChangeRequestField)
     case failed
+    case demo
 
     var errorDescription: String? {
         switch self {
+        case .demo:
+            return "Na demonstração nada é enviado. Entre com a sua conta para solicitar a alteração."
+
         case .notAvailable(let field):
             return "A alteração de \(field.titulo.lowercased()) pelo app estará disponível em breve. Por enquanto, fale com a Central de Contratos."
         case .failed:
@@ -54,18 +58,14 @@ protocol ChangeRequestsRepository {
 final class ChangeRequestsRepositoryMock: ChangeRequestsRepository {
     static let shared = ChangeRequestsRepositoryMock()
 
-    private var stored: [ChangeRequest] = [
+    private let stored: [ChangeRequest] = [
         ChangeRequest(id: 1, field: .phone, newValue: "(62) 98888-0000", status: .approved, createdAt: "2026-09-20")
     ]
 
     func requests() async throws -> [ChangeRequest] { stored.sorted { $0.id > $1.id } }
 
     func create(field: ChangeRequestField, newValue: String, address: AddressForm?) async throws -> ChangeRequest {
-        let created = ChangeRequest(id: (stored.map(\.id).max() ?? 0) + 1, field: field,
-                                    newValue: address?.resumo ?? newValue,
-                                    status: .pending, createdAt: ISO8601DateFormatter().string(from: Date()))
-        stored.append(created)
-        return created
+        throw ChangeRequestError.demo
     }
 }
 

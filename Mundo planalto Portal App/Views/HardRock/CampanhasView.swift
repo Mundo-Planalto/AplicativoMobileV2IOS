@@ -40,6 +40,11 @@ final class CampanhasViewModel: ObservableObject {
         isLoading = false
     }
 
+    /// CTAs que só registram interesse no servidor: travados enquanto o backend não existe.
+    func emBreve(_ campaign: Campaign) -> Bool {
+        RepositoryProvider.acoesSimuladas && (campaign.ctaType == .online || campaign.ctaType == .postsales)
+    }
+
     /// Registra o clique (o backend mede cliques e conversão) e executa o CTA.
     func executar(_ campaign: Campaign, router: AppRouter) async {
         enviandoId = campaign.id
@@ -71,6 +76,7 @@ struct CampanhasView: View {
                 }
 
                 HrChipRow(options: vm.filtros, selected: $vm.filtro)
+                HrConteudoExemploAviso()
 
                 if vm.isLoading {
                     HrCard { HStack { Spacer(); ProgressView().tint(.hrGold); Spacer() } }
@@ -126,8 +132,12 @@ struct CampanhasView: View {
                 if let validade = c.validadeTexto {
                     HrTag(text: validade, color: .hrGoldLight)
                 }
-                HrGoldButton(text: c.ctaLabel, isLoading: vm.enviandoId == c.id) {
-                    Task { await vm.executar(c, router: router) }
+                if vm.emBreve(c) {
+                    HrEmBreveButton()
+                } else {
+                    HrGoldButton(text: c.ctaLabel, isLoading: vm.enviandoId == c.id) {
+                        Task { await vm.executar(c, router: router) }
+                    }
                 }
             }
         }
@@ -151,6 +161,14 @@ struct CampanhasView: View {
                     if let validade = c.validadeTexto {
                         HrTag(text: validade, color: .hrGoldLight)
                     }
+                    if vm.emBreve(c) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock").font(.system(size: 11, weight: .semibold))
+                            Text("Disponível em breve").font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundColor(.hrTextMuted)
+                        .padding(.top, 2)
+                    } else {
                     Button {
                         Task { await vm.executar(c, router: router) }
                     } label: {
@@ -165,6 +183,7 @@ struct CampanhasView: View {
                     }
                     .buttonStyle(HrPressStyle())
                     .padding(.top, 2)
+                    }
                 }
                 Spacer(minLength: 0)
             }

@@ -17,6 +17,7 @@ struct MainTabView: View {
         // A HrTabBar ocupa espaço próprio abaixo do TabView (não flutua por cima do conteúdo),
         // então o fim de toda rolagem, inclusive das telas empilhadas, termina acima dela.
         VStack(spacing: 0) {
+            if appState.isDemoSession { HrDemoBanner() }
             TabView(selection: $router.selectedTab) {
                 tabContent(.inicio) { InicioView() }
                 tabContent(.beneficios) { BeneficiosView() }

@@ -16,8 +16,6 @@ protocol CampaignsRepository {
 
 final class CampaignsRepositoryMock: CampaignsRepository {
     static let shared = CampaignsRepositoryMock()
-    /// Cliques registrados na sessão (o backend é quem conta de verdade).
-    private(set) var interestLog: [Int] = []
 
     func campaigns() async throws -> [Campaign] {
         [
@@ -44,9 +42,9 @@ final class CampaignsRepositoryMock: CampaignsRepository {
     }
 
     func registerInterest(id: Int) async throws {
-        interestLog.append(id)
+        // Sem backend o clique não é contado em lugar nenhum.
         #if DEBUG
-        print("[Campanhas][mock] interesse registrado na campanha \(id)")
+        print("[Campanhas][mock] interesse NÃO enviado (sem backend) na campanha \(id)")
         #endif
     }
 }

@@ -45,9 +45,8 @@ final class PartnersRepositoryMock: PartnersRepository {
     }
 
     func coupon(partnerId: Int) async throws -> Coupon {
-        guard let s = seeds.first(where: { $0.id == partnerId }) else { throw HrApiError.http(404, "Parceiro não encontrado") }
-        return Coupon(partnerId: s.id, partnerName: s.nome, code: s.cupom, discountText: s.desconto,
-                      validUntil: nil, remainingUses: nil, instructions: "Apresente este código no parceiro")
+        // Cupom de verdade só existe quando o backend gerar: o mock não entrega código fictício.
+        throw HrApiError.http(501, HrPendente.nadaEnviado)
     }
 }
 

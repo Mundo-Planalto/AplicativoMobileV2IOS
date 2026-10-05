@@ -18,19 +18,21 @@ revisão do CEO de 01/10 (`docs/revisao-ceo-01-10.md`).
 ## Em mock com `AppConfig.useMockData = true` (sem endpoint ainda)
 
 Vale também para quem entra com login real: os dados abaixo são os de demonstração de `docs/telas.md`
-até o backend existir. **Atenção em builds para a diretoria:** as ações marcadas com (*) parecem
-funcionar, mas nada é enviado ao backend.
+até o backend existir. **Desde 05/10:** as ações marcadas com (*) e o cupom ficam travadas com
+"Disponível em breve" (na demonstração e no login real), os mocks não devolvem sucesso inventado, e
+as telas com conteúdo de exemplo mostram o aviso "Conteúdo de exemplo" no login real. A sessão de
+demonstração tem a faixa fixa "DEMONSTRAÇÃO • dados de exemplo" em todas as telas.
 
 | Tela / dado | Endpoint futuro | Observação |
 |---|---|---|
-| Certificados e solicitação de ativação (*) | `GET members/me/certificates`, `POST certificates/{id}/request` | 2 certificados fixos; o protocolo `CERT-2026-000123` é fictício e o estado "Aguardando Pós-vendas" some ao reabrir o app |
-| Parceiros, destaques e cupons | `GET partners`, `POST partners/{id}/coupon` | 6 parceiros de Gramado; destaques Belle du Val e Snowland |
-| Campanhas e registro de interesse (*) | `GET campaigns`, `POST campaigns/{id}/interest` | 4 campanhas; o clique só vai para o log em debug. A campanha de indicação abre `https://hrh.vacation.mundoplanalto.com.br/` no navegador interno (definido em 02/10) |
+| Certificados e solicitação de ativação (*) | `GET members/me/certificates`, `POST certificates/{id}/request` | 2 certificados fixos; "Solicitar ativação" e "Usar" travados com "Disponível em breve" (sem protocolo fictício) |
+| Parceiros, destaques e cupons | `GET partners`, `POST partners/{id}/coupon` | 6 parceiros de Gramado; destaques Belle du Val e Snowland. O cupom (*) fica travado: nenhum código fictício é exibido |
+| Campanhas e registro de interesse (*) | `GET campaigns`, `POST campaigns/{id}/interest` | 4 campanhas; os CTAs que só registram interesse (`online`, `postsales`) ficam travados; os que abrem link ou tela funcionam. A campanha de indicação abre `https://hrh.vacation.mundoplanalto.com.br/` no navegador interno (definido em 02/10) |
 | Cartão do membro, tier, número, "desde", clube, QR `verifyUrl` | `GET members/me/card` | Com login real mostra o nome do cliente e os demais campos do mock (8150 / Founder / 2026 / Mundo Planalto) |
 | Utilizações recentes | `GET members/me/redemptions` | 3 linhas fixas |
-| Perfil de viagem (*) | `GET/PUT members/me/travel-profile` | Salvo em memória; volta ao padrão ao reabrir o app |
-| Preferências (opt-in) | `GET/PUT members/me/notification-preferences` | Persistidas em UserDefaults |
-| Alteração de telefone e e-mail | `POST/GET customers/change-requests` | Na demonstração é mock. **Com login real, o endereço usa o endpoint que o portal já tem (`address/change-requests`)** e telefone/e-mail mostram que a função chega em breve |
+| Perfil de viagem (*) | `GET/PUT members/me/travel-profile` | Respostas de exemplo; "Salvar" travado com "Disponível em breve" |
+| Preferências (opt-in) | `GET/PUT members/me/notification-preferences` | Persistidas em UserDefaults, com aviso de que ficam só no aparelho |
+| Alteração de telefone e e-mail | `POST/GET customers/change-requests` | Na demonstração o envio é recusado com aviso (nada é enviado). **Com login real, o endereço usa o endpoint que o portal já tem (`address/change-requests`)** e telefone/e-mail mostram que a função chega em breve |
 | Redes sociais, cidade/UF e unidade do empreendimento | `GET ventures` com os campos novos | Com login real as linhas de redes sociais ficam ocultas e a unidade não aparece, porque a API ainda não devolve |
 | Financeiro por empreendimento | `GET ventures/{id}/financial` | Com login real o extrato é filtrado pelo nome do empreendimento no app; o valor do próximo vencimento segue o resumo geral |
 

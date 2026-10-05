@@ -15,6 +15,7 @@ final class BeneficiosViewModel: ObservableObject {
     @Published var partners: [Partner] = []
     @Published var coupon: Coupon?
     @Published var filtro = "Todos"
+    @Published var cupomEmBreve = false
 
     /// "Todos", "Viagens" e uma opção por cidade dos parceiros (mock: Gramado).
     var filtros: [String] {
@@ -42,6 +43,10 @@ final class BeneficiosViewModel: ObservableObject {
     }
 
     func abrirCupom(partnerId: Int) async {
+        if RepositoryProvider.acoesSimuladas {
+            cupomEmBreve = true
+            return
+        }
         coupon = try? await RepositoryProvider.partners.coupon(partnerId: partnerId)
     }
 }
@@ -60,6 +65,7 @@ struct BeneficiosView: View {
                     }
 
                     HrChipRow(options: vm.filtros, selected: $vm.filtro)
+                    HrConteudoExemploAviso()
 
                     if vm.mostraParceiros {
                         ForEach(vm.destaques) { partner in
@@ -98,6 +104,11 @@ struct BeneficiosView: View {
         .sheet(item: $vm.coupon) { coupon in
             HrCouponSheet(coupon: coupon)
         }
+        .alert("Disponível em breve", isPresented: $vm.cupomEmBreve) {
+            Button("OK") {}
+        } message: {
+            Text("O cupom deste parceiro ainda não pode ser gerado pelo app. Nada foi enviado ao servidor.")
+        }
     }
 
     private func rolar(para target: String?, proxy: ScrollViewProxy) {
@@ -121,7 +132,11 @@ struct BeneficiosView: View {
                 Text("\(partner.name) • \(partner.city)")
                     .font(HrFont.caption)
                     .foregroundColor(.white.opacity(0.85))
-                HrGoldButton(text: "Ver voucher") { Task { await vm.abrirCupom(partnerId: partner.id) } }
+                if RepositoryProvider.acoesSimuladas {
+                    HrEmBreveButton()
+                } else {
+                    HrGoldButton(text: "Ver voucher") { Task { await vm.abrirCupom(partnerId: partner.id) } }
+                }
             }
         }
     }

@@ -18,7 +18,7 @@ protocol CertificatesRepository {
 final class CertificatesRepositoryMock: CertificatesRepository {
     static let shared = CertificatesRepositoryMock()
 
-    private var store: [Certificate] = [
+    private let store: [Certificate] = [
         Certificate(id: 1, name: "Certificado RCI — 7 noites", type: .rci, quantity: 1, status: .available,
                     expiresAt: "2027-12-31", protocolNumber: nil, code: nil, useUrl: nil,
                     requestedAt: nil, releasedAt: nil, usedAt: nil),
@@ -30,12 +30,8 @@ final class CertificatesRepositoryMock: CertificatesRepository {
     func certificates() async throws -> [Certificate] { store }
 
     func requestActivation(id: Int) async throws -> CertificateRequestResult {
-        guard let i = store.firstIndex(where: { $0.id == id }) else { throw HrApiError.http(404, "Certificado não encontrado") }
-        let result = CertificateRequestResult(protocolNumber: "CERT-2026-000123", slaHours: 48)
-        store[i].status = .requested
-        store[i].protocolNumber = result.protocolNumber
-        store[i].requestedAt = ISO8601DateFormatter().string(from: Date())
-        return result
+        // Sem backend não existe protocolo: o mock não inventa sucesso.
+        throw HrApiError.http(501, HrPendente.nadaEnviado)
     }
 }
 
