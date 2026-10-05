@@ -69,6 +69,7 @@ class LoginViewModel: ObservableObject {
         }
     }
 
+    #if DEBUG
     /// Entra com o usuário fictício José R. Castro, sem chamar a API.
     func loginDemo() {
         if case .loading = state { return }
@@ -76,6 +77,7 @@ class LoginViewModel: ObservableObject {
         state = .idle
         appState.loginDemo()
     }
+    #endif
 
     func formatDocument(_ text: String) -> String {
         CPFMask.format(text)

@@ -101,6 +101,7 @@ struct LoginView: View {
                                     .foregroundColor(.hrGoldLight)
                             }
 
+                            #if DEBUG
                             if AppConfig.showDemoLogin {
                                 Button {
                                     viewModel.loginDemo()
@@ -112,6 +113,7 @@ struct LoginView: View {
                                 }
                                 .disabled(isLoading)
                             }
+                            #endif
                         }
                         .padding(.top, 24)
                         .padding(.bottom, 32)

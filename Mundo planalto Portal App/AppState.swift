@@ -28,6 +28,10 @@ class AppState: ObservableObject {
     }
 
     func checkInitialLoginState() {
+        #if !DEBUG
+        // Um token de demonstração deixado por um build de teste no mesmo aparelho não vale em Release.
+        if preferencesManager.getAuthToken() == AppConfig.demoToken { preferencesManager.clearAllData() }
+        #endif
         // Verificar se há token válido salvo
         isLoggedIn = preferencesManager.hasValidSession()
         if isLoggedIn {
@@ -64,7 +68,9 @@ class AppState: ObservableObject {
         }
     }
 
+    #if DEBUG
     /// "Acessar demonstração": grava o token DEMO-HRVC e o usuário fictício, sem chamar a API.
+    /// Só existe em builds Debug; em Release o código nem é compilado.
     func loginDemo() {
         let demo = MemberInfo.demo
         preferencesManager.saveAuthToken(AppConfig.demoToken)
@@ -74,10 +80,15 @@ class AppState: ObservableObject {
         sessionExpiredMessage = nil
         isLoggedIn = true
     }
+    #endif
 
-    /// Sessão de demonstração (token DEMO-HRVC no Keychain).
+    /// Sessão de demonstração (token DEMO-HRVC no Keychain). Em Release é sempre `false`.
     var isDemoSession: Bool {
-        preferencesManager.getAuthToken() == AppConfig.demoToken
+        #if DEBUG
+        return preferencesManager.getAuthToken() == AppConfig.demoToken
+        #else
+        return false
+        #endif
     }
 
     /// Dados do membro para cartão e headers. Sem a API nova (GET members/me/card),
