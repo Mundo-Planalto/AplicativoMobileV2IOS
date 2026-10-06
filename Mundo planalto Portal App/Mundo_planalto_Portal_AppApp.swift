@@ -87,6 +87,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         Messaging.messaging().apnsToken = deviceToken
+        // O token do FCM pode chegar antes do token da Apple; aí a inscrição em tópicos falha
+        // ("No APNS token specified"). Refaz a inscrição agora que o token da Apple existe.
+        PushService.syncTopics()
         #if DEBUG
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
         print("[Push] APNs token registrado (\(tokenString.count) chars)")
