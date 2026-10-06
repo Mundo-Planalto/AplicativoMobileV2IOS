@@ -66,7 +66,16 @@ developer.apple.com, como em 29/09.
 | Tópicos | `announcements` para todos; `user_{id}` depois do login, saindo do tópico ao deslogar (novo em 05/10) |
 | Toque na notificação com o app fechado | **Corrigido em 05/10.** Antes o toque se perdia quando o app não estava aberto |
 
-### Precisa ser conferido por alguém com acesso (não consigo ver daqui)
+### Conferido no Firebase em 06/10
+
+| Item | Situação |
+|---|---|
+| Projeto do Firebase | `mundo-planalto-portal` (número **907146044474**). O projeto `mundo-planalto-portal-e81bb` (23373676291), que também se chama "Mundo Planalto Portal", não é usado pelo app nem pelo backend; o cadastro iOS feito lá por engano foi removido |
+| Acesso | `timundoplanalto@gmail.com` é editor do projeto certo desde 06/10 |
+| Chave APNs | `558BV2MC26` (time `L2AA5G4SRT`) nos **dois** campos, desenvolvimento e produção. Até 06/10 só estava em produção, e por isso o build instalado pelo cabo não recebia nada |
+| Resultado | Mensagem de teste pelo console chegou no iPad Air com o app aberto e com o iPad bloqueado (casos 4 e 6 do roteiro). O envio por tópico `user_212` ficou montado, sem publicar, aguardando o ok |
+
+### Precisa ser conferido por alguém com acesso
 
 | Onde | O que conferir |
 |---|---|

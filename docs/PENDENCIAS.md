@@ -69,7 +69,7 @@ demonstração tem a faixa fixa "DEMONSTRAÇÃO • dados de exemplo" em todas a
 | Documentos → Contrato | Linha informativa "O contrato ficará disponível aqui em breve"; falta endpoint |
 | Política de privacidade e Termos de uso | Placeholder; faltam URL ou conteúdo oficiais |
 | Layout de iPad | Telas desenhadas e conferidas em iPhone; no iPad o conteúdo estica na largura |
-| Push por tópico `user_{id}` | Inscrito depois do login desde 05/10 (sai ao deslogar); `POST /devices` aguarda o backend |
+| Push por tópico `user_{id}` | Inscrito depois do login desde 05/10 (sai ao deslogar; corrida com o token APNs corrigida em 06/10); `POST /devices` aguarda o backend. Entrega confirmada em iPad real em 06/10 pelo projeto Firebase 907146044474 |
 | Toggle "Notificações push" em Configurações | Só grava a preferência local; não desinscreve dos tópicos FCM |
 | Variantes de Home (`AppConfig.homeVariant`) | Não implementadas; só a variante A, como manda a revisão, até Rodrigo pedir |
 | Ícone do app | Decidido em 05/10: o escuro vai para as lojas (é o que o app já usa) |
