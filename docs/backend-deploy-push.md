@@ -30,7 +30,14 @@ teste configurável.
 - Os scripts `project/*.nu` do repositório descrevem a convenção (`deploy_dir: /opt/portal/app/`), mas a
   função de deploy está vazia; a publicação é manual.
 
-## 2. Credencial do Firebase (quem tem acesso ao console)
+## 2. Credencial do Firebase: FEITO em 07/10 às 17:51
+
+Chave gerada no projeto 907146044474 (conta `firebase-adminsdk-fbsvc@mundo-planalto-portal.iam.gserviceaccount.com`)
+e instalada em **`/home/dev/.config/portal/firebase-sa.json`** (dono `dev`, permissão 600, pasta 700). O serviço
+roda como `dev`, então lê o arquivo sem `root`. A cópia baixada no Mac do TI foi apagada. Se preferirem o caminho
+`/etc/portal`, basta mover como `root` e ajustar a variável; o conteúdo abaixo fica como referência.
+
+### 2.1 Como foi feito (referência)
 
 1. Firebase Console > projeto **Mundo Planalto Portal, número 907146044474** (conferir o número; existe um
    homônimo `-e81bb`).
@@ -44,7 +51,7 @@ scp -i ~/.ssh/planalto_portal ~/Downloads/mundo-planalto-portal-firebase-adminsd
 4. No servidor, como `root`:
 
 ```bash
-mkdir -p /etc/portal && mv /tmp/firebase-sa.json /etc/portal/firebase-sa.json && chown dev:dev /etc/portal/firebase-sa.json && chmod 600 /etc/portal/firebase-sa.json && grep -oE '"(project_id|client_email)": *"[^"]+"' /etc/portal/firebase-sa.json
+mkdir -p /etc/portal && mv /tmp/firebase-sa.json /home/dev/.config/portal/firebase-sa.json && chown dev:dev /home/dev/.config/portal/firebase-sa.json && chmod 600 /home/dev/.config/portal/firebase-sa.json && grep -oE '"(project_id|client_email)": *"[^"]+"' /home/dev/.config/portal/firebase-sa.json
 ```
 
 Precisa mostrar `"project_id": "mundo-planalto-portal"` (sem `-e81bb`). Depois apagar a cópia do computador
@@ -79,12 +86,12 @@ systemd-run --unit=portal_dev --uid=dev --gid=dev \
   -p WorkingDirectory=/bin/portal_dev \
   -E ASPNETCORE_URLS=http://0.0.0.0:5083 \
   -E ASPNETCORE_ENVIRONMENT=Development \
-  -E GOOGLE_APPLICATION_CREDENTIALS=/etc/portal/firebase-sa.json \
+  -E GOOGLE_APPLICATION_CREDENTIALS=/home/dev/.config/portal/firebase-sa.json \
   /bin/portal_dev/MundoPlanaltoPortal
 journalctl -u portal_dev -n 40 --no-pager | grep -iE "firebase|credencia|project|Now listening"
 ```
 
-Esperado no log: `Arquivo de credenciais: Encontrado ✅ (/etc/portal/firebase-sa.json)` e
+Esperado no log: `Arquivo de credenciais: Encontrado ✅ (/home/dev/.config/portal/firebase-sa.json)` e
 `Firebase Admin SDK inicializado (projeto mundo-planalto-portal)`. Se aparecer `LogCritical … Credencial do
 Firebase não encontrada`, a variável não chegou ao processo.
 
@@ -136,7 +143,7 @@ Conteúdo do override (salvar e fechar):
 
 ```ini
 [Service]
-Environment=GOOGLE_APPLICATION_CREDENTIALS=/etc/portal/firebase-sa.json
+Environment=GOOGLE_APPLICATION_CREDENTIALS=/home/dev/.config/portal/firebase-sa.json
 ```
 
 ```bash
@@ -150,7 +157,7 @@ journalctl -u portal -n 40 --no-pager | grep -iE "firebase|credencia|project|Now
 curl -s -o /dev/null -w "%{http_code}\n" https://portal.mundoplanalto.com.br/
 ```
 
-Esperado: `Environment=ASPNETCORE_URLS=… GOOGLE_APPLICATION_CREDENTIALS=/etc/portal/firebase-sa.json`,
+Esperado: `Environment=ASPNETCORE_URLS=… GOOGLE_APPLICATION_CREDENTIALS=/home/dev/.config/portal/firebase-sa.json`,
 log com `Firebase Admin SDK inicializado (projeto mundo-planalto-portal)` e o portal respondendo `200`.
 
 Reversão, se algo der errado: `systemctl stop portal && rsync -a --delete /opt/portal/app.bak-…/ /opt/portal/app/ && systemctl start portal`.
