@@ -13,6 +13,14 @@ revisão do CEO de 01/10 (`docs/revisao-ceo-01-10.md`).
 | `docs/app-store-bloqueadores.md` | O que falta para a submissão de 18/11, bloqueante e desejável |
 | `docs/ipad-telas-pequenas.md` | Verificação em 375 pt e iPad, com recomendação |
 
+## Chaves e acessos (08/10)
+
+| Item | Onde |
+|---|---|
+| Chave APNs `558BV2MC26` (.p8) | `/Users/planaltoti/Chaves-TI/AuthKey_558BV2MC26.p8` no Mac do TI (pasta 700, arquivo 600, com LEIA-ME). Fazer backup no cofre de senhas; a Apple não permite baixar de novo |
+| Conta de serviço do Firebase (backend) | Servidor, `/home/dev/.config/portal/firebase-sa.json` |
+| Acesso SSH do Mac ao servidor | Chave `~/.ssh/planalto_portal` autorizada para `dev@177.136.206.246`; mantida por decisão do TI |
+
 ## Ambiente e configuração
 
 | Item | Situação | Decisão no iOS |
@@ -68,7 +76,7 @@ demonstração tem a faixa fixa "DEMONSTRAÇÃO • dados de exemplo" em todas a
 | Logo do Hard Rock Unity | Texto "HARD ROCK UNITY" sobre `#1A1A1A` até o asset oficial chegar |
 | Documentos → Contrato | Linha informativa "O contrato ficará disponível aqui em breve"; falta endpoint |
 | Política de privacidade e Termos de uso | Placeholder; faltam URL ou conteúdo oficiais |
-| Layout de iPad | Telas desenhadas e conferidas em iPhone; no iPad o conteúdo estica na largura |
+| Layout de iPad | Decisão de 08/10: fica como está até a V2 (conteúdo estica na largura). Capturas de iPad continuam obrigatórias na loja |
 | Push por tópico `user_{id}` | Inscrito depois do login desde 05/10 (sai ao deslogar; corrida com o token APNs corrigida em 06/10); `POST /devices` aguarda o backend. Entrega confirmada em iPad real em 06/10 pelo projeto Firebase 907146044474 |
 | Toggle "Notificações push" em Configurações | Só grava a preferência local; não desinscreve dos tópicos FCM |
 | Variantes de Home (`AppConfig.homeVariant`) | Não implementadas; só a variante A, como manda a revisão, até Rodrigo pedir |

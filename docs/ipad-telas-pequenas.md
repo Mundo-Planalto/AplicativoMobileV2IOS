@@ -40,7 +40,11 @@ O app abre e todas as telas funcionam. Problemas visíveis:
 | B. Coluna central no iPad | Manter iPhone + iPad, mas limitar o conteúdo a uma coluna de uns 600 pt centralizada, com fundo preto nas laterais, e travar retrato no iPhone | 1 dia, mais meio dia de conferência tela a tela | Baixo. Visual de "app de telefone no meio da tela", mas correto e sem nada esticado |
 | C. Layout próprio de iPad | Duas colunas, barra lateral no lugar das abas, grades de 3 ou 4 cartões | 1 a 2 semanas, mais desenho | Não cabe até o congelamento de 15/11 sem tirar tempo da camada de API |
 
-## Recomendação
+## Decisão (08/10)
+
+O TI decidiu **não investir mais no layout de iPad agora**: o app continua universal, com o layout de telefone esticado no iPad, até a V2. Consequências que permanecem: capturas de iPad 13" obrigatórias na loja e teste rápido de que nada quebra no iPad antes de cada envio.
+
+## Recomendação original (para a V2)
 
 **Opção B agora, opção C na V2.** Ela resolve o que o revisor e a diretoria veriam (conteúdo esticado),
 não depende de saber se a Apple deixa remover o iPad e custa um dia e meio. Junto com ela:
