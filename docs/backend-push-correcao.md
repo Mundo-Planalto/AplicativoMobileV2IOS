@@ -257,6 +257,6 @@ dedicado), para que um duplo clique no admin não dispare dois pushes.
 
 ## 8. Contatos e artefatos
 
-- App iOS: repositório `rodrigoasilva1/AplicativoMobileV2IOS`, pasta `docs/`.
+- App iOS: repositório `Mundo-Planalto/AplicativoMobileV2IOS`, pasta `docs/`.
 - Roteiro de teste de push nos aparelhos: `docs/teste-aparelho-real.md`.
 - TI (acesso ao Firebase e aos aparelhos de teste): `timundoplanalto@gmail.com`.

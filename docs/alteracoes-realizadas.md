@@ -3,7 +3,7 @@
 Registro de tudo o que foi feito no projeto `Mundo-Planalto-Portal-App-IOS` entre 29/09 e 06/10/2026,
 a partir do app "Mundo Planalto Portal" que existia (último commit anterior: `1ae7c5a`, de 04/03/2026).
 No total: 44 commits, 137 arquivos alterados. **Nenhum commit foi enviado ao GitHub ainda** (o repositório
-remoto é `rodrigoasilva1/AplicativoMobileV2IOS`); tudo está só neste Mac até o "Push origin".
+remoto é `Mundo-Planalto/AplicativoMobileV2IOS`); tudo está só neste Mac até o "Push origin".
 
 ## 1. Resumo em uma página
 
