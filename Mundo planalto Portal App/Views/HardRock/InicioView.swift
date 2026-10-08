@@ -44,7 +44,7 @@ struct InicioView: View {
                     router.push(.avisosNoticias)
                 }
 
-                heroCard
+                if AppConfig.Features.viagens { heroCard }
                 shortcuts
                 resumoFinanceiroCard
                 ofertasCard
@@ -88,13 +88,23 @@ struct InicioView: View {
 
     private var shortcuts: some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: HrMetrics.cardSpacing), GridItem(.flexible(), spacing: HrMetrics.cardSpacing)], spacing: HrMetrics.cardSpacing) {
-            HrShortcut(icon: "airplane", titulo: "Viagens", subtitulo: "Seus certificados e reservas") { router.push(.viagens) }
-            HrShortcut(icon: "tag.fill", titulo: "Descontos", subtitulo: "Em parceiros selecionados") { router.switchTab(.beneficios) }
-            HrShortcut(icon: "globe", titulo: "Unity", subtitulo: "Vantagens Hard Rock no mundo") {
-                router.beneficiosScrollTarget = "unity"
-                router.switchTab(.beneficios)
+            if AppConfig.Features.viagens {
+                HrShortcut(icon: "airplane", titulo: "Viagens", subtitulo: "Seus certificados e reservas") { router.push(.viagens) }
             }
-            HrShortcut(icon: "megaphone.fill", titulo: "Campanhas", subtitulo: "Condições especiais") { router.switchTab(.campanhas) }
+            if AppConfig.Features.beneficios {
+                HrShortcut(icon: "tag.fill", titulo: "Descontos", subtitulo: "Em parceiros selecionados") { router.switchTab(.beneficios) }
+                HrShortcut(icon: "globe", titulo: "Unity", subtitulo: "Vantagens Hard Rock no mundo") {
+                    router.beneficiosScrollTarget = "unity"
+                    router.switchTab(.beneficios)
+                }
+            }
+            if AppConfig.Features.campanhas {
+                HrShortcut(icon: "megaphone.fill", titulo: "Campanhas", subtitulo: "Condições especiais") { router.switchTab(.campanhas) }
+            }
+            if !AppConfig.Features.viagens || !AppConfig.Features.beneficios || !AppConfig.Features.campanhas {
+                HrShortcut(icon: "creditcard.fill", titulo: "Financeiro", subtitulo: "Parcelas, boletos e extrato") { router.push(.financeiro) }
+                HrShortcut(icon: "building.2.fill", titulo: "Empreendimentos", subtitulo: "Obra, fotos e vídeos") { router.switchTab(.empreendimentos) }
+            }
         }
     }
 

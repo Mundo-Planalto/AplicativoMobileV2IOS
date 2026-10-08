@@ -430,6 +430,25 @@ Sem contrato ainda; precisam existir antes da submissão de 18/11 (ver `docs/app
 
 | Necessidade | Proposta |
 |---|---|
-| Exclusão de conta pedida de dentro do app | `DELETE customers/me` ou `POST customers/me/deletion-request` (resposta com protocolo e prazo). O app precisa de um endpoint que **inicie** a exclusão; pode ser um pedido atendido pela Central, desde que o cliente não precise ligar nem mandar e-mail |
+| Exclusão de conta pedida de dentro do app | **Definido no app em 08/10:** `POST customers/me/deletion-request` (abaixo). O app já tem a tela (Perfil > Segurança > Excluir conta) e envia o pedido; a Central conclui |
 | Política de privacidade e Termos de uso | Duas URLs públicas (sem login), ex.: `https://portal.mundoplanalto.com.br/privacidade` e `/termos` |
 | Conta de teste para o revisor da Apple | Um cliente de teste em produção com financeiro, empreendimento, certificado e campanha preenchidos |
+
+
+### POST `customers/me/deletion-request`
+
+Cliente logado pede a exclusão da conta pelo app. Envia:
+```json
+{ "reason": "Não uso mais o app" }
+```
+`reason` é opcional (`null` quando o cliente não escreve).
+
+Resposta `data`:
+```json
+{ "protocol": "EXC-2026-000010", "deadlineDays": 15 }
+```
+O app mostra "Protocolo EXC-2026-000010. A Central de Contratos conclui em até 15 dias" e **encerra a sessão**
+(chama o `logout` atual). Depois disso o backend deve: registrar o pedido para a Central, desativar o login do cliente
+no prazo informado (ou imediatamente, a critério do negócio), invalidar o JWT e remover o token de push. Dados
+contratuais e financeiros seguem a retenção legal; o app explica isso ao cliente antes de confirmar.
+Erros: `409` se já houver pedido aberto (com `message`), `401` sessão inválida.

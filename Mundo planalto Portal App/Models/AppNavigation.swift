@@ -17,6 +17,17 @@ enum TabItem: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Abas ativas no build (AppConfig.Features). Início, Empreendimentos e Perfil sempre existem.
+    static var visiveis: [TabItem] {
+        allCases.filter { tab in
+            switch tab {
+            case .beneficios: return AppConfig.Features.beneficios
+            case .campanhas: return AppConfig.Features.campanhas
+            default: return true
+            }
+        }
+    }
+
     var iconName: String {
         switch self {
         case .inicio: return "house.fill"
@@ -45,5 +56,7 @@ enum AppRoute: Hashable {
     case alteracaoDados(ChangeRequestField)
     case avisosNoticias
     case politicaPrivacidade
+    case termosUso
+    case excluirConta
     case sistema
 }

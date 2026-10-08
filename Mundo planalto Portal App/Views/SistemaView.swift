@@ -36,11 +36,12 @@ struct SistemaView: View {
                 }
 
                 HrSectionTitle(titulo: "Legal").padding(.top, 8)
+                // Com URL oficial definida em AppConfig abre no navegador interno; sem ela, tela "em breve".
                 HrListRow(icon: "hand.raised.fill", titulo: "Política de privacidade", subtitulo: "Como tratamos seus dados pessoais") {
-                    router.push(.politicaPrivacidade)
+                    if let url = HrLinks.url(from: AppConfig.privacyPolicyURL) { router.open(url) } else { router.push(.politicaPrivacidade) }
                 }
                 HrListRow(icon: "doc.text.fill", titulo: "Termos de uso", subtitulo: "Leia nossos termos e condições") {
-                    router.push(.politicaPrivacidade)
+                    if let url = HrLinks.url(from: AppConfig.termsOfUseURL) { router.open(url) } else { router.push(.termosUso) }
                 }
 
                 #if DEBUG

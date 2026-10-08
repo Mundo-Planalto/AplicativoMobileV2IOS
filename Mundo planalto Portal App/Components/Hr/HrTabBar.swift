@@ -14,7 +14,7 @@ struct HrTabBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(TabItem.allCases) { tab in
+            ForEach(TabItem.visiveis) { tab in
                 Button {
                     if selected != tab {
                         selected = tab

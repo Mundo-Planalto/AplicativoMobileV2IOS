@@ -579,6 +579,36 @@ paths:
                   - properties:
                       data: { $ref: "#/components/schemas/VentureFinancialSummary" }
 
+  /customers/me/deletion-request:
+    post:
+      tags: [Clientes]
+      summary: Pedido de exclusão da conta feito pelo cliente no app (exigência da App Store)
+      description: Abre o pedido para a Central de Contratos; o app encerra a sessão ao receber o protocolo.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, nullable: true, maxLength: 500 }
+      responses:
+        "200":
+          description: Pedido registrado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ApiResponse"
+                  - properties:
+                      data:
+                        type: object
+                        required: [protocol, deadlineDays]
+                        properties:
+                          protocol: { type: string, example: "EXC-2026-000010" }
+                          deadlineDays: { type: integer, example: 15 }
+        "409": { description: Já existe pedido em aberto }
+
   /auth/refresh:
     post:
       tags: [Sessão]

@@ -34,5 +34,9 @@ struct HrPlaceholderScreen: View {
 }
 
 struct PoliticaPrivacidadeView: View {
-    var body: some View { HrPlaceholderScreen(titulo: "Política de privacidade") }
+    var body: some View { HrPlaceholderScreen(titulo: "Política de privacidade", subtitulo: "Texto oficial em breve") }
+}
+
+struct TermosUsoView: View {
+    var body: some View { HrPlaceholderScreen(titulo: "Termos de uso", subtitulo: "Texto oficial em breve") }
 }

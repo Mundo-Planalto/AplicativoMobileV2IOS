@@ -39,18 +39,26 @@ struct PerfilView: View {
                     desde: member.desde,
                     clube: clube ?? member.clube
                 ) {
-                    router.push(.cartaoDigital)
+                    if AppConfig.Features.cartao { router.push(.cartaoDigital) }
                 }
 
-                HStack(spacing: 10) {
-                    HrGoldButton(text: "Ver benefícios") { router.switchTab(.beneficios) }
-                    HrIconSquareButton(icon: "qrcode") { router.push(.cartaoDigital) }
+                if AppConfig.Features.beneficios || AppConfig.Features.cartao {
+                    HStack(spacing: 10) {
+                        if AppConfig.Features.beneficios {
+                            HrGoldButton(text: "Ver benefícios") { router.switchTab(.beneficios) }
+                        }
+                        if AppConfig.Features.cartao {
+                            HrIconSquareButton(icon: "qrcode") { router.push(.cartaoDigital) }
+                        }
+                    }
                 }
 
                 // Perfil de viagem
-                HrSectionTitle(titulo: "Perfil de viagem", subtitulo: "Usamos isso para escolher campanhas para você")
-                    .padding(.top, 8)
-                perfilViagemCard
+                if AppConfig.Features.perfilViagem {
+                    HrSectionTitle(titulo: "Perfil de viagem", subtitulo: "Usamos isso para escolher campanhas para você")
+                        .padding(.top, 8)
+                    perfilViagemCard
+                }
 
                 // Dados pessoais
                 HrSectionTitle(titulo: "Dados pessoais", subtitulo: "Mantenha seus dados atualizados")
@@ -92,6 +100,7 @@ struct PerfilView: View {
                 secao(.seguranca, icon: "shield.fill", titulo: "Segurança", subtitulo: "Senha e acesso") {
                     HrListRow(icon: "key.fill", titulo: "Trocar senha", subtitulo: "Altere sua senha de acesso") { trocarSenha = true }
                     HrListRow(icon: "gearshape.fill", titulo: "Configurações", subtitulo: "Notificações, política e versão") { router.push(.sistema) }
+                    HrListRow(icon: "person.crop.circle.badge.xmark", titulo: "Excluir conta", subtitulo: "Encerrar seu acesso ao app e ao portal") { router.push(.excluirConta) }
                 }
 
                 HrListRow(

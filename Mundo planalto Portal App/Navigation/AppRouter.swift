@@ -127,6 +127,8 @@ extension AppRoute {
         case "alteracao": return .alteracaoDados(.phone)
         case "avisos": return .avisosNoticias
         case "politica": return .politicaPrivacidade
+        case "termos": return .termosUso
+        case "excluir-conta": return .excluirConta
         case "sistema": return .sistema
         case "obra": return .videosObra(debugVenture)
         case "hub": return .empreendimento(debugVenture)

@@ -30,6 +30,8 @@ enum RepositoryProvider {
         if isDemo { return ChangeRequestsRepositoryMock.shared }
         return AppConfig.useMockData ? ChangeRequestsRepositoryPortal() : ChangeRequestsRepositoryRemote()
     }
+    /// Exclusão de conta: Remote quando o endpoint existir; até lá fica travada com "Disponível em breve".
+    static var account: AccountRepository { mockNewApi ? AccountRepositoryMock.shared : AccountRepositoryRemote() }
     static var ventures: VenturesRepository { isDemo ? VenturesRepositoryMock.shared : VenturesRepositoryRemote() }
     static var financeiro: FinanceiroRepository { isDemo ? FinanceiroRepositoryMock.shared : FinanceiroRepositoryRemote() }
 }

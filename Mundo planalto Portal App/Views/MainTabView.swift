@@ -20,8 +20,8 @@ struct MainTabView: View {
             if appState.isDemoSession { HrDemoBanner() }
             TabView(selection: $router.selectedTab) {
                 tabContent(.inicio) { InicioView() }
-                tabContent(.beneficios) { BeneficiosView() }
-                tabContent(.campanhas) { CampanhasView() }
+                if AppConfig.Features.beneficios { tabContent(.beneficios) { BeneficiosView() } }
+                if AppConfig.Features.campanhas { tabContent(.campanhas) { CampanhasView() } }
                 tabContent(.empreendimentos) { EmpreendimentosView() }
                 tabContent(.perfil) { PerfilView() }
             }
@@ -102,6 +102,10 @@ struct RouteView: View {
                 AvisosNoticiasView()
             case .politicaPrivacidade:
                 PoliticaPrivacidadeView()
+            case .termosUso:
+                TermosUsoView()
+            case .excluirConta:
+                ExcluirContaView()
             case .sistema:
                 SistemaView()
             case .financeiroEmpreendimento(let venture):

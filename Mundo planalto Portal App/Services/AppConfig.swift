@@ -30,6 +30,21 @@ enum AppConfig {
 
     /// Programa Unity (docs/telas.md).
     static let unityURL = "https://www.hardrock.com/unity"
+
+    /// Política de privacidade e Termos de uso: URLs públicas definidas pelo jurídico
+    /// (docs/app-store-bloqueadores.md, itens 2 e 3). Vazias = tela "em breve".
+    static let privacyPolicyURL = ""
+    static let termsOfUseURL = ""
+
+    /// Áreas que dependem da API nova. `false` tira a aba/atalho do app (build de loja sem
+    /// conteúdo de exemplo; docs/app-store-bloqueadores.md, item 4). Decidir até 15/11.
+    enum Features {
+        static let viagens = true
+        static let beneficios = true
+        static let campanhas = true
+        static let cartao = true
+        static let perfilViagem = true
+    }
 }
 
 /// Dados do membro exibidos no cartão e nos headers.
