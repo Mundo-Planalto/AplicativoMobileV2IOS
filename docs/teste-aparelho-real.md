@@ -73,7 +73,7 @@ developer.apple.com, como em 29/09.
 | Projeto do Firebase | `mundo-planalto-portal` (número **907146044474**). O projeto `mundo-planalto-portal-e81bb` (23373676291), que também se chama "Mundo Planalto Portal", não é usado pelo app nem pelo backend; o cadastro iOS feito lá por engano foi removido |
 | Acesso | `timundoplanalto@gmail.com` é editor do projeto certo desde 06/10 |
 | Chave APNs | `558BV2MC26` (time `L2AA5G4SRT`) nos **dois** campos, desenvolvimento e produção. Até 06/10 só estava em produção, e por isso o build instalado pelo cabo não recebia nada |
-| Resultado | Mensagem de teste pelo console chegou no iPad Air com o app aberto e com o iPad bloqueado (casos 4 e 6 do roteiro). O envio por tópico `user_212` ficou montado, sem publicar, aguardando o ok |
+| Resultado | Mensagem de teste pelo console chegou no iPad Air e no iPhone 14 Plus (app aberto e bloqueado; toque abriu Avisos). **Backend:** depois da correção implantada em 08/10, o `portal_dev` enviou o aviso nº 1 para o tópico `user_212` às 10:22 com `SUCESSO` no log (caminho portal → Firebase validado). Falta o primeiro aviso real em produção |
 
 ### Precisa ser conferido por alguém com acesso
 
